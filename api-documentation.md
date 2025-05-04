@@ -247,6 +247,155 @@ Similar CRUD endpoints are available for stands at `/stands`.
 
 Similar CRUD endpoints are available for aircraft types at `/aircraft-types`.
 
+### Configuration
+
+#### Get Operational Settings
+- **URL**: `/config/settings`
+- **Method**: `GET`
+- **Auth Required**: No
+- **Success Response**: 
+  ```json
+  {
+    "id": 1,
+    "default_gap_minutes": 15,
+    "operating_start_time": "06:00:00",
+    "operating_end_time": "23:59:59",
+    "created_at": "2024-07-20T10:23:45.000Z",
+    "updated_at": "2024-07-20T10:23:45.000Z"
+  }
+  ```
+
+#### Update Operational Settings
+- **URL**: `/config/settings`
+- **Method**: `PUT`
+- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "default_gap_minutes": 20,
+    "operating_start_time": "05:00:00",
+    "operating_end_time": "23:00:00"
+  }
+  ```
+- **Success Response**: 
+  ```json
+  {
+    "id": 1,
+    "default_gap_minutes": 20,
+    "operating_start_time": "05:00:00",
+    "operating_end_time": "23:00:00",
+    "created_at": "2024-07-20T10:23:45.000Z",
+    "updated_at": "2024-08-20T15:30:22.000Z"
+  }
+  ```
+
+#### Get All Turnaround Rules
+- **URL**: `/config/turnaround-rules`
+- **Method**: `GET`
+- **Auth Required**: No
+- **Success Response**: 
+  ```json
+  [
+    {
+      "id": "a1b2c3d4-1234-5678-90ab-cdef12345678",
+      "aircraft_type_id": 1,
+      "min_turnaround_minutes": 90,
+      "created_at": "2024-07-20T10:23:45.000Z",
+      "updated_at": "2024-07-20T10:23:45.000Z",
+      "aircraftType": {
+        "id": 1,
+        "iata_code": "388",
+        "icao_code": "A388",
+        "name": "Airbus A380-800"
+      }
+    },
+    {
+      "id": "e5f6g7h8-9012-3456-78ij-klmn90123456",
+      "aircraft_type_id": 2,
+      "min_turnaround_minutes": 60,
+      "created_at": "2024-07-20T10:23:45.000Z",
+      "updated_at": "2024-07-20T10:23:45.000Z",
+      "aircraftType": {
+        "id": 2,
+        "iata_code": "77W",
+        "icao_code": "B77W",
+        "name": "Boeing 777-300ER"
+      }
+    }
+  ]
+  ```
+
+#### Get Turnaround Rule by Aircraft Type
+- **URL**: `/config/turnaround-rules/aircraft-type/:id`
+- **Method**: `GET`
+- **Auth Required**: No
+- **Success Response**: 
+  ```json
+  {
+    "id": "a1b2c3d4-1234-5678-90ab-cdef12345678",
+    "aircraft_type_id": 1,
+    "min_turnaround_minutes": 90,
+    "created_at": "2024-07-20T10:23:45.000Z",
+    "updated_at": "2024-07-20T10:23:45.000Z",
+    "aircraftType": {
+      "id": 1,
+      "iata_code": "388",
+      "icao_code": "A388",
+      "name": "Airbus A380-800"
+    }
+  }
+  ```
+
+#### Create Turnaround Rule
+- **URL**: `/config/turnaround-rules`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "aircraft_type_id": 3,
+    "min_turnaround_minutes": 45
+  }
+  ```
+- **Success Response**: 
+  ```json
+  {
+    "id": "i9j0k1l2-3456-7890-abcd-efgh12345678",
+    "aircraft_type_id": 3,
+    "min_turnaround_minutes": 45,
+    "created_at": "2024-08-20T15:45:22.000Z",
+    "updated_at": "2024-08-20T15:45:22.000Z"
+  }
+  ```
+
+#### Update Turnaround Rule
+- **URL**: `/config/turnaround-rules/aircraft-type/:id`
+- **Method**: `PUT`
+- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "min_turnaround_minutes": 50
+  }
+  ```
+- **Success Response**: 
+  ```json
+  {
+    "id": "i9j0k1l2-3456-7890-abcd-efgh12345678",
+    "aircraft_type_id": 3,
+    "min_turnaround_minutes": 50,
+    "created_at": "2024-08-20T15:45:22.000Z",
+    "updated_at": "2024-08-20T16:12:35.000Z"
+  }
+  ```
+
+#### Delete Turnaround Rule
+- **URL**: `/config/turnaround-rules/aircraft-type/:id`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
+- **Success Response**: 
+  - Status: 204 No Content
+
 ### Operational Settings
 
 Similar CRUD endpoints are available for operational settings at `/settings`.

@@ -27,30 +27,20 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/maintenance/calendar": [
+    "/config": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/maintenance/calendar.js"
+      "static/chunks/pages/config.js"
     ],
-    "/maintenance/impact": [
+    "/config/settings": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/maintenance/impact.js"
+      "static/chunks/pages/config/settings.js"
     ],
-    "/maintenance/requests": [
+    "/config/turnaround-rules": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/maintenance/requests.js"
-    ],
-    "/piers": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/piers.js"
-    ],
-    "/stands": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/stands.js"
+      "static/chunks/pages/config/turnaround-rules.js"
     ]
   },
   "ampFirstPages": []

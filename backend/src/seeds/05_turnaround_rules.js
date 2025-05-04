@@ -40,78 +40,64 @@ exports.seed = async function(knex) {
   
   if (a380) {
     rules.push({
-      name: 'A380 Rule',
       aircraft_type_id: a380.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 90,
-      optimal_turnaround_minutes: 120,
-      description: 'Turnaround rules for A380'
+      min_turnaround_minutes: 90,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (b777) {
     rules.push({
-      name: '777 Rule',
       aircraft_type_id: b777.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 60,
-      optimal_turnaround_minutes: 90,
-      description: 'Turnaround rules for 777'
+      min_turnaround_minutes: 60,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (a320) {
     rules.push({
-      name: 'A320 Rule',
       aircraft_type_id: a320.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 30,
-      optimal_turnaround_minutes: 45,
-      description: 'Turnaround rules for A320'
+      min_turnaround_minutes: 30,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (b737) {
     rules.push({
-      name: 'B737 Rule',
       aircraft_type_id: b737.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 30,
-      optimal_turnaround_minutes: 45,
-      description: 'Turnaround rules for B737'
+      min_turnaround_minutes: 30,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (a350) {
     rules.push({
-      name: 'A350 Rule',
       aircraft_type_id: a350.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 60,
-      optimal_turnaround_minutes: 75,
-      description: 'Turnaround rules for A350'
+      min_turnaround_minutes: 60,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (b787) {
     rules.push({
-      name: 'B787 Rule',
       aircraft_type_id: b787.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 60,
-      optimal_turnaround_minutes: 75,
-      description: 'Turnaround rules for B787'
+      min_turnaround_minutes: 60,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   
   if (e190) {
     rules.push({
-      name: 'E190 Rule',
       aircraft_type_id: e190.id,
-      stand_type: 'contact',
-      minimum_turnaround_minutes: 25,
-      optimal_turnaround_minutes: 40,
-      description: 'Turnaround rules for E190'
+      min_turnaround_minutes: 25,
+      created_at: new Date(),
+      updated_at: new Date()
     });
   }
   

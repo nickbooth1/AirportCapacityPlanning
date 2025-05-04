@@ -4,6 +4,7 @@ import { ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
 import BuildIcon from '@mui/icons-material/Build';
 import FlightIcon from '@mui/icons-material/Flight';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const NavigationSidebar = () => {
   return (
@@ -28,6 +29,13 @@ const NavigationSidebar = () => {
           <FlightIcon />
         </ListItemIcon>
         <ListItemText primary="Aircraft Types" />
+      </ListItem>
+
+      <ListItem button component={Link} href="/config">
+        <ListItemIcon>
+          <SettingsIcon />
+        </ListItemIcon>
+        <ListItemText primary="Configuration" />
       </ListItem>
       {/* ... rest of the list items ... */}
     </div>

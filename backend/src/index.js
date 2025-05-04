@@ -45,11 +45,13 @@ const terminalsRoutes = require('./routes/terminals');
 const piersRoutes = require('./routes/piers');
 const standsRoutes = require('./routes/stands');
 const aircraftTypesRoutes = require('./routes/aircraft-types');
+const configRoutes = require('./routes/config');
 
 app.use('/api/terminals', terminalsRoutes);
 app.use('/api/piers', piersRoutes);
 app.use('/api/stands', standsRoutes);
 app.use('/api/aircraft-types', aircraftTypesRoutes);
+app.use('/api/config', configRoutes);
 
 // Error handling
 app.use(errorHandler);
