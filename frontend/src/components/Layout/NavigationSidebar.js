@@ -5,6 +5,7 @@ import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
 import BuildIcon from '@mui/icons-material/Build';
 import FlightIcon from '@mui/icons-material/Flight';
 import SettingsIcon from '@mui/icons-material/Settings';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const NavigationSidebar = () => {
   return (
@@ -29,6 +30,13 @@ const NavigationSidebar = () => {
           <FlightIcon />
         </ListItemIcon>
         <ListItemText primary="Aircraft Types" />
+      </ListItem>
+      
+      <ListItem button component={Link} href="/capacity">
+        <ListItemIcon>
+          <AssessmentIcon />
+        </ListItemIcon>
+        <ListItemText primary="Stand Capacity" />
       </ListItem>
 
       <ListItem button component={Link} href="/config">

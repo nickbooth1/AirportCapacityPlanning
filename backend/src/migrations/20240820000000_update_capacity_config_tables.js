@@ -17,9 +17,11 @@ exports.up = function(knex) {
         .comment('Start of the core operational period for capacity calculation');
       table.time('operating_end_time').notNullable().defaultTo('23:59:59')
         .comment('End of the core operational period for capacity calculation');
+      table.integer('slot_duration_minutes').notNullable().defaultTo(10)
+        .comment('Duration of each time slot in minutes');
+      table.integer('slot_block_size').notNullable().defaultTo(6)
+        .comment('Number of slots per block for hourly reporting');
       table.timestamps(true, true);
-      // Add constraint to ensure only one row exists
-      table.check('id = 1', 'ensure_single_row');
     })
     
     // Recreate turnaround_rules table with the required structure

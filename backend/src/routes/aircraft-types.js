@@ -39,7 +39,7 @@ router.post('/', async (req, res, next) => {
       model, 
       wingspan_meters, 
       length_meters,
-      size_category 
+      size_category_code 
     } = req.body;
     
     // Validate required fields
@@ -58,7 +58,7 @@ router.post('/', async (req, res, next) => {
       model,
       wingspan_meters,
       length_meters,
-      size_category
+      size_category_code
     }).returning('id');
     
     const newAircraftType = await db('aircraft_types').where({ id }).first();
@@ -81,7 +81,7 @@ router.put('/:id', async (req, res, next) => {
       model, 
       wingspan_meters, 
       length_meters,
-      size_category 
+      size_category_code 
     } = req.body;
     
     // Check if aircraft type exists
@@ -99,8 +99,8 @@ router.put('/:id', async (req, res, next) => {
       model,
       wingspan_meters,
       length_meters,
-      size_category,
-      updated_at: db.fn.now()
+      size_category_code,
+      updated_at: new Date().toISOString()
     });
     
     const updatedAircraftType = await db('aircraft_types').where({ id }).first();

@@ -3,7 +3,8 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#000000',
+      contrastText: '#FFDE59',
     },
     secondary: {
       main: '#dc004e',
@@ -11,6 +12,10 @@ const theme = createTheme({
     background: {
       default: '#f5f5f5',
     },
+    airport: {
+      main: '#000000',
+      contrastText: '#FFDE59',
+    }
   },
   typography: {
     fontFamily: [
@@ -32,7 +37,26 @@ const theme = createTheme({
         root: {
           textTransform: 'none',
         },
+        containedPrimary: {
+          backgroundColor: '#000000',
+          color: '#FFDE59',
+          '&:hover': {
+            backgroundColor: '#333333',
+          },
+        },
       },
+      variants: [
+        {
+          props: { variant: 'airport' },
+          style: {
+            backgroundColor: '#000000',
+            color: '#FFDE59',
+            '&:hover': {
+              backgroundColor: '#333333',
+            },
+          },
+        },
+      ],
     },
   },
 });

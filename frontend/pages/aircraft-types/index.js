@@ -124,6 +124,7 @@ export default function AircraftTypes() {
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => router.push('/aircraft-types/new')}
+            style={{ backgroundColor: '#000000', color: '#FFDE59', borderColor: '#000000' }}
           >
             Add Aircraft Type
           </Button>

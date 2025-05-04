@@ -337,6 +337,7 @@ export default function Stands() {
               type="primary" 
               icon={<PlusOutlined />} 
               onClick={() => router.push('/stands/new')}
+              style={{ backgroundColor: '#000000', color: '#FFDE59', borderColor: '#000000' }}
             >
               Add Stand
             </Button>

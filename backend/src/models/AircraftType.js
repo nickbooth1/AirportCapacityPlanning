@@ -18,7 +18,7 @@ class AircraftType extends Model {
         model: { type: 'string', maxLength: 100 },
         wingspan_meters: { type: 'integer' },
         length_meters: { type: 'integer' },
-        size_category: { type: 'string', maxLength: 10 },
+        size_category_code: { type: 'string', maxLength: 10 },
         created_at: { type: 'string', format: 'date-time' },
         updated_at: { type: 'string', format: 'date-time' }
       }

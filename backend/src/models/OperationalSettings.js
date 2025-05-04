@@ -13,6 +13,8 @@ class OperationalSettings extends Model {
         default_gap_minutes: { type: 'integer', minimum: 1 },
         operating_start_time: { type: 'string', format: 'time' },
         operating_end_time: { type: 'string', format: 'time' },
+        slot_duration_minutes: { type: 'integer', minimum: 1 },
+        slot_block_size: { type: 'integer', minimum: 1 },
         created_at: { type: 'string', format: 'date-time' },
         updated_at: { type: 'string', format: 'date-time' }
       }
@@ -28,7 +30,9 @@ class OperationalSettings extends Model {
         id: 1,
         default_gap_minutes: 15,
         operating_start_time: '06:00:00',
-        operating_end_time: '23:59:59'
+        operating_end_time: '23:59:59',
+        slot_duration_minutes: 10,
+        slot_block_size: 6
       });
     }
     return settings;

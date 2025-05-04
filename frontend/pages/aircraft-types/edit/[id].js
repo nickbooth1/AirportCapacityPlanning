@@ -50,7 +50,7 @@ export default function EditAircraftType() {
         model: response.data.model,
         wingspan_meters: response.data.wingspan_meters,
         length_meters: response.data.length_meters,
-        size_category: response.data.size_category,
+        size_category_code: response.data.size_category_code,
       });
       
       setInitializing(false);
@@ -168,7 +168,7 @@ export default function EditAircraftType() {
           </Form.Item>
           
           <Form.Item
-            name="size_category"
+            name="size_category_code"
             label="Size Category"
           >
             <Select placeholder="Select size category">

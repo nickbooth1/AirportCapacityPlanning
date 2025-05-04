@@ -117,7 +117,7 @@ export default function NewAircraftType() {
           </Form.Item>
           
           <Form.Item
-            name="size_category"
+            name="size_category_code"
             label="Size Category"
           >
             <Select placeholder="Select size category">
