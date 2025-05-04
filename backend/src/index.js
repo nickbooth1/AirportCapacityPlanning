@@ -48,6 +48,8 @@ const aircraftTypesRoutes = require('./routes/aircraft-types');
 const aircraftSizeCategoriesRoutes = require('./routes/aircraft-size-categories');
 const configRoutes = require('./routes/config');
 const capacityRoutes = require('./routes/capacity');
+const airlineRoutes = require('./routes/airlineRoutes');
+const airportRoutes = require('./routes/airportRoutes');
 
 app.use('/api/terminals', terminalsRoutes);
 app.use('/api/piers', piersRoutes);
@@ -56,6 +58,8 @@ app.use('/api/aircraft-types', aircraftTypesRoutes);
 app.use('/api/aircraft-size-categories', aircraftSizeCategoriesRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/capacity', capacityRoutes);
+app.use('/api/airlines', airlineRoutes);
+app.use('/api/airports', airportRoutes);
 
 // Error handling
 app.use(errorHandler);
