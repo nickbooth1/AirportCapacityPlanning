@@ -1,0 +1,44 @@
+{
+  "name": "airport-capacity-planner-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Airport Capacity Planner",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "PORT=${PORT:-3001} nodemon src/index.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "db:migrate": "knex migrate:latest",
+    "db:rollback": "knex migrate:rollback",
+    "db:seed": "knex seed:run"
+  },
+  "keywords": [
+    "airport",
+    "capacity",
+    "planning",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "helmet": "^6.0.1",
+    "joi": "^17.7.0",
+    "jsonwebtoken": "^9.0.0",
+    "knex": "^2.5.1",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.0",
+    "objection": "^3.1.5",
+    "pg": "^8.9.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.34.0",
+    "jest": "^29.4.3",
+    "nodemon": "^2.0.20",
+    "prettier": "^2.8.4",
+    "supertest": "^6.3.3"
+  }
+}

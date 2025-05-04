@@ -1,0 +1,150 @@
+# Airport Capacity Planning Tool - MVP Components & Modules
+
+This document outlines the key components and their internal modules for the Minimum Viable Product (MVP) focused on Stand Capacity Calculation.
+
+## Key Components
+
+1.  **Airport Definition:** Manages the core physical characteristics of the airport.
+2.  **Capacity Configuration:** Manages the operational parameters used for calculation.
+3.  **Stand Capacity Engine:** Performs the core calculation based on definitions and configurations.
+4.  **API Layer:** Facilitates communication between the frontend and backend logic/data.
+5.  **User Interface (UI):** Presents information and interaction points to the user.
+6.  **Stand Maintenance:** Manages maintenance requests for stands and their impact on capacity.
+
+## Modules within Components
+
+### 1. Airport Definition Component
+
+*   **`Database Schema (Airport)`:** Defines tables in PostgreSQL for:
+    *   `terminals`
+    *   `piers`
+    *   `aircraft_types` (e.g., Code, Name, Wingspan Category, Length Category)
+    *   `stands` (e.g., Name, Terminal ID, Pier ID, Max Aircraft Size Code)
+    *   `stand_constraints` (e.g., linking stands to specific allowed `aircraft_types`).
+*   **`API Endpoints (Airport)`:** Backend routes (e.g., in Express.js) for CRUD operations on airport entities:
+    *   `GET /api/terminals`
+    *   `POST /api/stands`
+    *   `GET /api/stands/:id`
+    *   `PUT /api/stands/:id`
+    *   (and similar for piers, aircraft types, etc.)
+*   **`Backend Services (Airport)`:** Node.js functions/classes containing the logic to interact with the database for airport data (e.g., `createStand(data)`, `getAllPiers()`).
+*   **`Frontend UI (Airport)`:** Next.js pages and components for:
+    *   Displaying lists of terminals, piers, stands.
+    *   Forms for adding/editing these entities.
+
+### 2. Capacity Configuration Component
+
+*   **`Database Schema (Config)`:** Defines tables in PostgreSQL for:
+    *   `turnaround_rules` (e.g., by `aircraft_type`, Minimum Turnaround Time)
+    *   `operational_settings` (e.g., Default Gap Time Between Aircraft, Airport Operating Hours).
+*   **`API Endpoints (Config)`:** Backend routes for managing configuration:
+    *   `GET /api/config/turnaround`
+    *   `POST /api/config/turnaround`
+    *   `GET /api/config/settings`
+    *   `PUT /api/config/settings`
+*   **`Backend Services (Config)`:** Node.js functions/classes to fetch and update configuration values in the database.
+*   **`Frontend UI (Config)`:** Next.js pages and components for displaying and editing configuration settings.
+
+### 3. Stand Capacity Engine Component
+
+*   **`Data Fetching Module`:** Backend logic to retrieve necessary airport definitions and configurations from the database (likely utilizing the Airport and Config Backend Services).
+*   **`Time Slot Logic Module`:** Backend logic to determine the time intervals for analysis (e.g., hourly slots within defined operating hours).
+*   **`Stand Allocation Simulation Module`:** Core backend logic. For each stand and time slot, determines its theoretical availability based on constraints (size) and rules (turnaround times, gap times). *Note: MVP calculates maximum theoretical capacity, not based on actual flight schedules.*
+*   **`Capacity Aggregation Module`:** Backend logic to summarize the simulation results into a meaningful output (e.g., total available stand-hours per aircraft size, per terminal/pier).
+*   **`API Endpoint (Capacity Calculation)`:** A backend route (e.g., `GET /api/capacity/calculate` or `POST /api/capacity/calculate`) that triggers the engine and returns the aggregated results.
+
+### 4. API Layer Component
+
+*   **`Router Setup`:** Backend configuration (e.g., in Express.js) defining all API routes and mapping them to the corresponding controller/service logic.
+*   **`Request/Response Handling`:** Backend middleware for common tasks like parsing incoming request bodies (e.g., JSON), validating input data, handling errors consistently, and formatting outgoing responses.
+*   **`(Future)` `Authentication/Authorization Module`:** Backend middleware to handle user login and permissions (not part of the initial MVP focus).
+
+### 5. User Interface (UI) Component
+
+*   **`Layout/Navigation`:** Frontend (Next.js) components defining the overall page structure, navigation menus, headers, footers.
+*   **`Data Display Components`:** Reusable frontend components for presenting data in tables, lists, cards, etc.
+*   **`Form Components`:** Reusable frontend components for various input fields (text boxes, dropdowns, number inputs) with validation.
+*   **`Capacity Results Display Component`:** Specific frontend component(s) designed to fetch (via the API Layer) and visualize the output of the Stand Capacity Engine (e.g., a table or chart showing capacity per time slot/aircraft size).
+
+### 6. Stand Maintenance Component
+
+*   **`Database Schema (Maintenance)`:** Defines tables in PostgreSQL for:
+    *   `maintenance_requests` (e.g., Stand ID, Requestor, Description, Start Date/Time, End Date/Time, Status)
+    *   `maintenance_status_types` (e.g., Requested, Approved, In Progress, Completed, Rejected)
+    *   `maintenance_approvals` (e.g., Request ID, Approver ID, Approval Date, Comments)
+*   **`API Endpoints (Maintenance)`:** Backend routes for managing maintenance requests:
+    *   `GET /api/maintenance/requests`
+    *   `POST /api/maintenance/requests`
+    *   `GET /api/maintenance/requests/:id`
+    *   `PUT /api/maintenance/requests/:id`
+    *   `GET /api/maintenance/requests/stand/:standId`
+    *   `POST /api/maintenance/approvals`
+*   **`Backend Services (Maintenance)`:** Node.js functions/classes for managing maintenance request workflow, from creation to approval/rejection.
+*   **`Frontend UI (Maintenance)`:** Next.js pages and components for:
+    *   Creating and viewing maintenance requests
+    *   Approving or rejecting maintenance requests
+    *   Visualizing maintenance impact on capacity
+*   **`Capacity Integration Module`:** Logic to integrate maintenance information into capacity calculations, ensuring stands with scheduled maintenance are excluded from availability during relevant time periods.
+
+## MVP Component Interaction Flow
+
+The following diagram illustrates the typical sequence of interactions between the components during core operations like managing airport data, configuring settings, and calculating stand capacity.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI (Next.js)
+    participant API Layer (Node.js)
+    participant AirportDef Services (Backend)
+    participant CapacityConfig Services (Backend)
+    participant StandCapacity Engine (Backend)
+    participant Maintenance Services (Backend)
+    participant Database (PostgreSQL)
+
+    User->>UI: Interact (View/Edit Airport Data)
+    UI->>API Layer: Request (GET/POST /api/stands, etc.)
+    API Layer->>AirportDef Services: Call (getStand, createStand)
+    AirportDef Services->>Database: Query (SELECT/INSERT/UPDATE Stands)
+    Database-->>AirportDef Services: Return Data/Status
+    AirportDef Services-->>API Layer: Return Result
+    API Layer-->>UI: Response (Airport Data/Status)
+    UI-->>User: Display Data/Confirmation
+
+    User->>UI: Interact (View/Edit Config Data)
+    UI->>API Layer: Request (GET/PUT /api/config/*)
+    API Layer->>CapacityConfig Services: Call (getConfig, updateConfig)
+    CapacityConfig Services->>Database: Query (SELECT/UPDATE Config Tables)
+    Database-->>CapacityConfig Services: Return Data/Status
+    CapacityConfig Services-->>API Layer: Return Result
+    API Layer-->>UI: Response (Config Data/Status)
+    UI-->>User: Display Data/Confirmation
+    
+    User->>UI: Interact (Create/Manage Maintenance)
+    UI->>API Layer: Request (POST/GET/PUT /api/maintenance/*)
+    API Layer->>Maintenance Services: Call (createRequest, approveRequest)
+    Maintenance Services->>Database: Query (INSERT/SELECT/UPDATE Maintenance)
+    Database-->>Maintenance Services: Return Data/Status
+    Maintenance Services-->>API Layer: Return Result
+    API Layer-->>UI: Response (Maintenance Data/Status)
+    UI-->>User: Display Data/Confirmation
+
+    User->>UI: Interact (Trigger Capacity Calculation)
+    UI->>API Layer: Request (GET/POST /api/capacity/calculate)
+    API Layer->>StandCapacity Engine: Trigger Calculation
+    StandCapacity Engine->>AirportDef Services: Fetch Airport Data
+    AirportDef Services->>Database: Query Airport Tables
+    Database-->>AirportDef Services: Return Airport Data
+    AirportDef Services-->>StandCapacity Engine: Provide Airport Data
+    StandCapacity Engine->>CapacityConfig Services: Fetch Config Data
+    CapacityConfig Services->>Database: Query Config Tables
+    Database-->>CapacityConfig Services: Return Config Data
+    CapacityConfig Services-->>StandCapacity Engine: Provide Config Data
+    StandCapacity Engine->>Maintenance Services: Fetch Maintenance Data
+    Maintenance Services->>Database: Query Maintenance Tables
+    Database-->>Maintenance Services: Return Maintenance Data
+    Maintenance Services-->>StandCapacity Engine: Provide Maintenance Data
+    Note over StandCapacity Engine: Run Time Slot Logic, Simulation, Aggregation
+    StandCapacity Engine-->>API Layer: Return Calculated Capacity Results
+    API Layer-->>UI: Response (Capacity Results)
+    UI-->>User: Display Capacity Results
+```

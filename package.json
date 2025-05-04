@@ -1,0 +1,21 @@
+{
+  "name": "airport-capacity-planner",
+  "version": "1.0.0",
+  "description": "Airport Capacity Planning Tool",
+  "scripts": {
+    "start:backend": "lsof -ti:3001 | xargs kill -9 2>/dev/null || true && cd backend && PORT=3001 npm run dev",
+    "start:frontend": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true && cd frontend && PORT=3000 npm run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "test:backend-db": "cd backend && npx jest tests/db-connectivity.test.js",
+    "test:frontend-api": "cd frontend && npx jest tests/api-connectivity.test.js",
+    "test:e2e": "node tests/e2e-connectivity.js",
+    "test:all": "./test-all-components.sh"
+  },
+  "devDependencies": {
+    "axios": "^1.9.0",
+    "concurrently": "^7.6.0",
+    "dotenv": "^16.0.3",
+    "knex": "^2.4.2",
+    "pg": "^8.9.0"
+  }
+}

@@ -1,0 +1,44 @@
+
+> airport-capacity-planner@1.0.0 start
+> concurrently "npm run start:backend" "npm run start:frontend"
+
+[1] 
+[1] > airport-capacity-planner@1.0.0 start:frontend
+[1] > lsof -ti:3000 | xargs kill -9 2>/dev/null || true && cd frontend && PORT=3000 npm run dev
+[1] 
+[0] 
+[0] > airport-capacity-planner@1.0.0 start:backend
+[0] > lsof -ti:3001 | xargs kill -9 2>/dev/null || true && cd backend && PORT=3001 npm run dev
+[0] 
+[0] 
+[0] > airport-capacity-planner-backend@1.0.0 dev
+[0] > PORT=${PORT:-3001} nodemon src/index.js
+[0] 
+[1] 
+[1] > airport-capacity-planner-frontend@1.0.0 dev
+[1] > next dev -p ${PORT:-3000}
+[1] 
+[0] [33m[nodemon] 2.0.22[39m
+[0] [33m[nodemon] to restart at any time, enter `rs`[39m
+[0] [33m[nodemon] watching path(s): *.*[39m
+[0] [33m[nodemon] watching extensions: js,mjs,json[39m
+[0] [32m[nodemon] starting `node src/index.js`[39m
+[0] Email notifications not configured. Missing EMAIL_HOST, EMAIL_USER, or EMAIL_PASSWORD environment variables.
+[0] Server running on port 3001
+[0] Environment: development
+[0] Database connection successful
+[1]    Disabled SWC as replacement for Babel because of custom Babel configuration "babel.config.js" https://nextjs.org/docs/messages/swc-disabled
+[1]   ▲ Next.js 13.5.11
+[1]   - Local:        http://localhost:3000
+[1] 
+[1]  ✓ Ready in 1858ms
+[1]  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[1]    Using external babel configuration from /Users/nick/AirportCapacityPlanner/frontend/babel.config.js
+[0] [0mGET /api/maintenance/requests [32m200[0m 7.651 ms - 2[0m
+[1]  ✓ Compiled /maintenance/requests in 2.4s (11767 modules)
+[0] [0mGET /api/maintenance/requests [36m304[0m 3.092 ms - -[0m
+[0] [0mGET /api/maintenance/status-types [36m304[0m 4.048 ms - -[0m
+[0] [0mGET /api/maintenance/status-types [32m200[0m 2.483 ms - 990[0m
+[1] [?25h
+[1] npm run start:frontend exited with code SIGTERM
+[0] npm run start:backend exited with code SIGTERM

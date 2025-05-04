@@ -1,0 +1,29 @@
+# Airport Capacity Planning Tool - Architecture
+
+## Overview
+
+The tool follows a standard three-tier architecture to separate concerns and allow for scalability.
+
+```mermaid
+graph LR
+    A[User's Browser] -- HTTP Requests --> B(Frontend: Next.js);
+    B -- API Calls --> C(Backend: Node.js/Express);
+    C -- SQL Queries --> D(Database: PostgreSQL);
+    D -- Data --> C;
+    C -- API Responses --> B;
+    B -- HTML/JS/CSS --> A;
+```
+
+## Tiers
+
+1.  **Frontend (Client-Side):**
+    *   **Technology:** Next.js (React framework)
+    *   **Responsibilities:** Handles the user interface (UI) and user experience (UX). Renders web pages, displays data fetched from the backend, captures user input through forms, and communicates with the backend API layer via HTTP requests (typically REST or GraphQL).
+
+2.  **Backend (Server-Side):**
+    *   **Technology:** Node.js (potentially with the Express.js framework)
+    *   **Responsibilities:** Acts as the central hub for business logic and data access. It exposes an API for the frontend to consume, validates incoming data, performs calculations (like the stand capacity engine), interacts with the database to retrieve and store data, and handles other server-side tasks.
+
+3.  **Database:**
+    *   **Technology:** PostgreSQL
+    *   **Responsibilities:** Provides persistent storage for all application data. This includes the definitions of airport infrastructure (terminals, piers, stands, aircraft types), operational configuration settings (turnaround times, gap times), user information (in later phases), and flight schedule data (in later phases). Ensures data integrity and provides querying capabilities.

@@ -1,0 +1,26 @@
+{
+  "../node_modules/next/dist/client/index.js -> ../pages/_app": {
+    "id": "../node_modules/next/dist/client/index.js -> ../pages/_app",
+    "files": [
+      "static/chunks/node_modules_next_dist_pages__app_js.js"
+    ]
+  },
+  "../node_modules/next/dist/client/index.js -> ../pages/_error": {
+    "id": "../node_modules/next/dist/client/index.js -> ../pages/_error",
+    "files": [
+      "static/chunks/node_modules_next_dist_pages__error_js.js"
+    ]
+  },
+  "stands/index.js -> leaflet/dist/leaflet.css": {
+    "id": "stands/index.js -> leaflet/dist/leaflet.css",
+    "files": [
+      "static/chunks/node_modules_leaflet_dist_leaflet_css.js"
+    ]
+  },
+  "stands/index.js -> react-leaflet": {
+    "id": "stands/index.js -> react-leaflet",
+    "files": [
+      "static/chunks/node_modules_react-leaflet_lib_index_js.js"
+    ]
+  }
+}

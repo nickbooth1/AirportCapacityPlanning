@@ -1,0 +1,75 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Map container for the airport stands */
+.map-container {
+  height: 400px;
+  width: 100%;
+  border-radius: 4px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+/* Dialog fullscreen map */
+.fullscreen-map {
+  height: 80vh;
+  width: 100%;
+}
+
+/* Custom marker styling */
+.stand-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background-color: #1976d2;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+.stand-marker.inactive {
+  background-color: #9e9e9e;
+}
+
+/* Tooltip styling */
+.tooltip-content {
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 4px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Stand details panel */
+.stand-details {
+  padding: 16px;
+  border-left: 4px solid #1976d2;
+  background-color: #f5f5f5;
+  margin-bottom: 16px;
+}
+
+/* Aircraft compatibility list */
+.compatible-aircraft {
+  color: #4caf50;
+}
+
+.incompatible-aircraft {
+  color: #f44336;
+} 
