@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import { 
   Settings as SettingsIcon, 
-  ScheduleRounded as ScheduleIcon
+  ScheduleRounded as ScheduleIcon,
+  LocationCity as LocationCityIcon
 } from '@mui/icons-material';
 
 const ConfigIndexPage = () => {
@@ -36,7 +37,29 @@ const ConfigIndexPage = () => {
         </Typography>
         
         <Grid container spacing={4} mt={2}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <LocationCityIcon fontSize="large" color="primary" />
+                  <Typography variant="h5" component="h2" ml={1}>
+                    Airport Configuration
+                  </Typography>
+                </Box>
+                <Typography>
+                  Configure your base airport, allocate airlines to terminals, and assign ground handling agents.
+                  This supports stand allocation and capacity planning.
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small" color="primary" href="/config/airport-configuration">
+                  Configure Airport
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -58,7 +81,7 @@ const ConfigIndexPage = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" mb={2}>

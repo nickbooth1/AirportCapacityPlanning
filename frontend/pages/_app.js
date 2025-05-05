@@ -4,6 +4,7 @@ import { CacheProvider } from '@emotion/react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import createEmotionCache from '../lib/createEmotionCache';
 import theme from '../lib/theme';
+import { AirportConfigProvider } from '../src/contexts/AirportConfigContext';
 // For Ant Design v5
 import 'antd/dist/reset.css';
 
@@ -21,7 +22,9 @@ export default function MyApp(props) {
       </Head>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Component {...pageProps} />
+        <AirportConfigProvider>
+          <Component {...pageProps} />
+        </AirportConfigProvider>
       </ThemeProvider>
     </CacheProvider>
   );
