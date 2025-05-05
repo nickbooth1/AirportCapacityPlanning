@@ -40,9 +40,22 @@ const MaintenanceCalendar = () => {
           api.get('/stands'),
           api.get('/maintenance/status-types')
         ]);
-        setTerminals(terminalsRes.data);
-        setStands(standsRes.data);
-        setStatusTypes(statusTypesRes.data);
+        
+        // Extract data properly with fallbacks to empty arrays
+        const extractData = (response) => {
+          if (Array.isArray(response.data)) {
+            return response.data;
+          } else if (response.data && response.data.data) {
+            return response.data.data;
+          } else {
+            return [];
+          }
+        };
+        
+        setTerminals(extractData(terminalsRes));
+        setStands(extractData(standsRes));
+        setStatusTypes(extractData(statusTypesRes));
+        
         // Fetch initial calendar events after getting filter options
         await fetchCalendarEvents(); 
       } catch (err) {
@@ -124,7 +137,7 @@ const MaintenanceCalendar = () => {
               <InputLabel>Terminal</InputLabel>
               <Select value={terminalFilter} onChange={(e) => setTerminalFilter(e.target.value)} label="Terminal">
                 <MenuItem value="">All Terminals</MenuItem>
-                {terminals.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                {Array.isArray(terminals) && terminals.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
               </Select>
             </FormControl>
           </Grid>
@@ -133,7 +146,7 @@ const MaintenanceCalendar = () => {
                 <InputLabel>Stand</InputLabel>
                 <Select value={standFilter} onChange={(e) => setStandFilter(e.target.value)} label="Stand">
                     <MenuItem value="">All Stands</MenuItem>
-                    {stands.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+                    {Array.isArray(stands) && stands.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
                 </Select>
              </FormControl>
            </Grid>
@@ -142,7 +155,7 @@ const MaintenanceCalendar = () => {
                 <InputLabel>Status</InputLabel>
                 <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Status">
                     <MenuItem value="">All Statuses</MenuItem>
-                    {statusTypes.map(st => <MenuItem key={st.id} value={st.id}>{st.name}</MenuItem>)}
+                    {Array.isArray(statusTypes) && statusTypes.map(st => <MenuItem key={st.id} value={st.id}>{st.name}</MenuItem>)}
                 </Select>
              </FormControl>
            </Grid>

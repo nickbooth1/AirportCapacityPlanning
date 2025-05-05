@@ -47,7 +47,7 @@ const ConfigIndexPage = () => {
                   </Typography>
                 </Box>
                 <Typography>
-                  Configure your base airport, allocate airlines to terminals, and assign ground handling agents.
+                  Configure your base airport, manage terminals and piers, allocate airlines to terminals, and assign ground handling agents.
                   This supports stand allocation and capacity planning.
                 </Typography>
               </CardContent>
