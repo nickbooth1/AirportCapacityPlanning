@@ -27,10 +27,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/airports": [
+    "/ghas": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/airports.js"
+      "static/chunks/pages/ghas.js"
     ]
   },
   "ampFirstPages": []

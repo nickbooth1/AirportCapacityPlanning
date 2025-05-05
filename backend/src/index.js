@@ -50,6 +50,7 @@ const configRoutes = require('./routes/config');
 const capacityRoutes = require('./routes/capacity');
 const airlineRoutes = require('./routes/airlineRoutes');
 const airportRoutes = require('./routes/airportRoutes');
+const ghaRoutes = require('./routes/ghaRoutes');
 
 app.use('/api/terminals', terminalsRoutes);
 app.use('/api/piers', piersRoutes);
@@ -60,6 +61,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/capacity', capacityRoutes);
 app.use('/api/airlines', airlineRoutes);
 app.use('/api/airports', airportRoutes);
+app.use('/api/ghas', ghaRoutes);
 
 // Error handling
 app.use(errorHandler);

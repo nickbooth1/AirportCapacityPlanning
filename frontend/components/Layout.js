@@ -30,7 +30,9 @@ import {
   InsertChart as InsertChartIcon,
   Assessment as AssessmentIcon,
   FlightTakeoff as FlightTakeoffIcon,
-  FlightLand as FlightLandIcon
+  FlightLand as FlightLandIcon,
+  Engineering as EngineeringIcon,
+  Handyman as HandymanIcon
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -122,6 +124,12 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
             <FlightTakeoffIcon />
           </ListItemIcon>
           <ListItemText primary="Airlines" />
+        </ListItem>
+        <ListItem button component={Link} href="/ghas">
+          <ListItemIcon>
+            <HandymanIcon />
+          </ListItemIcon>
+          <ListItemText primary="GHAs" />
         </ListItem>
         <ListItem button component={Link} href="/aircraft-types">
           <ListItemIcon>
