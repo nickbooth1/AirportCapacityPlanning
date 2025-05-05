@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create a base API client with default configuration
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: '/api', // Use relative path
   headers: {
     'Content-Type': 'application/json',
   },

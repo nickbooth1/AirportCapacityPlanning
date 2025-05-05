@@ -27,6 +27,19 @@ app.use(cors({
 app.use(express.json()); // Parse JSON request bodies
 app.use(morgan('dev')); // Logging
 
+// Add file upload middleware
+const fileUpload = require('express-fileupload');
+app.use(fileUpload({
+  createParentPath: true,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB max file size
+  },
+  abortOnLimit: true,
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  debug: process.env.NODE_ENV === 'development'
+}));
+
 // Test database connection
 app.get('/test-db', async (req, res) => {
   try {
@@ -48,10 +61,11 @@ const aircraftTypesRoutes = require('./routes/aircraft-types');
 const aircraftSizeCategoriesRoutes = require('./routes/aircraft-size-categories');
 const configRoutes = require('./routes/config');
 const capacityRoutes = require('./routes/capacity');
-const airlineRoutes = require('./routes/airlineRoutes');
 const airportRoutes = require('./routes/airportRoutes');
 const ghaRoutes = require('./routes/ghaRoutes');
 const airportConfigRoutes = require('./routes/airportConfig');
+const flightUploadRoutes = require('./routes/api/flightUpload');
+const flightDataRoutes = require('./routes/api/flightData');
 
 app.use('/api/terminals', terminalsRoutes);
 app.use('/api/piers', piersRoutes);
@@ -60,10 +74,76 @@ app.use('/api/aircraft-types', aircraftTypesRoutes);
 app.use('/api/aircraft-size-categories', aircraftSizeCategoriesRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/capacity', capacityRoutes);
-app.use('/api/airlines', airlineRoutes);
 app.use('/api/airports', airportRoutes);
 app.use('/api/ghas', ghaRoutes);
 app.use('/api/airport-config', airportConfigRoutes);
+app.use('/api/flights/upload', flightUploadRoutes);
+app.use('/api/flights', flightDataRoutes);
+
+// Add mock routes for airlines and airport-config
+app.get('/api/airlines', (req, res) => {
+  const mockAirlines = [
+    { id: 1, code: 'BA', name: 'British Airways', country: 'GB', active: true },
+    { id: 2, code: 'LH', name: 'Lufthansa', country: 'DE', active: true },
+    { id: 3, code: 'AF', name: 'Air France', country: 'FR', active: true },
+    { id: 4, code: 'UA', name: 'United Airlines', country: 'US', active: true },
+    { id: 5, code: 'DL', name: 'Delta Air Lines', country: 'US', active: true },
+    { id: 6, code: 'EK', name: 'Emirates', country: 'AE', active: true },
+    { id: 7, code: 'QF', name: 'Qantas', country: 'AU', active: true },
+    { id: 8, code: 'SQ', name: 'Singapore Airlines', country: 'SG', active: true },
+    { id: 9, code: 'CX', name: 'Cathay Pacific', country: 'HK', active: true }
+  ];
+  res.json({
+    success: true,
+    message: "Airlines retrieved successfully",
+    data: mockAirlines
+  });
+});
+
+// We now use the real terminals API route instead of this mock
+// app.get('/api/terminals', (req, res) => {
+//   const mockTerminals = [
+//     { id: 1, code: 'T1', name: 'Terminal 1', max_capacity: 1200, current_capacity: 850, status: 'OPERATIONAL' },
+//     { id: 2, code: 'T2', name: 'Terminal 2', max_capacity: 1500, current_capacity: 1100, status: 'OPERATIONAL' },
+//     { id: 3, code: 'T3', name: 'Terminal 3', max_capacity: 1800, current_capacity: 1300, status: 'OPERATIONAL' },
+//     { id: 4, code: 'T4', name: 'Terminal 4', max_capacity: 2000, current_capacity: 1400, status: 'OPERATIONAL' },
+//     { id: 5, code: 'T5', name: 'Terminal 5', max_capacity: 2200, current_capacity: 1600, status: 'OPERATIONAL' }
+//   ];
+//   res.json({
+//     success: true,
+//     message: "Terminals retrieved successfully",
+//     data: mockTerminals
+//   });
+// });
+
+app.get('/api/airport-config', (req, res) => {
+  const mockConfig = {
+    data: {
+      baseAirport: {
+        id: 1,
+        code: 'LHR',
+        name: 'London Heathrow',
+        city: 'London',
+        country: 'GB',
+        timezone: 'Europe/London'
+      }
+    }
+  };
+  res.json(mockConfig);
+});
+
+app.get('/api/airport-config/allocations', (req, res) => {
+  const mockAllocations = {
+    data: [
+      { id: 1, airlineId: 1, terminalId: 5, ghaId: null },
+      { id: 2, airlineId: 2, terminalId: 1, ghaId: null },
+      { id: 3, airlineId: 3, terminalId: 2, ghaId: null },
+      { id: 4, airlineId: 4, terminalId: 3, ghaId: null },
+      { id: 5, airlineId: 5, terminalId: 4, ghaId: null }
+    ]
+  };
+  res.json(mockAllocations);
+});
 
 // Error handling
 app.use(errorHandler);

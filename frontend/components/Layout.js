@@ -67,9 +67,15 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
         </ListItem>
-        <ListItem button component={Link} href="/stands">
+        <ListItem button component={Link} href="/flights">
           <ListItemIcon>
             <FlightIcon />
+          </ListItemIcon>
+          <ListItemText primary="Flights" />
+        </ListItem>
+        <ListItem button component={Link} href="/stands">
+          <ListItemIcon>
+            <FlightTakeoffIcon />
           </ListItemIcon>
           <ListItemText primary="Stands" />
         </ListItem>
