@@ -22,6 +22,11 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/capacity": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/capacity.js"
+    ],
     "/maintenance/calendar": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -31,11 +36,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/maintenance/impact.js"
-    ],
-    "/maintenance/requests": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/maintenance/requests.js"
     ],
     "/stands": [
       "static/chunks/webpack.js",
