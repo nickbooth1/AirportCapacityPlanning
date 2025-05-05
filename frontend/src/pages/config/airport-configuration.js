@@ -20,16 +20,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
   Alert,
   Snackbar,
   CircularProgress,
   Breadcrumbs,
-  Link as MuiLink
+  Link as MuiLink,
+  Tooltip
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Edit as EditIcon, 
-  Delete as DeleteIcon 
+  Delete as DeleteIcon,
+  Info as InfoIcon 
 } from '@mui/icons-material';
 import { useAirportConfig } from '../../contexts/AirportConfigContext';
 import axios from 'axios';
@@ -50,8 +53,16 @@ const AirportConfiguration = () => {
   const [ghas, setGhas] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  // Dialog state
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    message: '',
+    action: null,
+    id: null
+  });
+  
   const [currentAllocation, setCurrentAllocation] = useState({
     id: null,
     airlineId: null,
@@ -86,16 +97,30 @@ const AirportConfiguration = () => {
         
         // Fetch data in parallel
         const [airportsRes, airlinesRes, terminalsRes, ghasRes] = await Promise.all([
-          axios.get(`${API_URL}/airports`),
+          axios.get(`${API_URL}/airports?limit=6000`),
           axios.get(`${API_URL}/airlines`),
           axios.get(`${API_URL}/terminals`),
           axios.get(`${API_URL}/ghas`)
         ]);
 
-        setAirports(airportsRes.data.data || []);
-        setAirlines(airlinesRes.data.data || []);
-        setTerminals(terminalsRes.data.data || []);
-        setGhas(ghasRes.data.data || []);
+        // Helper function to extract data regardless of response format
+        const extractData = (response) => {
+          if (Array.isArray(response.data)) {
+            return response.data;
+          } else if (response.data && response.data.data) {
+            return response.data.data;
+          } else {
+            return [];
+          }
+        };
+
+        // Extract data from responses
+        setAirports(extractData(airportsRes));
+        setAirlines(extractData(airlinesRes));
+        setTerminals(extractData(terminalsRes));
+        setGhas(extractData(ghasRes));
+
+        console.log('Data loaded. Terminals count:', extractData(terminalsRes).length);
       } catch (err) {
         console.error('Error fetching reference data:', err);
         showNotification('Failed to load reference data', 'error');
@@ -121,13 +146,49 @@ const AirportConfiguration = () => {
     setNotification({ ...notification, open: false });
   };
 
+  // Open confirmation dialog
+  const openConfirmation = (title, message, action, id = null) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      action,
+      id
+    });
+  };
+
+  // Close confirmation dialog
+  const closeConfirmation = () => {
+    setConfirmDialog({
+      ...confirmDialog,
+      open: false
+    });
+  };
+
+  // Handle confirmation action
+  const handleConfirmAction = async () => {
+    if (confirmDialog.action && typeof confirmDialog.action === 'function') {
+      await confirmDialog.action(confirmDialog.id);
+    }
+    closeConfirmation();
+  };
+
   // Handle base airport change
   const handleBaseAirportChange = async (event, value) => {
     if (value) {
-      const success = await updateBaseAirport(value.id);
-      if (success) {
-        showNotification('Base airport updated successfully');
-      }
+      // First, show confirmation dialog
+      openConfirmation(
+        'Change Base Airport?',
+        `Are you sure you want to set ${value.name} (${value.iata_code || value.icao_code}) as your base airport? This will affect all airport-related configurations.`,
+        async () => {
+          const success = await updateBaseAirport(value.id);
+          if (success) {
+            showNotification('Base airport updated successfully');
+          } else {
+            showNotification('Failed to update base airport', 'error');
+          }
+        }
+      );
     }
   };
 
@@ -165,38 +226,69 @@ const AirportConfiguration = () => {
       showNotification('Airline and terminal are required', 'error');
       return;
     }
+    
+    // Ensure we're sending integer IDs and not objects
+    const allocationData = {
+      airlineId: typeof currentAllocation.airlineId === 'object' ? currentAllocation.airlineId.id : currentAllocation.airlineId,
+      terminalId: typeof currentAllocation.terminalId === 'object' ? currentAllocation.terminalId.id : currentAllocation.terminalId,
+      ghaId: currentAllocation.ghaId ? (typeof currentAllocation.ghaId === 'object' ? currentAllocation.ghaId.id : currentAllocation.ghaId) : null
+    };
+    
+    console.log('Sending allocation data:', allocationData);
 
     let success;
+    let actionText = currentAllocation.id ? 'update' : 'add';
 
-    if (currentAllocation.id) {
-      // Update existing allocation
-      success = await updateAirlineAllocation(
-        currentAllocation.id,
-        currentAllocation
+    try {
+      if (currentAllocation.id) {
+        // Update existing allocation
+        success = await updateAirlineAllocation(
+          currentAllocation.id,
+          allocationData
+        );
+      } else {
+        // Add new allocation
+        success = await addAirlineAllocation(allocationData);
+      }
+
+      if (success) {
+        showNotification(`Allocation ${actionText}ed successfully`);
+        handleCloseDialog();
+      } else {
+        showNotification(`Failed to ${actionText} allocation`, 'error');
+      }
+    } catch (err) {
+      console.error(`Error ${actionText}ing allocation:`, err);
+      showNotification(
+        err.response?.data?.message || `An error occurred while ${actionText}ing the allocation`,
+        'error'
       );
-      if (success) {
-        showNotification('Allocation updated successfully');
-      }
-    } else {
-      // Add new allocation
-      success = await addAirlineAllocation(currentAllocation);
-      if (success) {
-        showNotification('Allocation added successfully');
-      }
-    }
-
-    if (success) {
-      handleCloseDialog();
     }
   };
 
   // Delete allocation
   const handleDeleteAllocation = async (id) => {
-    if (window.confirm('Are you sure you want to delete this allocation?')) {
-      const success = await deleteAirlineAllocation(id);
-      if (success) {
-        showNotification('Allocation deleted successfully');
-      }
+    const allocation = airportConfig.airlineAllocations.find(a => a.id === id);
+    
+    if (allocation) {
+      openConfirmation(
+        'Delete Allocation?',
+        `Are you sure you want to delete the allocation for ${allocation.airline_name} in ${allocation.terminal_name}?`,
+        async () => {
+          try {
+            const success = await deleteAirlineAllocation(id);
+            if (success) {
+              showNotification('Allocation deleted successfully');
+            } else {
+              showNotification('Failed to delete allocation', 'error');
+            }
+          } catch (err) {
+            console.error('Error deleting allocation:', err);
+            showNotification('An error occurred while deleting the allocation', 'error');
+          }
+        },
+        id
+      );
     }
   };
 
@@ -244,9 +336,14 @@ const AirportConfiguration = () => {
         )}
 
         <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Base Airport
-          </Typography>
+          <Box display="flex" alignItems="center" mb={2}>
+            <Typography variant="h6" gutterBottom>
+              Base Airport
+            </Typography>
+            <Tooltip title="The base airport is used for various capacity planning calculations. All terminal and stand allocations are assumed to be for this airport.">
+              <InfoIcon fontSize="small" color="primary" sx={{ ml: 1 }} />
+            </Tooltip>
+          </Box>
           <Autocomplete
             id="base-airport-select"
             options={airports}
@@ -259,6 +356,7 @@ const AirportConfiguration = () => {
                 label="Select Base Airport"
                 variant="outlined"
                 fullWidth
+                helperText="Select the primary airport for which you want to manage capacity"
               />
             )}
             isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -267,9 +365,14 @@ const AirportConfiguration = () => {
 
         <Paper sx={{ p: 3, mb: 4 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6">
-              Airline Terminal Allocations
-            </Typography>
+            <Box display="flex" alignItems="center">
+              <Typography variant="h6">
+                Airline Terminal Allocations
+              </Typography>
+              <Tooltip title="Associate airlines with specific terminals and optionally assign ground handling agents to support their operations">
+                <InfoIcon fontSize="small" color="primary" sx={{ ml: 1 }} />
+              </Tooltip>
+            </Box>
             <Button
               variant="contained"
               color="primary"
@@ -302,20 +405,24 @@ const AirportConfiguration = () => {
                       <TableCell>{allocation.terminal_code} - {allocation.terminal_name}</TableCell>
                       <TableCell>{allocation.gha_name || 'Not assigned'}</TableCell>
                       <TableCell align="right">
-                        <IconButton 
-                          size="small" 
-                          color="primary" 
-                          onClick={() => handleOpenDialog(allocation)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          size="small" 
-                          color="error" 
-                          onClick={() => handleDeleteAllocation(allocation.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        <Tooltip title="Edit allocation">
+                          <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => handleOpenDialog(allocation)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete allocation">
+                          <IconButton 
+                            size="small" 
+                            color="error" 
+                            onClick={() => handleDeleteAllocation(allocation.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -349,12 +456,13 @@ const AirportConfiguration = () => {
                     ? `${option.iata_code} - ${option.name}` 
                     : option.name
                 }
-                onChange={(e, value) => 
+                onChange={(e, value) => {
+                  console.log('Selected airline:', value);
                   setCurrentAllocation({
                     ...currentAllocation,
                     airlineId: value ? value.id : null
-                  })
-                }
+                  });
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -362,6 +470,7 @@ const AirportConfiguration = () => {
                     variant="outlined"
                     required
                     fullWidth
+                    helperText="Select the airline to allocate to a terminal"
                   />
                 )}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -373,12 +482,13 @@ const AirportConfiguration = () => {
                 options={terminals}
                 value={terminals.find(t => t.id === currentAllocation.terminalId) || null}
                 getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                onChange={(e, value) => 
+                onChange={(e, value) => {
+                  console.log('Selected terminal:', value);
                   setCurrentAllocation({
                     ...currentAllocation,
                     terminalId: value ? value.id : null
-                  })
-                }
+                  });
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -386,6 +496,7 @@ const AirportConfiguration = () => {
                     variant="outlined"
                     required
                     fullWidth
+                    helperText="Select the terminal where the airline operates"
                   />
                 )}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -397,18 +508,20 @@ const AirportConfiguration = () => {
                 options={ghas}
                 value={ghas.find(g => g.id === currentAllocation.ghaId) || null}
                 getOptionLabel={(option) => option.name}
-                onChange={(e, value) => 
+                onChange={(e, value) => {
+                  console.log('Selected GHA:', value);
                   setCurrentAllocation({
                     ...currentAllocation,
                     ghaId: value ? value.id : null
-                  })
-                }
+                  });
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Ground Handling Agent (Optional)"
                     variant="outlined"
                     fullWidth
+                    helperText="Optionally assign a ground handling agent to this airline's operations"
                   />
                 )}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -424,6 +537,20 @@ const AirportConfiguration = () => {
             variant="contained"
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog.open} onClose={closeConfirmation}>
+        <DialogTitle>{confirmDialog.title}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmDialog.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeConfirmation} color="inherit">Cancel</Button>
+          <Button onClick={handleConfirmAction} color="primary" variant="contained" autoFocus>
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>

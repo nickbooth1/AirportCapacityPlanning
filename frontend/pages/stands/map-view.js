@@ -256,11 +256,11 @@ export default function StandsMapView() {
               value={selectedTerminal}
               allowClear
             >
-              {terminals.map(terminal => (
+              {Array.isArray(terminals) ? terminals.map(terminal => (
                 <Option key={terminal.id} value={terminal.id}>
                   {terminal.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
             
             <Select
@@ -271,11 +271,11 @@ export default function StandsMapView() {
               disabled={!selectedTerminal || filteredPiers.length === 0}
               allowClear
             >
-              {filteredPiers.map(pier => (
+              {Array.isArray(filteredPiers) ? filteredPiers.map(pier => (
                 <Option key={pier.id} value={pier.id}>
                   {pier.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
             
             <Button onClick={resetFilters}>

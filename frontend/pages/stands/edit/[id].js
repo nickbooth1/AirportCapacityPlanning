@@ -254,11 +254,11 @@ export default function EditStand() {
               disabled={true}
               help="Cannot change terminal directly. Change the pier to update terminal association."
             >
-              {terminals.map(terminal => (
+              {Array.isArray(terminals) ? terminals.map(terminal => (
                 <Option key={terminal.id} value={terminal.id}>
                   {terminal.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
           </Form.Item>
           
@@ -271,11 +271,11 @@ export default function EditStand() {
               placeholder="Select pier" 
               disabled={!selectedTerminal || filteredPiers.length === 0}
             >
-              {filteredPiers.map(pier => (
+              {Array.isArray(filteredPiers) ? filteredPiers.map(pier => (
                 <Option key={pier.id} value={pier.id}>
                   {pier.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
           </Form.Item>
           

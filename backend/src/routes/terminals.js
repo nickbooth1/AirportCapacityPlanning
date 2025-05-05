@@ -6,7 +6,11 @@ const { db } = require('../utils/db');
 router.get('/', async (req, res, next) => {
   try {
     const terminals = await db('terminals').select('*');
-    res.json(terminals);
+    res.json({ 
+      success: true, 
+      message: 'Terminals retrieved successfully', 
+      data: terminals 
+    });
   } catch (error) {
     next(error);
   }

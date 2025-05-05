@@ -68,7 +68,20 @@ async function getAirlineTerminalAllocations(req, res, next) {
  */
 async function addAirlineTerminalAllocation(req, res, next) {
   try {
-    const { airlineId, terminalId, ghaId } = req.body;
+    let { airlineId, terminalId, ghaId } = req.body;
+    
+    // Handle case where IDs might be objects with an 'id' property
+    if (airlineId && typeof airlineId === 'object' && airlineId.id) {
+      airlineId = airlineId.id;
+    }
+    
+    if (terminalId && typeof terminalId === 'object' && terminalId.id) {
+      terminalId = terminalId.id;
+    }
+    
+    if (ghaId && typeof ghaId === 'object' && ghaId.id) {
+      ghaId = ghaId.id;
+    }
     
     // Validate required fields
     if (!airlineId || !terminalId) {
@@ -77,6 +90,8 @@ async function addAirlineTerminalAllocation(req, res, next) {
         message: 'Airline ID and terminal ID are required'
       });
     }
+    
+    console.log('Adding allocation with:', { airlineId, terminalId, ghaId });
     
     const newAllocation = await airportConfigService.addAllocation({
       airlineId,
@@ -96,6 +111,7 @@ async function addAirlineTerminalAllocation(req, res, next) {
         message: 'This airline is already allocated to this terminal'
       });
     }
+    console.error('Error adding allocation:', error);
     next(error);
   }
 }
@@ -106,7 +122,20 @@ async function addAirlineTerminalAllocation(req, res, next) {
 async function updateAirlineTerminalAllocation(req, res, next) {
   try {
     const { id } = req.params;
-    const { airlineId, terminalId, ghaId } = req.body;
+    let { airlineId, terminalId, ghaId } = req.body;
+    
+    // Handle case where IDs might be objects with an 'id' property
+    if (airlineId && typeof airlineId === 'object' && airlineId.id) {
+      airlineId = airlineId.id;
+    }
+    
+    if (terminalId && typeof terminalId === 'object' && terminalId.id) {
+      terminalId = terminalId.id;
+    }
+    
+    if (ghaId && typeof ghaId === 'object' && ghaId.id) {
+      ghaId = ghaId.id;
+    }
     
     // Validate required fields
     if (!airlineId || !terminalId) {
@@ -115,6 +144,8 @@ async function updateAirlineTerminalAllocation(req, res, next) {
         message: 'Airline ID and terminal ID are required'
       });
     }
+    
+    console.log('Updating allocation with:', { id, airlineId, terminalId, ghaId });
     
     const updatedAllocation = await airportConfigService.updateAllocation(id, {
       airlineId,
@@ -141,6 +172,7 @@ async function updateAirlineTerminalAllocation(req, res, next) {
         message: 'This airline is already allocated to this terminal'
       });
     }
+    console.error('Error updating allocation:', error);
     next(error);
   }
 }

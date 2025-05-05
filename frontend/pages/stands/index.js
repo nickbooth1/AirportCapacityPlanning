@@ -421,11 +421,11 @@ export default function Stands() {
             onChange={handleTerminalSelect}
             value={selectedTerminal}
           >
-            {terminals.map(terminal => (
+            {Array.isArray(terminals) ? terminals.map(terminal => (
               <Option key={terminal.id} value={terminal.id}>
                 {terminal.name}
               </Option>
-            ))}
+            )) : null}
           </Select>
           
           <Select

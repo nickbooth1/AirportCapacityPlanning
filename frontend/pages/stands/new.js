@@ -181,11 +181,11 @@ export default function NewStand() {
               placeholder="Select terminal" 
               onChange={handleTerminalChange}
             >
-              {terminals.map(terminal => (
+              {Array.isArray(terminals) ? terminals.map(terminal => (
                 <Option key={terminal.id} value={terminal.id}>
                   {terminal.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
           </Form.Item>
           
@@ -198,11 +198,11 @@ export default function NewStand() {
               placeholder="Select pier" 
               disabled={!selectedTerminal || filteredPiers.length === 0}
             >
-              {filteredPiers.map(pier => (
+              {Array.isArray(filteredPiers) ? filteredPiers.map(pier => (
                 <Option key={pier.id} value={pier.id}>
                   {pier.name}
                 </Option>
-              ))}
+              )) : null}
             </Select>
           </Form.Item>
           
