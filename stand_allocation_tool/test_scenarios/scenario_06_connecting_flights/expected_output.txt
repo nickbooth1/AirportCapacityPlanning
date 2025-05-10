@@ -1,0 +1,8 @@
+===== ALLOCATED FLIGHTS =====
+Flight BA100 (B737) allocated to stand T1-S1 from 10:00 to 12:00
+Flight BA101 (B737) allocated to stand T1-S1 from 10:00 to 12:00
+Flight AF200 (A320) allocated to stand T2-S1 from 11:00 to 13:00
+Flight AF201 (A320) allocated to stand T2-S1 from 11:00 to 13:00
+
+===== UNALLOCATED FLIGHTS =====
+All flights were allocated successfully. 

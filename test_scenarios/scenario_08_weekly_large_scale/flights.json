@@ -1,0 +1,16 @@
+[
+  {
+    "FlightID": "flight_placeholder",
+    "FlightNumber": "placeholder",
+    "AirlineCode": "placeholder",
+    "AircraftType": "placeholder",
+    "Origin": "placeholder",
+    "Destination": "placeholder",
+    "ScheduledTime": "00:00",
+    "Terminal": "1",
+    "IsArrival": true,
+    "LinkID": null,
+    "is_critical_connection": false,
+    "base_priority_score": 0
+  }
+] 

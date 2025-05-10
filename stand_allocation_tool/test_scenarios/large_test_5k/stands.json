@@ -1,0 +1,782 @@
+[
+  {
+    "StandName": "STAND001",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND021"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND002",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND003",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND004",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND005",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND006",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND007",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND040"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND008",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND009",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND010",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND011",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND012",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND013",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND029"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND014",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND015",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND016",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND061"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND017",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND018",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND019",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND020",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND021",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND022",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND023",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND024",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND058"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND025",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND026",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND039"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND027",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND028",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND029",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND030",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND031",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND032",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND033",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND047"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND034",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND035",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND036",
+    "Terminal": "T2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND037",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND038",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND039",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND040",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND041",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND042",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND043",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND044",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND045",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND046"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND046",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND047",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND048",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND049",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND050",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND051",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND035"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND052",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND053",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND054",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND055",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND056",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND057",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND058",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND003"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND059",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND060",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND092"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND061",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND081"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND062",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND063",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND064",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND065",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND030"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND066",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND015"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND067",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND068",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND069",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND070",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND071",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND092"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND072",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND073",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND074",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND075",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND086"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND076",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND077",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND052"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND078",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND079",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND080",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND081",
+    "Terminal": "T3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND082",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND083",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND084",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND085",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND059"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND086",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND087",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND088",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND089",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND090",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND091",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND092",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND093",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND094",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND022"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND095",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND096",
+    "Terminal": "T1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND097",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND098",
+    "Terminal": "T4",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "STAND099",
+    "Terminal": "T3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {
+      "Incompatible": [
+        "STAND045"
+      ]
+    }
+  },
+  {
+    "StandName": "STAND100",
+    "Terminal": "T4",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  }
+]

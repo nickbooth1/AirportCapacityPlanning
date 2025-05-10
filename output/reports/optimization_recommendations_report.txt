@@ -1,0 +1,31 @@
+OPTIMIZATION RECOMMENDATIONS REPORT
+==================================
+
+Recommendation #1
+Type: REALLOCATION
+Description: Repurpose or reallocate 2 underutilized stands (20% utilization): B2, C1
+Estimated Capacity Gain: 4 flights per day
+Implementation Complexity: MEDIUM
+Affected Stands: B2, C1
+-------------------------------------------
+Recommendation #2
+Type: REALLOCATION
+Description: Repurpose or reallocate 1 underutilized stands (25% utilization): A1
+Estimated Capacity Gain: 2 flights per day
+Implementation Complexity: MEDIUM
+Affected Stands: A1
+-------------------------------------------
+Recommendation #3
+Type: REALLOCATION
+Description: Repurpose or reallocate 1 underutilized stands (15% utilization): A2
+Estimated Capacity Gain: 2 flights per day
+Implementation Complexity: MEDIUM
+Affected Stands: A2
+-------------------------------------------
+Recommendation #4
+Type: REALLOCATION
+Description: Repurpose or reallocate 1 underutilized stands (10% utilization): B1
+Estimated Capacity Gain: 2 flights per day
+Implementation Complexity: MEDIUM
+Affected Stands: B1
+-------------------------------------------

@@ -1,0 +1,22 @@
+[
+  {
+    "TerminalCode": "T1",
+    "Terminal": "Terminal 1"
+  },
+  {
+    "TerminalCode": "T2",
+    "Terminal": "Terminal 2"
+  },
+  {
+    "TerminalCode": "T3",
+    "Terminal": "Terminal 3"
+  },
+  {
+    "TerminalCode": "T4",
+    "Terminal": "Terminal 4"
+  },
+  {
+    "TerminalCode": "T5",
+    "Terminal": "Terminal 5"
+  }
+]

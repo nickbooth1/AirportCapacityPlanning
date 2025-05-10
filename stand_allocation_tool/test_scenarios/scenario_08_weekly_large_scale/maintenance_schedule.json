@@ -1,0 +1,52 @@
+[
+  {
+    "StandName": "T1-R8",
+    "StartTime": "13:15",
+    "EndTime": "15:15"
+  },
+  {
+    "StandName": "T2-R2",
+    "StartTime": "09:30",
+    "EndTime": "10:30"
+  },
+  {
+    "StandName": "T2-S4",
+    "StartTime": "09:45",
+    "EndTime": "11:45"
+  },
+  {
+    "StandName": "T3-R7",
+    "StartTime": "12:15",
+    "EndTime": "14:15"
+  },
+  {
+    "StandName": "T1-R4",
+    "StartTime": "13:45",
+    "EndTime": "14:45"
+  },
+  {
+    "StandName": "T2-R8",
+    "StartTime": "10:00",
+    "EndTime": "13:00"
+  },
+  {
+    "StandName": "T2-S7",
+    "StartTime": "12:45",
+    "EndTime": "14:45"
+  },
+  {
+    "StandName": "T1-R10",
+    "StartTime": "12:45",
+    "EndTime": "14:45"
+  },
+  {
+    "StandName": "T2-S8",
+    "StartTime": "12:00",
+    "EndTime": "14:00"
+  },
+  {
+    "StandName": "T2-S8",
+    "StartTime": "16:15",
+    "EndTime": "18:15"
+  }
+]

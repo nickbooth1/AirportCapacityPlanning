@@ -1,0 +1,107 @@
+[
+  {
+    "AirlineCode": "BA",
+    "AirlineName": "British Airways",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "LH",
+    "AirlineName": "Lufthansa",
+    "BaseTerminal": "2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "AF",
+    "AirlineName": "Air France",
+    "BaseTerminal": "2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "EK",
+    "AirlineName": "Emirates",
+    "BaseTerminal": "3",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "SQ",
+    "AirlineName": "Singapore Airlines",
+    "BaseTerminal": "3",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "UA",
+    "AirlineName": "United Airlines",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "AA",
+    "AirlineName": "American Airlines",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "IB",
+    "AirlineName": "Iberia",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "LX",
+    "AirlineName": "Swiss",
+    "BaseTerminal": "2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "AZ",
+    "AirlineName": "Alitalia",
+    "BaseTerminal": "2",
+    "RequiresContactStand": false,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "QF",
+    "AirlineName": "Qantas",
+    "BaseTerminal": "3",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "VS",
+    "AirlineName": "Virgin Atlantic",
+    "BaseTerminal": "3",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "TK",
+    "AirlineName": "Turkish Airlines",
+    "BaseTerminal": "2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "KL",
+    "AirlineName": "KLM",
+    "BaseTerminal": "2",
+    "RequiresContactStand": false,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "DL",
+    "AirlineName": "Delta Airlines",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  }
+] 

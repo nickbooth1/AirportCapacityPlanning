@@ -1,0 +1,27 @@
+# Node modules
+node_modules/
+
+# Generated files
+dist/
+coverage/
+.nyc_output/
+
+# User configuration
+.env
+.vscode/
+.idea/
+
+# Generated mapping profiles
+mappings/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Test reports
+test-report/ 

@@ -1,0 +1,37 @@
+[
+  {
+    "standID": "A1",
+    "terminalArea": "Terminal 1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "E190"]
+  },
+  {
+    "standID": "A2",
+    "terminalArea": "Terminal 1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "E190"]
+  },
+  {
+    "standID": "B1",
+    "terminalArea": "Terminal 1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "B77W"]
+  },
+  {
+    "standID": "B2",
+    "terminalArea": "Terminal 1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "B77W"]
+  },
+  {
+    "standID": "C1",
+    "terminalArea": "Terminal 1",
+    "baseCompatibleAircraftTypeIDs": ["B77W", "A380"]
+  },
+  {
+    "standID": "CA1",
+    "terminalArea": "Cargo Area",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "B77W"]
+  },
+  {
+    "standID": "CA2",
+    "terminalArea": "Cargo Area",
+    "baseCompatibleAircraftTypeIDs": ["B77W"]
+  }
+] 

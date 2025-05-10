@@ -1,0 +1,21 @@
+ADJACENCY IMPACT REPORT
+=======================
+
+Primary Stand: A1, Affected Stand: A2
+Occurrences: 0
+Total Duration Affected: 0 minutes
+Estimated Lost Capacity: 0 flights
+Most Common Trigger: B738
+-------------------------------------------
+Primary Stand: B1, Affected Stand: B2
+Occurrences: 0
+Total Duration Affected: 0 minutes
+Estimated Lost Capacity: 0 flights
+Most Common Trigger: B77W
+-------------------------------------------
+Primary Stand: C1, Affected Stand: B2
+Occurrences: 1
+Total Duration Affected: 60 minutes
+Estimated Lost Capacity: 1 flights
+Most Common Trigger: A380
+-------------------------------------------

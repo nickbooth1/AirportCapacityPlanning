@@ -1,0 +1,23 @@
+[
+  {
+    "StandName": "S1",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "S2",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "S3",
+    "Terminal": "T2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  }
+] 

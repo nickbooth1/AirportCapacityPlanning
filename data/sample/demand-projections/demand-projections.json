@@ -1,0 +1,146 @@
+[
+  {
+    "scenarioName": "CONSERVATIVE",
+    "timePeriod": {
+      "start": "2023-07-01T00:00:00",
+      "end": "2023-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 35,
+      "A320": 35,
+      "B77W": 12,
+      "A380": 5,
+      "E190": 25
+    },
+    "growthRateFromBaseline": 2.0,
+    "confidenceInterval": {
+      "LOWER": 0.9,
+      "UPPER": 1.1
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Slow growth assumption",
+      "fuelPrices": "Steady increase",
+      "competitiveFactors": "Stable competition"
+    }
+  },
+  {
+    "scenarioName": "MODERATE",
+    "timePeriod": {
+      "start": "2023-07-01T00:00:00",
+      "end": "2023-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 38,
+      "A320": 38,
+      "B77W": 15,
+      "A380": 6,
+      "E190": 28
+    },
+    "growthRateFromBaseline": 3.5,
+    "confidenceInterval": {
+      "LOWER": 0.85,
+      "UPPER": 1.15
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Moderate growth assumption",
+      "fuelPrices": "Moderate increase",
+      "competitiveFactors": "Some new routes"
+    }
+  },
+  {
+    "scenarioName": "AGGRESSIVE",
+    "timePeriod": {
+      "start": "2023-07-01T00:00:00",
+      "end": "2023-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 42,
+      "A320": 42,
+      "B77W": 18,
+      "A380": 7,
+      "E190": 32
+    },
+    "growthRateFromBaseline": 5.0,
+    "confidenceInterval": {
+      "LOWER": 0.8,
+      "UPPER": 1.2
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Strong growth assumption",
+      "fuelPrices": "Stable prices",
+      "competitiveFactors": "Expansion into new markets"
+    }
+  },
+  {
+    "scenarioName": "CONSERVATIVE",
+    "timePeriod": {
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 37,
+      "A320": 37,
+      "B77W": 13,
+      "A380": 5,
+      "E190": 27
+    },
+    "growthRateFromBaseline": 3.0,
+    "confidenceInterval": {
+      "LOWER": 0.9,
+      "UPPER": 1.1
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Slow growth assumption",
+      "fuelPrices": "Steady increase",
+      "competitiveFactors": "Stable competition"
+    }
+  },
+  {
+    "scenarioName": "MODERATE",
+    "timePeriod": {
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 41,
+      "A320": 41,
+      "B77W": 16,
+      "A380": 6,
+      "E190": 30
+    },
+    "growthRateFromBaseline": 4.5,
+    "confidenceInterval": {
+      "LOWER": 0.85,
+      "UPPER": 1.15
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Moderate growth assumption",
+      "fuelPrices": "Moderate increase",
+      "competitiveFactors": "Some new routes"
+    }
+  },
+  {
+    "scenarioName": "AGGRESSIVE",
+    "timePeriod": {
+      "start": "2024-01-01T00:00:00",
+      "end": "2024-12-31T23:59:59"
+    },
+    "projectedFlightsByAircraftType": {
+      "B738": 45,
+      "A320": 45,
+      "B77W": 20,
+      "A380": 7,
+      "E190": 35
+    },
+    "growthRateFromBaseline": 6.0,
+    "confidenceInterval": {
+      "LOWER": 0.8,
+      "UPPER": 1.2
+    },
+    "driverAssumptions": {
+      "economicGrowth": "Strong growth assumption",
+      "fuelPrices": "Stable prices",
+      "competitiveFactors": "Expansion into new markets"
+    }
+  }
+] 

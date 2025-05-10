@@ -1,0 +1,22 @@
+[
+  {
+    "standID": "A1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "E190"]
+  },
+  {
+    "standID": "A2",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "E190"]
+  },
+  {
+    "standID": "B1",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "B77W"]
+  },
+  {
+    "standID": "B2",
+    "baseCompatibleAircraftTypeIDs": ["B738", "A320", "B77W"]
+  },
+  {
+    "standID": "C1",
+    "baseCompatibleAircraftTypeIDs": ["B77W", "A380"]
+  }
+] 

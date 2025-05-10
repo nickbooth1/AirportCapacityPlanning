@@ -1,0 +1,47 @@
+[
+  {
+    "recommendationID": "577f9e69-395f-4342-b93d-ea2612fe4296",
+    "recommendationType": "REALLOCATION",
+    "description": "Repurpose or reallocate 2 underutilized stands (20% utilization): B2, C1",
+    "estimatedCapacityGain": 4,
+    "implementationComplexity": "MEDIUM",
+    "affectedStands": [
+      "B2",
+      "C1"
+    ],
+    "affectedTimeSlots": []
+  },
+  {
+    "recommendationID": "b407c80c-219a-4dd5-9b5c-ca10c540e719",
+    "recommendationType": "REALLOCATION",
+    "description": "Repurpose or reallocate 1 underutilized stands (25% utilization): A1",
+    "estimatedCapacityGain": 2,
+    "implementationComplexity": "MEDIUM",
+    "affectedStands": [
+      "A1"
+    ],
+    "affectedTimeSlots": []
+  },
+  {
+    "recommendationID": "c02d71b8-5ce2-45c2-b937-668de2f1e09b",
+    "recommendationType": "REALLOCATION",
+    "description": "Repurpose or reallocate 1 underutilized stands (15% utilization): A2",
+    "estimatedCapacityGain": 2,
+    "implementationComplexity": "MEDIUM",
+    "affectedStands": [
+      "A2"
+    ],
+    "affectedTimeSlots": []
+  },
+  {
+    "recommendationID": "a4f95f7d-1798-46d5-86ec-7685b3455085",
+    "recommendationType": "REALLOCATION",
+    "description": "Repurpose or reallocate 1 underutilized stands (10% utilization): B1",
+    "estimatedCapacityGain": 2,
+    "implementationComplexity": "MEDIUM",
+    "affectedStands": [
+      "B1"
+    ],
+    "affectedTimeSlots": []
+  }
+]

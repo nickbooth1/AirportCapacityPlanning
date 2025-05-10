@@ -1,0 +1,122 @@
+[
+  {
+    "date": "2023-07-01",
+    "timeSlotStart": "06:00:00",
+    "timeSlotEnd": "12:00:00",
+    "terminalArea": "Terminal 1",
+    "capacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 25,
+      "A320": 28,
+      "B77W": 8,
+      "A380": 3,
+      "E190": 20
+    }
+  },
+  {
+    "date": "2023-07-01",
+    "timeSlotStart": "12:00:00",
+    "timeSlotEnd": "18:00:00",
+    "terminalArea": "Terminal 1",
+    "capacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 28,
+      "A320": 29,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 22
+    }
+  },
+  {
+    "date": "2023-07-01",
+    "timeSlotStart": "18:00:00",
+    "timeSlotEnd": "00:00:00",
+    "terminalArea": "Terminal 1",
+    "capacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 20,
+      "A320": 18,
+      "B77W": 7,
+      "A380": 4,
+      "E190": 15
+    }
+  },
+  {
+    "date": "2023-07-02",
+    "timeSlotStart": "06:00:00",
+    "timeSlotEnd": "12:00:00",
+    "terminalArea": "Terminal 1",
+    "capacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 24,
+      "A320": 26,
+      "B77W": 8,
+      "A380": 4,
+      "E190": 18
+    }
+  },
+  {
+    "date": "2023-07-01",
+    "timeSlotStart": "06:00:00",
+    "timeSlotEnd": "12:00:00",
+    "terminalArea": "Cargo Area",
+    "capacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 3,
+      "A320": 2,
+      "B77W": 12,
+      "A380": 0,
+      "E190": 0
+    }
+  },
+  {
+    "date": "2023-07-01",
+    "timeSlotStart": "12:00:00",
+    "timeSlotEnd": "18:00:00",
+    "terminalArea": "Cargo Area",
+    "capacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "actualUtilizationByAircraftType": {
+      "B738": 4,
+      "A320": 3,
+      "B77W": 14,
+      "A380": 0,
+      "E190": 0
+    }
+  }
+] 

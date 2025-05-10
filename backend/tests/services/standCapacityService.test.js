@@ -7,12 +7,16 @@ const Stand = require('../../src/models/Stand');
 const AircraftType = require('../../src/models/AircraftType');
 const TurnaroundRule = require('../../src/models/TurnaroundRule');
 const OperationalSettings = require('../../src/models/OperationalSettings');
+const StandAdjacencyRule = require('../../src/models/StandAdjacencyRule');
+const TimeSlot = require('../../src/models/TimeSlot');
 
 // Mock the models and dependencies
 jest.mock('../../src/models/Stand');
 jest.mock('../../src/models/AircraftType');
 jest.mock('../../src/models/TurnaroundRule');
 jest.mock('../../src/models/OperationalSettings');
+jest.mock('../../src/models/StandAdjacencyRule');
+jest.mock('../../src/models/TimeSlot');
 jest.mock('../../src/utils/slotUtils');
 jest.mock('../../src/db/knex', () => ({
   knex: jest.fn().mockReturnValue({
@@ -255,5 +259,129 @@ describe('StandCapacityService', () => {
         expect(standSlots[i].maxAircraftSize).toBe('C');
       }
     }
+  });
+
+  test('should generate time slots correctly from operational settings', () => {
+    const operationalSettings = {
+      operating_start_time: '06:00:00',
+      operating_end_time: '10:00:00',
+      slot_duration_minutes: 60
+    };
+    
+    const slots = standCapacityService.generateTimeSlots(operationalSettings);
+    
+    expect(slots).toHaveLength(4);
+    expect(slots[0].name).toContain('06:00:00');
+    expect(slots[3].name).toContain('09:00:00');
+  });
+  
+  test('should calculate capacity for a specific time slot', () => {
+    const timeSlot = {
+      id: 1,
+      name: 'Morning Peak',
+      start_time: '06:00:00',
+      end_time: '09:00:00'
+    };
+    
+    const stands = [
+      { id: 1, code: 'A1', compatible_aircraft_types: ['B738', 'A320'] },
+      { id: 2, code: 'A2', compatible_aircraft_types: ['B738', 'A320', 'B777'] }
+    ];
+    
+    const aircraftTypes = [
+      { id: 1, code: 'B738', size_category: 'Code C' },
+      { id: 2, code: 'A320', size_category: 'Code C' },
+      { id: 3, code: 'B777', size_category: 'Code E' }
+    ];
+    
+    const turnaroundRules = {
+      'B738': { min_turnaround_minutes: 45 },
+      'A320': { min_turnaround_minutes: 45 },
+      'B777': { min_turnaround_minutes: 90 }
+    };
+    
+    const adjacencyRules = [
+      {
+        id: 1,
+        affected_stand_id: 2,
+        restriction_type: 'MAX_AIRCRAFT_SIZE_REDUCED_TO',
+        restricted_to_aircraft_type_or_size: 'Code C'
+      }
+    ];
+    
+    const gapBetweenFlights = 15;
+    
+    const result = standCapacityService.calculateCapacityForTimeSlot(
+      timeSlot,
+      stands,
+      aircraftTypes,
+      turnaroundRules,
+      adjacencyRules,
+      gapBetweenFlights
+    );
+    
+    expect(result).toHaveProperty('bestCaseCapacity');
+    expect(result).toHaveProperty('worstCaseCapacity');
+    
+    // Best case calculations:
+    // Slot duration: 3 hours = 180 minutes
+    // B738/A320: 45 + 15 = 60 min occupation time => 3 per stand x 2 stands = 6 each
+    // B777: 90 + 15 = 105 min occupation time => 1 per stand x 1 stand = 1
+    expect(result.bestCaseCapacity.B738).toBe(6);
+    expect(result.bestCaseCapacity.A320).toBe(6);
+    expect(result.bestCaseCapacity.B777).toBe(1);
+    
+    // Worst case should have restrictions applied
+    expect(result.worstCaseCapacity.B738).toBeLessThanOrEqual(result.bestCaseCapacity.B738);
+    expect(result.worstCaseCapacity.A320).toBeLessThanOrEqual(result.bestCaseCapacity.A320);
+    expect(result.worstCaseCapacity.B777).toBeLessThanOrEqual(result.bestCaseCapacity.B777);
+  });
+  
+  test('should calculate overall capacity correctly', async () => {
+    const options = {
+      useDefinedTimeSlots: true
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    
+    expect(result).toHaveProperty('bestCaseCapacity');
+    expect(result).toHaveProperty('worstCaseCapacity');
+    expect(result).toHaveProperty('timeSlots');
+    expect(result).toHaveProperty('metadata');
+    
+    expect(result.metadata).toHaveProperty('calculatedAt');
+    expect(result.metadata).toHaveProperty('operationalSettings');
+    expect(result.metadata).toHaveProperty('stands');
+    expect(result.metadata).toHaveProperty('aircraftTypes');
+  });
+  
+  test('should handle filtering by stand IDs', async () => {
+    const options = {
+      useDefinedTimeSlots: true,
+      standIds: [1]
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    
+    expect(result.metadata.stands).toHaveProperty('filtered');
+  });
+  
+  test('should handle filtering by time slot IDs', async () => {
+    const options = {
+      useDefinedTimeSlots: true,
+      timeSlotIds: [1]
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    
+    expect(result.timeSlots.length).toBe(1);
+  });
+  
+  test('isAircraftSizeSmallEnough should correctly compare aircraft sizes', () => {
+    // Test various size comparisons
+    expect(standCapacityService.isAircraftSizeSmallEnough('Code A', 'Code C')).toBe(true);
+    expect(standCapacityService.isAircraftSizeSmallEnough('Code C', 'Code C')).toBe(true);
+    expect(standCapacityService.isAircraftSizeSmallEnough('Code F', 'Code C')).toBe(false);
+    expect(standCapacityService.isAircraftSizeSmallEnough('Invalid', 'Code C')).toBe(false);
   });
 }); 

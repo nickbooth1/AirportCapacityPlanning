@@ -1,0 +1,5 @@
+===== ALLOCATED FLIGHTS =====
+Allocation verification is not the focus of this test. This test is meant to verify that the algorithm can process a large number of flights efficiently.
+
+===== UNALLOCATED FLIGHTS =====
+Some flights may be unallocated due to resource constraints. 

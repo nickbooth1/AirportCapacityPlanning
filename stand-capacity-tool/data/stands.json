@@ -1,0 +1,22 @@
+[
+  {
+    "standID": "Stand01",
+    "baseCompatibleAircraftTypeIDs": ["A320", "B737", "B777", "B787", "A380"]
+  },
+  {
+    "standID": "Stand02",
+    "baseCompatibleAircraftTypeIDs": ["A320", "B737", "B777", "B787"]
+  },
+  {
+    "standID": "Stand03",
+    "baseCompatibleAircraftTypeIDs": ["A320", "B737", "B777", "B787"]
+  },
+  {
+    "standID": "Stand04",
+    "baseCompatibleAircraftTypeIDs": ["A320", "B737"]
+  },
+  {
+    "standID": "Stand05",
+    "baseCompatibleAircraftTypeIDs": ["A320", "B737"]
+  }
+] 

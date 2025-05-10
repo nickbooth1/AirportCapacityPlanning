@@ -9,6 +9,9 @@ const OperationalSettings = require('../models/OperationalSettings');
 const slotUtils = require('../utils/slotUtils');
 const { raw, ref } = require('objection');
 const db = require('../utils/db');
+const StandAdjacencyRule = require('../models/StandAdjacencyRule');
+const TimeSlot = require('../models/TimeSlot');
+const { transaction } = require('objection');
 
 class StandCapacityService {
   /**
@@ -141,34 +144,50 @@ class StandCapacityService {
   
   /**
    * Generate time slots based on operational settings
-   * @param {Object} settings - Operational settings
-   * @returns {Array} Array of time slot objects
+   * @param {Object} operationalSettings - The operational settings object
+   * @returns {Array} Generated time slots
    */
-  generateTimeSlots(settings) {
-    const { operating_start_time, operating_end_time, slot_duration_minutes } = settings;
+  generateTimeSlots(operationalSettings) {
+    const slots = [];
+    const { operating_start_time, operating_end_time, slot_duration_minutes } = operationalSettings;
     
-    // Create a comprehensive slot map for the operating day
-    const slots = slotUtils.createSlotMap(
-      operating_start_time,
-      operating_end_time,
-      slot_duration_minutes
-    );
+    // Parse start and end times
+    const startDate = new Date(`1970-01-01T${operating_start_time}`);
+    const endDate = new Date(`1970-01-01T${operating_end_time}`);
     
-    // Group slots by hour for reporting
-    const slotsByHour = {};
-    slots.forEach(slot => {
-      if (!slotsByHour[slot.hour]) {
-        slotsByHour[slot.hour] = [];
-      }
-      slotsByHour[slot.hour].push(slot);
-    });
+    // Handle case where end time crosses midnight
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
     
-    return {
-      slots,
-      slotsByHour,
-      totalSlots: slots.length,
-      slotDuration: slot_duration_minutes
-    };
+    // Generate slots at regular intervals
+    let currentTime = new Date(startDate);
+    let slotId = 0;
+    
+    while (currentTime < endDate) {
+      const slotStartTime = currentTime.toTimeString().substring(0, 8);
+      
+      // Calculate end time for this slot
+      const slotEndTime = new Date(currentTime);
+      slotEndTime.setMinutes(slotEndTime.getMinutes() + slot_duration_minutes);
+      
+      // Ensure end time doesn't exceed operating end time
+      const actualEndTime = slotEndTime > endDate ? endDate : slotEndTime;
+      const slotEndTimeString = actualEndTime.toTimeString().substring(0, 8);
+      
+      slots.push({
+        id: `generated_${slotId++}`,
+        name: `${slotStartTime} - ${slotEndTimeString}`,
+        start_time: slotStartTime,
+        end_time: slotEndTimeString,
+        is_generated: true
+      });
+      
+      // Move to next slot
+      currentTime = slotEndTime;
+    }
+    
+    return slots;
   }
   
   /**
@@ -575,6 +594,272 @@ class StandCapacityService {
       capacity_by_pier: capacityByPier,
       stand_details: Object.values(standDetails)
     };
+  }
+
+  /**
+   * Calculate stand capacity based on various parameters
+   * @param {Object} options - Calculation options
+   * @returns {Promise<Object>} Capacity calculation results
+   */
+  async calculateStandCapacity(options = {}) {
+    try {
+      // Get all required data
+      const [
+        operationalSettings,
+        stands,
+        aircraftTypes,
+        turnaroundRules,
+        adjacencyRules,
+        timeSlots
+      ] = await Promise.all([
+        this.getOperationalSettings(),
+        this.getStandData(options.standIds),
+        this.getAircraftTypeData(),
+        this.getTurnaroundRules(),
+        this.getStandAdjacencyRules(),
+        options.useDefinedTimeSlots 
+          ? this.getDefinedTimeSlots(options.timeSlotIds) 
+          : Promise.resolve([])
+      ]);
+
+      // If using operational settings to generate time slots
+      const actualTimeSlots = options.useDefinedTimeSlots
+        ? timeSlots
+        : this.generateTimeSlots(operationalSettings);
+
+      // Calculate capacity for each time slot
+      const bestCaseCapacity = {};
+      const worstCaseCapacity = {};
+
+      actualTimeSlots.forEach(timeSlot => {
+        const { bestCaseCapacity: bestCase, worstCaseCapacity: worstCase } = 
+          this.calculateCapacityForTimeSlot(
+            timeSlot, 
+            stands, 
+            aircraftTypes, 
+            turnaroundRules, 
+            adjacencyRules, 
+            operationalSettings.default_gap_minutes
+          );
+
+        bestCaseCapacity[timeSlot.name] = bestCase;
+        worstCaseCapacity[timeSlot.name] = worstCase;
+      });
+
+      // Return results with metadata
+      return {
+        bestCaseCapacity,
+        worstCaseCapacity,
+        timeSlots: actualTimeSlots,
+        metadata: {
+          calculatedAt: new Date().toISOString(),
+          operationalSettings: {
+            default_gap_minutes: operationalSettings.default_gap_minutes,
+            operating_start_time: operationalSettings.operating_start_time,
+            operating_end_time: operationalSettings.operating_end_time,
+            slot_duration_minutes: operationalSettings.slot_duration_minutes
+          },
+          stands: {
+            total: stands.length,
+            filtered: options.standIds ? stands.length : undefined
+          },
+          aircraftTypes: {
+            total: aircraftTypes.length
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error calculating stand capacity:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get operational settings
+   * @returns {Promise<Object>} Operational settings
+   */
+  async getOperationalSettings() {
+    return OperationalSettings.getSettings();
+  }
+
+  /**
+   * Get stand data, optionally filtered by IDs
+   * @param {Array} standIds - Optional stand IDs to filter by
+   * @returns {Promise<Array>} Array of stand objects
+   */
+  async getStandData(standIds) {
+    let query = Stand.query().where('is_active', true);
+    
+    if (standIds && standIds.length > 0) {
+      query = query.whereIn('id', standIds);
+    }
+    
+    return query;
+  }
+
+  /**
+   * Get aircraft type data
+   * @returns {Promise<Array>} Array of aircraft type objects
+   */
+  async getAircraftTypeData() {
+    return AircraftType.query().where('is_active', true);
+  }
+
+  /**
+   * Get turnaround rules for each aircraft type
+   * @returns {Promise<Object>} Map of aircraft type code to turnaround rule
+   */
+  async getTurnaroundRules() {
+    const rules = await TurnaroundRule.query()
+      .withGraphFetched('aircraftType')
+      .where('is_active', true);
+      
+    // Convert to map for easier lookup
+    const rulesMap = {};
+    rules.forEach(rule => {
+      if (rule.aircraftType) {
+        rulesMap[rule.aircraftType.code] = rule;
+      }
+    });
+    
+    return rulesMap;
+  }
+
+  /**
+   * Get stand adjacency rules
+   * @returns {Promise<Array>} Array of stand adjacency rule objects
+   */
+  async getStandAdjacencyRules() {
+    return StandAdjacencyRule.query().where('is_active', true);
+  }
+
+  /**
+   * Get defined time slots, optionally filtered by IDs
+   * @param {Array} timeSlotIds - Optional time slot IDs to filter by
+   * @returns {Promise<Array>} Array of time slot objects
+   */
+  async getDefinedTimeSlots(timeSlotIds) {
+    let query = TimeSlot.query().where('is_active', true);
+    
+    if (timeSlotIds && timeSlotIds.length > 0) {
+      query = query.whereIn('id', timeSlotIds);
+    }
+    
+    return query.orderBy('start_time');
+  }
+
+  /**
+   * Calculate capacity for a specific time slot
+   * @param {Object} timeSlot - The time slot
+   * @param {Array} stands - The stands data
+   * @param {Array} aircraftTypes - The aircraft types data
+   * @param {Object} turnaroundRules - Map of aircraft type to turnaround rule
+   * @param {Array} adjacencyRules - The stand adjacency rules
+   * @param {Number} gapBetweenFlights - Gap between flights in minutes
+   * @returns {Object} Capacity for the time slot
+   */
+  calculateCapacityForTimeSlot(timeSlot, stands, aircraftTypes, turnaroundRules, adjacencyRules, gapBetweenFlights) {
+    const bestCaseCapacity = {};
+    const worstCaseCapacity = {};
+    
+    // Initialize capacity counters for each aircraft type
+    aircraftTypes.forEach(aircraftType => {
+      bestCaseCapacity[aircraftType.code] = 0;
+      worstCaseCapacity[aircraftType.code] = 0;
+    });
+    
+    // Calculate slot duration in minutes
+    const slotStart = new Date(`1970-01-01T${timeSlot.start_time}`);
+    const slotEnd = new Date(`1970-01-01T${timeSlot.end_time}`);
+    const slotDurationMinutes = (slotEnd - slotStart) / (1000 * 60);
+    
+    // For each stand
+    stands.forEach(stand => {
+      // Get base compatible aircraft types for this stand
+      const baseCompatibleTypes = stand.compatible_aircraft_types || [];
+      
+      // Best case: Just use base compatibility
+      baseCompatibleTypes.forEach(aircraftTypeCode => {
+        const turnaroundRule = turnaroundRules[aircraftTypeCode];
+        if (!turnaroundRule) return;
+        
+        // Calculate how many aircraft of this type can be processed in this time slot
+        const totalOccupationTime = turnaroundRule.min_turnaround_minutes + gapBetweenFlights;
+        const capacity = Math.floor(slotDurationMinutes / totalOccupationTime);
+        
+        // Update best case capacity
+        bestCaseCapacity[aircraftTypeCode] += capacity;
+      });
+      
+      // Worst case: Consider adjacency restrictions
+      let worstCaseCompatibleTypes = [...baseCompatibleTypes];
+      
+      // Apply most restrictive adjacency rules
+      adjacencyRules.forEach(rule => {
+        if (rule.affected_stand_id === stand.id) {
+          // Apply the most restrictive possible limitation
+          if (rule.restriction_type === 'NO_USE_AFFECTED_STAND') {
+            worstCaseCompatibleTypes = [];
+          } else if (rule.restriction_type === 'MAX_AIRCRAFT_SIZE_REDUCED_TO') {
+            // Filter to keep only smaller aircraft
+            // This requires knowing size hierarchy of aircraft types
+            // Get aircraft types that match the size category or smaller
+            const restrictedSizeCategory = rule.restricted_to_aircraft_type_or_size;
+            const allowedTypes = aircraftTypes
+              .filter(type => this.isAircraftSizeSmallEnough(type.size_category, restrictedSizeCategory))
+              .map(type => type.code);
+              
+            worstCaseCompatibleTypes = worstCaseCompatibleTypes.filter(
+              type => allowedTypes.includes(type)
+            );
+          } else if (rule.restriction_type === 'AIRCRAFT_TYPE_PROHIBITED_ON_AFFECTED_STAND') {
+            worstCaseCompatibleTypes = worstCaseCompatibleTypes.filter(
+              type => type !== rule.restricted_to_aircraft_type_or_size
+            );
+          }
+        }
+      });
+      
+      // Calculate worst case capacity
+      worstCaseCompatibleTypes.forEach(aircraftTypeCode => {
+        const turnaroundRule = turnaroundRules[aircraftTypeCode];
+        if (!turnaroundRule) return;
+        
+        // Calculate how many aircraft of this type can be processed in this time slot
+        const totalOccupationTime = turnaroundRule.min_turnaround_minutes + gapBetweenFlights;
+        const capacity = Math.floor(slotDurationMinutes / totalOccupationTime);
+        
+        // Update worst case capacity
+        worstCaseCapacity[aircraftTypeCode] += capacity;
+      });
+    });
+    
+    return {
+      bestCaseCapacity,
+      worstCaseCapacity
+    };
+  }
+
+  /**
+   * Helper method to check if an aircraft size is small enough to fit the restriction
+   * @param {String} aircraftSize - The aircraft size category
+   * @param {String} maxSize - The maximum allowed size category 
+   * @returns {Boolean} Whether the aircraft is small enough
+   */
+  isAircraftSizeSmallEnough(aircraftSize, maxSize) {
+    // Size hierarchy (from smallest to largest)
+    const sizeHierarchy = ['Code A', 'Code B', 'Code C', 'Code D', 'Code E', 'Code F'];
+    
+    const aircraftSizeIndex = sizeHierarchy.indexOf(aircraftSize);
+    const maxSizeIndex = sizeHierarchy.indexOf(maxSize);
+    
+    // If either size is not found in the hierarchy, return false
+    if (aircraftSizeIndex === -1 || maxSizeIndex === -1) {
+      return false;
+    }
+    
+    // Return true if aircraft size is smaller or equal to max size
+    return aircraftSizeIndex <= maxSizeIndex;
   }
 }
 

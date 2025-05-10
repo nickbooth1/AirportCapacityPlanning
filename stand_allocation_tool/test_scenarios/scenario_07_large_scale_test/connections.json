@@ -1,0 +1,44 @@
+[
+  {
+    "arrival_flight_id": "BA100A",
+    "departure_flight_id": "AF2700D",
+    "min_transfer_minutes": 45,
+    "max_transfer_minutes": 180,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "LH200A",
+    "departure_flight_id": "BA1900D",
+    "min_transfer_minutes": 60,
+    "max_transfer_minutes": 180,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "AF300A",
+    "departure_flight_id": "VS1300D",
+    "min_transfer_minutes": 90,
+    "max_transfer_minutes": 180,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "UA600A",
+    "departure_flight_id": "LH1700D",
+    "min_transfer_minutes": 60,
+    "max_transfer_minutes": 240,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "AA700A",
+    "departure_flight_id": "IB800D",
+    "min_transfer_minutes": 15,
+    "max_transfer_minutes": 60,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "AA2100A",
+    "departure_flight_id": "UA2200D",
+    "min_transfer_minutes": 15,
+    "max_transfer_minutes": 60,
+    "is_critical": true
+  }
+] 

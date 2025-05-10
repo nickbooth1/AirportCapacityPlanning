@@ -1,0 +1,142 @@
+[
+  {
+    "AirlineCode": "JV",
+    "AirlineName": "Airline JV",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": false,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "PT",
+    "AirlineName": "Airline PT",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "HY",
+    "AirlineName": "Airline HY",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "GR",
+    "AirlineName": "Airline GR",
+    "BaseTerminal": "T4",
+    "RequiresContactStand": false,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "LS",
+    "AirlineName": "Airline LS",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "RD",
+    "AirlineName": "Airline RD",
+    "BaseTerminal": "T4",
+    "RequiresContactStand": true,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "ED",
+    "AirlineName": "Airline ED",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": true,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "XF",
+    "AirlineName": "Airline XF",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": false,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "ZY",
+    "AirlineName": "Airline ZY",
+    "BaseTerminal": "T4",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "JW",
+    "AirlineName": "Airline JW",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "IY",
+    "AirlineName": "Airline IY",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "PH",
+    "AirlineName": "Airline PH",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": false,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "UH",
+    "AirlineName": "Airline UH",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": true,
+    "priority_tier": 3
+  },
+  {
+    "AirlineCode": "PQ",
+    "AirlineName": "Airline PQ",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "DI",
+    "AirlineName": "Airline DI",
+    "BaseTerminal": "T4",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "UP",
+    "AirlineName": "Airline UP",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "OL",
+    "AirlineName": "Airline OL",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "PE",
+    "AirlineName": "Airline PE",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": true,
+    "priority_tier": 1
+  },
+  {
+    "AirlineCode": "ZO",
+    "AirlineName": "Airline ZO",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": false,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "LL",
+    "AirlineName": "Airline LL",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": false,
+    "priority_tier": 3
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "StandName": "S1",
+    "Terminal": "T1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  }
+] 

@@ -1,0 +1,25 @@
+[
+  {
+    "primaryStandID": "A1",
+    "aircraftTypeTrigger": "B738",
+    "affectedStandID": "A2",
+    "restrictionType": "NO_USE_AFFECTED_STAND",
+    "notes": "No usage of A2 when B738 is at A1"
+  },
+  {
+    "primaryStandID": "B1",
+    "aircraftTypeTrigger": "B77W",
+    "affectedStandID": "B2",
+    "restrictionType": "MAX_AIRCRAFT_SIZE_REDUCED_TO",
+    "restrictedToAircraftTypeOrSize": "A320",
+    "notes": "Only allow A320 or smaller on B2 when B77W is on B1"
+  },
+  {
+    "primaryStandID": "C1",
+    "aircraftTypeTrigger": "A380",
+    "affectedStandID": "B2",
+    "restrictionType": "AIRCRAFT_TYPE_PROHIBITED_ON_AFFECTED_STAND",
+    "restrictedToAircraftTypeOrSize": "B77W",
+    "notes": "No B77W allowed on B2 when A380 is on C1"
+  }
+] 

@@ -1,0 +1,30 @@
+[
+  {
+    "StandName": "T1-S1",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S2",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S1",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S2",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow", 
+    "AdjacencyRules": {}
+  }
+] 

@@ -1,0 +1,26 @@
+This is a stress test scenario with 50 flights and will produce complex output.
+The expected outcome is for the algorithm to:
+1. Process all 50 flights in the busy morning slot
+2. Successfully allocate as many flights as possible given the stand constraints
+3. Correctly identify and report flights that cannot be allocated due to:
+   - Maintenance conflicts
+   - Stand size incompatibility
+   - Required contact stands not available
+   - Terminal/airline base mismatches
+   - Adjacency rule conflicts
+   - Timing conflicts (stands already occupied)
+
+Performance metrics to observe:
+- Number of flights successfully allocated
+- Number of flights unallocated
+- Distribution of reasons for unallocated flights
+- Processing time 
+
+===== ALLOCATED FLIGHTS =====
+Flight BA101 (B737) allocated to stand T1-A1 from 06:15 to 07:30
+Flight BA102 (B737) allocated to stand T1-A1 from 06:15 to 07:30
+Flight QF701 (A380) allocated to stand T3-A1 from 06:45 to 07:45
+
+===== UNALLOCATED FLIGHTS =====
+Flight LH201 (A320) not allocated: No suitable stand available
+Flight LH202 (A320) not allocated: No suitable stand available 

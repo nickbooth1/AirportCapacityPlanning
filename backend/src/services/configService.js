@@ -1,6 +1,7 @@
 const OperationalSettings = require('../models/OperationalSettings');
 const TurnaroundRule = require('../models/TurnaroundRule');
 const AircraftType = require('../models/AircraftType');
+const TimeSlot = require('../models/TimeSlot');
 const { transaction } = require('objection');
 
 class ConfigService {
@@ -47,10 +48,10 @@ class ConfigService {
 
   /**
    * Get a turnaround rule by aircraft type ID
-   * @param {number} aircraftTypeId - The aircraft type ID
+   * @param {number} aircraftTypeId - Aircraft type ID
    * @returns {Promise<Object>} The turnaround rule
    */
-  async getTurnaroundRuleByAircraftType(aircraftTypeId) {
+  async getTurnaroundRuleByAircraftTypeId(aircraftTypeId) {
     return TurnaroundRule.query()
       .where('aircraft_type_id', aircraftTypeId)
       .withGraphFetched('aircraftType')
@@ -106,12 +107,20 @@ class ConfigService {
   /**
    * Delete a turnaround rule
    * @param {number} aircraftTypeId - The aircraft type ID for the rule to delete
-   * @returns {Promise<number>} The number of deleted rows
+   * @returns {Promise<void>}
    */
   async deleteTurnaroundRule(aircraftTypeId) {
-    return TurnaroundRule.query()
+    const rule = await TurnaroundRule.query()
       .where('aircraft_type_id', aircraftTypeId)
-      .delete();
+      .first();
+      
+    if (!rule) {
+      throw new Error('Turnaround rule not found for this aircraft type');
+    }
+    
+    await TurnaroundRule.query()
+      .delete()
+      .where('aircraft_type_id', aircraftTypeId);
   }
 
   /**
@@ -137,6 +146,95 @@ class ConfigService {
       await trx.rollback();
       throw error;
     }
+  }
+
+  /**
+   * Get all time slots
+   * @returns {Promise<Array>} List of time slots
+   */
+  async getTimeSlots() {
+    return TimeSlot.query().orderBy('start_time');
+  }
+
+  /**
+   * Get all active time slots
+   * @returns {Promise<Array>} List of active time slots
+   */
+  async getActiveTimeSlots() {
+    return TimeSlot.getActiveSlots();
+  }
+
+  /**
+   * Get a time slot by ID
+   * @param {number} id - Time slot ID
+   * @returns {Promise<Object>} The time slot
+   */
+  async getTimeSlotById(id) {
+    const slot = await TimeSlot.query().findById(id);
+    if (!slot) {
+      throw new Error('Time slot not found');
+    }
+    return slot;
+  }
+
+  /**
+   * Create a new time slot
+   * @param {Object} slotData - The time slot data
+   * @returns {Promise<Object>} The created time slot
+   */
+  async createTimeSlot(slotData) {
+    // Check if a slot already exists with this name
+    const existingSlot = await TimeSlot.query()
+      .where('name', slotData.name)
+      .first();
+      
+    if (existingSlot) {
+      throw new Error('A time slot with this name already exists');
+    }
+    
+    return TimeSlot.query().insert(slotData).returning('*');
+  }
+
+  /**
+   * Update a time slot
+   * @param {number} id - Time slot ID
+   * @param {Object} slotData - The time slot data
+   * @returns {Promise<Object>} The updated time slot
+   */
+  async updateTimeSlot(id, slotData) {
+    const slot = await TimeSlot.query().findById(id);
+    if (!slot) {
+      throw new Error('Time slot not found');
+    }
+    
+    // If name is being changed, check if it conflicts with another slot
+    if (slotData.name && slotData.name !== slot.name) {
+      const existingSlot = await TimeSlot.query()
+        .where('name', slotData.name)
+        .whereNot('id', id)
+        .first();
+        
+      if (existingSlot) {
+        throw new Error('A time slot with this name already exists');
+      }
+    }
+    
+    return TimeSlot.query()
+      .patchAndFetchById(id, slotData);
+  }
+
+  /**
+   * Delete a time slot
+   * @param {number} id - Time slot ID
+   * @returns {Promise<void>}
+   */
+  async deleteTimeSlot(id) {
+    const slot = await TimeSlot.query().findById(id);
+    if (!slot) {
+      throw new Error('Time slot not found');
+    }
+    
+    await TimeSlot.query().deleteById(id);
   }
 }
 

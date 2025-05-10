@@ -1,0 +1,17 @@
+[
+  {
+    "StandName": "T1-S1",
+    "StartTime": "11:00",
+    "EndTime": "12:30"
+  },
+  {
+    "StandName": "T2-S2",
+    "StartTime": "09:30",
+    "EndTime": "10:15"
+  },
+  {
+    "StandName": "T3-S1",
+    "StartTime": "13:00",
+    "EndTime": "14:00"
+  }
+] 

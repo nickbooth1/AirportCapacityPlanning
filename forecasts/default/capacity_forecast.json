@@ -1,0 +1,304 @@
+[
+  {
+    "timePeriod": {
+      "start": "2025-05-01T00:00:00",
+      "end": "2026-04-30T23:59:59"
+    },
+    "terminalArea": "Terminal 1",
+    "baselineCapacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 36,
+      "A320": 19,
+      "B77W": 8,
+      "A380": 2,
+      "E190": 47
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 6.666666666666667,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:A380"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2026-05-01T00:00:00",
+      "end": "2027-04-30T23:59:59"
+    },
+    "terminalArea": "Terminal 1",
+    "baselineCapacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 32,
+      "A320": 20,
+      "B77W": 7,
+      "A380": 1,
+      "E190": 40
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": -4.761904761904762,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:A380"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2027-05-01T00:00:00",
+      "end": "2028-04-30T23:59:59"
+    },
+    "terminalArea": "Terminal 1",
+    "baselineCapacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 28,
+      "A320": 20,
+      "B77W": 7,
+      "A380": 0,
+      "E190": 32
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": -17.142857142857142,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:B738",
+      "FLEET_RETIREMENT:B77W",
+      "FLEET_RETIREMENT:A380",
+      "FLEET_RETIREMENT:E190"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2028-05-01T00:00:00",
+      "end": "2029-04-30T23:59:59"
+    },
+    "terminalArea": "Terminal 1",
+    "baselineCapacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 94,
+      "A320": 94,
+      "B77W": 31,
+      "A380": 16,
+      "E190": 94
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 213.33333333333334,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2029-05-01T00:00:00",
+      "end": "2030-04-30T23:59:59"
+    },
+    "terminalArea": "Terminal 1",
+    "baselineCapacityByAircraftType": {
+      "B738": 30,
+      "A320": 30,
+      "B77W": 10,
+      "A380": 5,
+      "E190": 30
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 94,
+      "A320": 94,
+      "B77W": 31,
+      "A380": 16,
+      "E190": 94
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 213.33333333333334,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2025-05-01T00:00:00",
+      "end": "2026-04-30T23:59:59"
+    },
+    "terminalArea": "Cargo Area",
+    "baselineCapacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 27,
+      "A320": 12,
+      "B77W": 8,
+      "A380": 1,
+      "E190": 31
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 216,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:A380"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2026-05-01T00:00:00",
+      "end": "2027-04-30T23:59:59"
+    },
+    "terminalArea": "Cargo Area",
+    "baselineCapacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 24,
+      "A320": 12,
+      "B77W": 8,
+      "A380": 0,
+      "E190": 28
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 188,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:A380"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2027-05-01T00:00:00",
+      "end": "2028-04-30T23:59:59"
+    },
+    "terminalArea": "Cargo Area",
+    "baselineCapacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 21,
+      "A320": 12,
+      "B77W": 9,
+      "A380": 0,
+      "E190": 22
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 156,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE",
+      "FLEET_RETIREMENT:B738",
+      "FLEET_RETIREMENT:B77W",
+      "FLEET_RETIREMENT:A380",
+      "FLEET_RETIREMENT:E190"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2028-05-01T00:00:00",
+      "end": "2029-04-30T23:59:59"
+    },
+    "terminalArea": "Cargo Area",
+    "baselineCapacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 68,
+      "A320": 68,
+      "B77W": 37,
+      "A380": 10,
+      "E190": 63
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 884,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE"
+    ]
+  },
+  {
+    "timePeriod": {
+      "start": "2029-05-01T00:00:00",
+      "end": "2030-04-30T23:59:59"
+    },
+    "terminalArea": "Cargo Area",
+    "baselineCapacityByAircraftType": {
+      "B738": 5,
+      "A320": 5,
+      "B77W": 15,
+      "A380": 0,
+      "E190": 0
+    },
+    "forecastedCapacityByAircraftType": {
+      "B738": 68,
+      "A320": 68,
+      "B77W": 37,
+      "A380": 10,
+      "E190": 63
+    },
+    "appliedInfrastructureChanges": [
+      "NEW_STAND_T1",
+      "NEW_TERMINAL"
+    ],
+    "capacityChangeFromBaseline": 884,
+    "limitingFactors": [
+      "DISRUPTION_ALLOWANCE"
+    ]
+  }
+]

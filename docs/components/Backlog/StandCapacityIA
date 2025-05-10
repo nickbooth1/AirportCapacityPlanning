@@ -1,0 +1,97 @@
+Problem Statement:
+I need an intelligent analysis capability that evaluates historical stand usage patterns to identify inefficiencies, bottlenecks, and optimization opportunities in stand allocation at an airport. This analysis should consider factors such as aircraft type compatibility, turnaround times, adjacency restrictions, and temporal patterns.
+
+Algorithm:
+1.  **Load Historical Stand Usage Data:**
+    *   Retrieve historical flight schedule and stand allocation data for a specified time period.
+    *   Verify data quality and completeness.
+    *   Transform data into a standardized format for analysis.
+
+2.  **Perform Basic Utilization Analysis:**
+    *   Calculate overall stand utilization rates (percentage of operational hours in use).
+    *   Identify peak usage periods and stand idle times.
+    *   Calculate utilization rates by aircraft type for each stand.
+    *   Generate utilization heatmaps by time of day, day of week, and season.
+
+3.  **Analyze Compatibility Efficiency:**
+    *   For each stand, compare actual aircraft types accommodated against the stand's `BaseCompatibleAircraftTypeIDs`.
+    *   Calculate "compatibility efficiency" metrics (percentage of time stands were used by their optimal aircraft types).
+    *   Identify stands frequently used by suboptimal aircraft types.
+
+4.  **Evaluate Adjacency Impact:**
+    *   Extract instances where adjacency rules were triggered in historical data.
+    *   Quantify capacity reduction due to adjacency restrictions.
+    *   Identify stand pairs most frequently affected by adjacency restrictions.
+    *   Calculate opportunity cost of adjacency restrictions in terms of potential additional flights.
+
+5.  **Identify Bottleneck Time Periods:**
+    *   Determine time slots where stand capacity consistently reached maximum utilization.
+    *   Analyze patterns in bottleneck occurrences (time of day, day of week, seasonality).
+    *   Correlate bottlenecks with specific aircraft types or flight patterns.
+
+6.  **Discover Optimization Opportunities:**
+    *   Identify stands with consistently low utilization that could be repurposed.
+    *   Suggest aircraft type reallocation strategies to better match stand capabilities.
+    *   Recommend operational time adjustments to reduce peak congestion.
+    *   Propose modifications to adjacency rules that would increase capacity with minimal operational impact.
+
+7.  **Generate Comparative Analysis:**
+    *   Compare actual capacity utilized against theoretical best-case and worst-case capacities.
+    *   Calculate efficiency scores for stand usage.
+    *   Identify trends in capacity utilization over time.
+
+8.  **Produce Recommendations:**
+    *   Generate actionable recommendations ranked by potential impact.
+    *   Provide quantitative estimates of capacity gains for each recommendation.
+    *   Include feasibility assessments for implementing recommendations.
+
+Data Structure:
+*   **`HistoricalFlightData`**: (Array of objects representing actual flight operations)
+    *   `FlightID`: string
+    *   `AircraftTypeID`: string
+    *   `ArrivalTime`: DateTime
+    *   `DepartureTime`: DateTime
+    *   `AssignedStandID`: string
+    *   `TurnaroundDuration`: integer (minutes)
+
+*   **`HistoricalStandCapacityData`**: (Array of objects representing historical capacity metrics)
+    *   `Date`: DateTime
+    *   `TimeSlotStart`: DateTime
+    *   `TimeSlotEnd`: DateTime
+    *   `StandID`: string
+    *   `PlannedCapacityByAircraftType`: Map<AircraftTypeID, integer>
+    *   `ActualCapacityByAircraftType`: Map<AircraftTypeID, integer>
+    *   `CapacityLimitingFactors`: array of strings (e.g., "ADJACENCY_RULE", "MAINTENANCE")
+
+*   **`StandUtilizationMetrics`**: (Array of objects representing utilization metrics)
+    *   `StandID`: string
+    *   `UtilizationRate`: float (0.0-1.0)
+    *   `PeakUtilizationPeriods`: array of TimeRange objects
+    *   `IdlePeriods`: array of TimeRange objects
+    *   `OptimalAircraftTypeUtilization`: Map<AircraftTypeID, float>
+    *   `SuboptimalAllocationInstances`: integer
+
+*   **`AdjacencyImpactMetrics`**: (Array of objects quantifying adjacency rule impacts)
+    *   `PrimaryStandID`: string
+    *   `AffectedStandID`: string
+    *   `OccurrenceCount`: integer
+    *   `TotalDurationAffected`: integer (minutes)
+    *   `EstimatedLostCapacity`: integer (number of potential flights)
+    *   `MostCommonTriggerAircraftType`: string
+
+*   **`OptimizationRecommendations`**: (Array of objects providing improvement suggestions)
+    *   `RecommendationID`: string
+    *   `RecommendationType`: enum (e.g., "REALLOCATION", "RULE_MODIFICATION", "SCHEDULE_ADJUSTMENT")
+    *   `Description`: string
+    *   `EstimatedCapacityGain`: integer (flights per day)
+    *   `ImplementationComplexity`: enum ("LOW", "MEDIUM", "HIGH")
+    *   `AffectedStands`: array of strings
+    *   `AffectedTimeSlots`: array of TimeRange objects
+
+Outputs:
+- Detailed stand utilization report with heatmaps and efficiency metrics
+- Bottleneck analysis showing capacity constraints by time period
+- Adjacency impact analysis quantifying capacity reduction due to restrictions
+- Ranked list of optimization opportunities with expected capacity gains
+- Comparative analysis between actual, best-case, and worst-case capacities
+- Action recommendations with implementation feasibility assessments 

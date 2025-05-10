@@ -1,0 +1,113 @@
+{
+  "isValid": true,
+  "timestamp": "2025-05-09T14:18:19.465Z",
+  "filename": "sample-flights.csv",
+  "entityType": "flights",
+  "recordCount": 10,
+  "errorCount": 0,
+  "warningCount": 10,
+  "categoryCounts": {
+    "schemaErrors": 0,
+    "referenceErrors": 0,
+    "businessRuleViolations": 0,
+    "formatErrors": 0
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "BA123",
+      "message": "Aircraft type 'B738' not found in reference data",
+      "value": "B738",
+      "row": 1
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "BA124",
+      "message": "Aircraft type 'B738' not found in reference data",
+      "value": "B738",
+      "row": 2
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "LH456",
+      "message": "Aircraft type 'A320' not found in reference data",
+      "value": "A320",
+      "row": 3
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "LH457",
+      "message": "Aircraft type 'A320' not found in reference data",
+      "value": "A320",
+      "row": 4
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "AF789",
+      "message": "Aircraft type 'B77W' not found in reference data",
+      "value": "B77W",
+      "row": 5
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "AF790",
+      "message": "Aircraft type 'B77W' not found in reference data",
+      "value": "B77W",
+      "row": 6
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "EK001",
+      "message": "Aircraft type 'A388' not found in reference data",
+      "value": "A388",
+      "row": 7
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "EK002",
+      "message": "Aircraft type 'A388' not found in reference data",
+      "value": "A388",
+      "row": 8
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "AA987",
+      "message": "Aircraft type 'B789' not found in reference data",
+      "value": "B789",
+      "row": 9
+    },
+    {
+      "severity": "warning",
+      "code": "W012",
+      "field": "AircraftType",
+      "recordId": "AA988",
+      "message": "Aircraft type 'B789' not found in reference data",
+      "value": "B789",
+      "row": 10
+    }
+  ],
+  "additionalInfo": {
+    "truncated": false,
+    "totalErrorCount": 0,
+    "totalWarningCount": 10
+  }
+}

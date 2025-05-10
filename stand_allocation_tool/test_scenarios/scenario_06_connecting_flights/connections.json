@@ -1,0 +1,16 @@
+[
+  {
+    "arrival_flight_id": "BA100A",
+    "departure_flight_id": "AF200D",
+    "min_transfer_minutes": 45,
+    "max_transfer_minutes": 180,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "AF200A",
+    "departure_flight_id": "BA100D",
+    "min_transfer_minutes": 30,
+    "max_transfer_minutes": 120,
+    "is_critical": false
+  }
+] 

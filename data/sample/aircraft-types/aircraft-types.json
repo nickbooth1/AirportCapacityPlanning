@@ -1,0 +1,22 @@
+[
+  {
+    "aircraftTypeID": "B738",
+    "averageTurnaroundMinutes": 45
+  },
+  {
+    "aircraftTypeID": "A320",
+    "averageTurnaroundMinutes": 40
+  },
+  {
+    "aircraftTypeID": "B77W",
+    "averageTurnaroundMinutes": 90
+  },
+  {
+    "aircraftTypeID": "A380",
+    "averageTurnaroundMinutes": 120
+  },
+  {
+    "aircraftTypeID": "E190",
+    "averageTurnaroundMinutes": 30
+  }
+] 

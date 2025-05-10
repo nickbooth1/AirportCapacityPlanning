@@ -1,0 +1,24 @@
+{
+  "GapBetweenFlights": 15,
+  "TurnaroundTimeSettings": {
+    "Default": 60,
+    "Narrow": 45,
+    "Wide": 90,
+    "Super": 120
+  },
+  "prioritization_weights": {
+    "aircraft_type_A380": 10.0,
+    "aircraft_type_B747": 8.0,
+    "aircraft_type_wide": 5.0,
+    "airline_tier": 2.0,
+    "requires_contact_stand": 3.0,
+    "critical_connection": 5.0,
+    "base_score": 1.0
+  },
+  "solver_parameters": {
+    "use_solver": true,
+    "solver_time_limit_seconds": 300,
+    "optimality_gap": 0.1,
+    "max_solutions": 1
+  }
+}

@@ -1,0 +1,5 @@
+===== ALLOCATED FLIGHTS =====
+Flight BA123 (B737) allocated to stand S1 from 10:00 to 10:30
+
+===== UNALLOCATED FLIGHTS =====
+All flights were allocated successfully. 

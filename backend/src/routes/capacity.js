@@ -5,6 +5,8 @@
 const express = require('express');
 const router = express.Router();
 const capacityController = require('../controllers/capacityController');
+const standCapacityService = require('../services/standCapacityService');
+const configService = require('../services/configService');
 
 /**
  * @swagger
@@ -71,6 +73,66 @@ router.get('/calculate', capacityController.calculateCapacity);
  *       500:
  *         description: Server error
  */
-router.get('/settings', capacityController.getCapacitySettings);
+router.get('/settings', async (req, res, next) => {
+  try {
+    const configData = await configService.getCapacityConfigData();
+    res.json(configData);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Calculate stand capacity
+router.get('/stand-capacity', async (req, res, next) => {
+  try {
+    const options = {
+      standIds: req.query.standIds ? req.query.standIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      timeSlotIds: req.query.timeSlotIds ? req.query.timeSlotIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      useDefinedTimeSlots: req.query.useDefinedTimeSlots === 'true',
+      date: req.query.date
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get capacity by time slot
+router.get('/stand-capacity/by-time-slot', async (req, res, next) => {
+  try {
+    const options = {
+      standIds: req.query.standIds ? req.query.standIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      timeSlotIds: req.query.timeSlotIds ? req.query.timeSlotIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      useDefinedTimeSlots: req.query.useDefinedTimeSlots === 'true',
+      date: req.query.date,
+      organizationType: 'timeSlot'
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get capacity by aircraft type
+router.get('/stand-capacity/by-aircraft-type', async (req, res, next) => {
+  try {
+    const options = {
+      standIds: req.query.standIds ? req.query.standIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      timeSlotIds: req.query.timeSlotIds ? req.query.timeSlotIds.split(',').map(id => parseInt(id, 10)) : undefined,
+      useDefinedTimeSlots: req.query.useDefinedTimeSlots === 'true',
+      date: req.query.date,
+      organizationType: 'aircraftType'
+    };
+    
+    const result = await standCapacityService.calculateStandCapacity(options);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router; 

@@ -1,0 +1,9 @@
+{
+  "GapBetweenFlights": 15,
+  "TurnaroundTimeSettings": {
+    "Default": 45,
+    "Narrow": 30,
+    "Wide": 45,
+    "Super": 60
+  }
+} 

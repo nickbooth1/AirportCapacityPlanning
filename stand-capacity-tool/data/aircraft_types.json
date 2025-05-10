@@ -1,0 +1,27 @@
+[
+  {
+    "aircraftTypeID": "A320",
+    "sizeCategory": "Code C",
+    "averageTurnaroundMinutes": 45
+  },
+  {
+    "aircraftTypeID": "B737",
+    "sizeCategory": "Code C",
+    "averageTurnaroundMinutes": 40
+  },
+  {
+    "aircraftTypeID": "B777",
+    "sizeCategory": "Code E",
+    "averageTurnaroundMinutes": 90
+  },
+  {
+    "aircraftTypeID": "B787",
+    "sizeCategory": "Code E",
+    "averageTurnaroundMinutes": 75
+  },
+  {
+    "aircraftTypeID": "A380",
+    "sizeCategory": "Code F",
+    "averageTurnaroundMinutes": 120
+  }
+] 

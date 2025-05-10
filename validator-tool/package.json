@@ -1,0 +1,36 @@
+{
+  "name": "flight-schedule-validator",
+  "version": "1.0.0",
+  "description": "Flight Schedule Validator for Airport Capacity Planner",
+  "main": "index.js",
+  "bin": {
+    "validator-cli": "./src/cli/index.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "start": "node src/cli/index.js",
+    "integration": "node test/integration/validator-stand-allocation-flow.js",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "chalk": "^4.1.2",
+    "commander": "^10.0.1",
+    "csv-parser": "^3.0.0",
+    "fs-extra": "^11.1.0",
+    "glob": "^8.1.0",
+    "inquirer": "^8.2.5",
+    "joi": "^17.9.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.40.0",
+    "jest": "^29.5.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ]
+  }
+} 

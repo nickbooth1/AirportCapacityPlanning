@@ -1,0 +1,14 @@
+[
+  {
+    "FlightID": "FL001",
+    "FlightNumber": "BA123",
+    "AirlineCode": "BA",
+    "AircraftType": "A380",
+    "Origin": "JFK",
+    "Destination": "LHR",
+    "ScheduledTime": "10:00",
+    "Terminal": "T1",
+    "IsArrival": true,
+    "LinkID": null
+  }
+] 

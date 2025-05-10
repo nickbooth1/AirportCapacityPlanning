@@ -1,0 +1,16 @@
+[
+  {
+    "AirlineCode": "BA",
+    "AirlineName": "British Airways",
+    "BaseTerminal": "1",
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  },
+  {
+    "AirlineCode": "AF",
+    "AirlineName": "Air France",
+    "BaseTerminal": "2", 
+    "RequiresContactStand": true,
+    "priority_tier": 2
+  }
+] 

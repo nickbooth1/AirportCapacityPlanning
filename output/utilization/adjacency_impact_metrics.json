@@ -1,0 +1,26 @@
+[
+  {
+    "primaryStandID": "A1",
+    "affectedStandID": "A2",
+    "occurrenceCount": 0,
+    "totalDurationAffected": 0,
+    "estimatedLostCapacity": 0,
+    "mostCommonTriggerAircraftType": "B738"
+  },
+  {
+    "primaryStandID": "B1",
+    "affectedStandID": "B2",
+    "occurrenceCount": 0,
+    "totalDurationAffected": 0,
+    "estimatedLostCapacity": 0,
+    "mostCommonTriggerAircraftType": "B77W"
+  },
+  {
+    "primaryStandID": "C1",
+    "affectedStandID": "B2",
+    "occurrenceCount": 1,
+    "totalDurationAffected": 60,
+    "estimatedLostCapacity": 1,
+    "mostCommonTriggerAircraftType": "A380"
+  }
+]

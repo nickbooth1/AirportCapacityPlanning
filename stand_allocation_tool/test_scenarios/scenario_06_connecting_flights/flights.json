@@ -1,0 +1,50 @@
+[
+  {
+    "FlightID": "BA100A",
+    "FlightNumber": "BA100",
+    "AirlineCode": "BA",
+    "AircraftType": "B737",
+    "Origin": "JFK",
+    "Destination": "LHR",
+    "ScheduledTime": "10:00",
+    "Terminal": "1",
+    "IsArrival": true,
+    "LinkID": "BA100"
+  },
+  {
+    "FlightID": "BA100D",
+    "FlightNumber": "BA101",
+    "AirlineCode": "BA",
+    "AircraftType": "B737",
+    "Origin": "LHR",
+    "Destination": "CDG",
+    "ScheduledTime": "12:00",
+    "Terminal": "1",
+    "IsArrival": false,
+    "LinkID": "BA100"
+  },
+  {
+    "FlightID": "AF200A",
+    "FlightNumber": "AF200",
+    "AirlineCode": "AF",
+    "AircraftType": "A320",
+    "Origin": "CDG",
+    "Destination": "LHR",
+    "ScheduledTime": "11:00",
+    "Terminal": "2",
+    "IsArrival": true,
+    "LinkID": "AF200"
+  },
+  {
+    "FlightID": "AF200D",
+    "FlightNumber": "AF201",
+    "AirlineCode": "AF",
+    "AircraftType": "A320",
+    "Origin": "LHR",
+    "Destination": "MAD",
+    "ScheduledTime": "13:00",
+    "Terminal": "2",
+    "IsArrival": false,
+    "LinkID": "AF200"
+  }
+] 

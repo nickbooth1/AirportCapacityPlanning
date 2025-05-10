@@ -1,0 +1,20 @@
+{
+  "profileName": "flights-mapping-2025-05-09",
+  "entityType": "flights",
+  "lastUsed": "2025-05-09T14:17:53.244Z",
+  "mappings": {
+    "FlightID": "flight_id",
+    "FlightNumber": "flight_no",
+    "AirlineCode": "carrier",
+    "AircraftType": "aircraft",
+    "Origin": "origin",
+    "Destination": "dest",
+    "ScheduledTime": "sched_time",
+    "Terminal": "terminal",
+    "IsArrival": "is_arrival"
+  },
+  "transformations": {
+    "ScheduledTime": "convertDateTime",
+    "IsArrival": "stringToBoolean"
+  }
+}

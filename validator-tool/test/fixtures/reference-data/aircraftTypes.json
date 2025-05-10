@@ -1,0 +1,32 @@
+[
+  {
+    "IATACode": "B738",
+    "ICAOCode": "B738",
+    "AircraftType": "Boeing 737-800",
+    "SizeCategory": "C"
+  },
+  {
+    "IATACode": "A320",
+    "ICAOCode": "A320",
+    "AircraftType": "Airbus A320",
+    "SizeCategory": "C"
+  },
+  {
+    "IATACode": "B77W",
+    "ICAOCode": "B77W",
+    "AircraftType": "Boeing 777-300ER",
+    "SizeCategory": "E"
+  },
+  {
+    "IATACode": "A388",
+    "ICAOCode": "A388",
+    "AircraftType": "Airbus A380-800",
+    "SizeCategory": "F"
+  },
+  {
+    "IATACode": "B789",
+    "ICAOCode": "B789",
+    "AircraftType": "Boeing 787-9",
+    "SizeCategory": "D"
+  }
+]

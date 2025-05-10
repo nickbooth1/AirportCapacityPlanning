@@ -1,0 +1,20 @@
+[
+  {
+    "AirlineCode": "BA",
+    "AirlineName": "British Airways",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": true
+  },
+  {
+    "AirlineCode": "LH",
+    "AirlineName": "Lufthansa",
+    "BaseTerminal": "T2",
+    "RequiresContactStand": true
+  },
+  {
+    "AirlineCode": "QF",
+    "AirlineName": "Qantas",
+    "BaseTerminal": "T3",
+    "RequiresContactStand": true
+  }
+] 

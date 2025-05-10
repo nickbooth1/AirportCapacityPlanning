@@ -1,0 +1,8 @@
+[
+  {
+    "AirlineCode": "BA",
+    "AirlineName": "British Airways",
+    "BaseTerminal": "T1",
+    "RequiresContactStand": true
+  }
+] 

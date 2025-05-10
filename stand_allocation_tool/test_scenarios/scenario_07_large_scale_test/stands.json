@@ -1,0 +1,149 @@
+[
+  {
+    "StandName": "T1-S1",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S2",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S3",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S4",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S5",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R1",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R2",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R3",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S1",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S2",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S3",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S4",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R1",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R2",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R3",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S1",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S2",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S3",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S4",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R1",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R2",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  }
+] 

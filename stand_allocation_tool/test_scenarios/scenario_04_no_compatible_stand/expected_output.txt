@@ -1,0 +1,5 @@
+===== ALLOCATED FLIGHTS =====
+No flights were allocated.
+
+===== UNALLOCATED FLIGHTS =====
+Flight BA123 (A380) not allocated: No suitable stand available 

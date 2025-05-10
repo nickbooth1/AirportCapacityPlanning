@@ -17,46 +17,7 @@ router.get('/settings', async (req, res, next) => {
 // Update operational settings
 router.put('/settings', async (req, res, next) => {
   try {
-    const { default_gap_minutes, operating_start_time, operating_end_time } = req.body;
-    
-    // Validate required fields
-    if (default_gap_minutes === undefined) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'default_gap_minutes is required' 
-      });
-    }
-    
-    if (!operating_start_time || !operating_end_time) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'operating_start_time and operating_end_time are required' 
-      });
-    }
-    
-    // Validate that default_gap_minutes is a positive integer
-    if (default_gap_minutes <= 0 || !Number.isInteger(default_gap_minutes)) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'default_gap_minutes must be a positive integer' 
-      });
-    }
-    
-    // Validate time format (HH:MM:SS)
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
-    if (!timeRegex.test(operating_start_time) || !timeRegex.test(operating_end_time)) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'Time values must be in HH:MM:SS format' 
-      });
-    }
-    
-    const updatedSettings = await configService.updateOperationalSettings({
-      default_gap_minutes,
-      operating_start_time,
-      operating_end_time
-    });
-    
+    const updatedSettings = await configService.updateOperationalSettings(req.body);
     res.json(updatedSettings);
   } catch (error) {
     next(error);
@@ -75,17 +36,14 @@ router.get('/turnaround-rules', async (req, res, next) => {
   }
 });
 
-// Get turnaround rule by aircraft type ID
-router.get('/turnaround-rules/aircraft-type/:id', async (req, res, next) => {
+// Get a turnaround rule by aircraft type ID
+router.get('/turnaround-rules/:aircraftTypeId', async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const rule = await configService.getTurnaroundRuleByAircraftType(id);
+    const { aircraftTypeId } = req.params;
+    const rule = await configService.getTurnaroundRuleByAircraftTypeId(parseInt(aircraftTypeId, 10));
     
     if (!rule) {
-      return res.status(404).json({ 
-        error: true, 
-        message: 'Turnaround rule not found for this aircraft type' 
-      });
+      return res.status(404).json({ message: 'Turnaround rule not found' });
     }
     
     res.json(rule);
@@ -97,100 +55,117 @@ router.get('/turnaround-rules/aircraft-type/:id', async (req, res, next) => {
 // Create a new turnaround rule
 router.post('/turnaround-rules', async (req, res, next) => {
   try {
-    const { aircraft_type_id, min_turnaround_minutes } = req.body;
-    
-    // Validate required fields
-    if (!aircraft_type_id || min_turnaround_minutes === undefined) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'aircraft_type_id and min_turnaround_minutes are required' 
-      });
-    }
-    
-    // Validate that min_turnaround_minutes is a positive integer
-    if (min_turnaround_minutes <= 0 || !Number.isInteger(min_turnaround_minutes)) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'min_turnaround_minutes must be a positive integer' 
-      });
-    }
-    
-    try {
-      const newRule = await configService.createTurnaroundRule({
-        aircraft_type_id,
-        min_turnaround_minutes
-      });
-      
-      res.status(201).json(newRule);
-    } catch (error) {
-      if (error.message.includes('exists for this aircraft type')) {
-        return res.status(409).json({ error: true, message: error.message });
-      }
-      if (error.message.includes('not found')) {
-        return res.status(404).json({ error: true, message: error.message });
-      }
-      throw error;
-    }
+    const newRule = await configService.createTurnaroundRule(req.body);
+    res.status(201).json(newRule);
   } catch (error) {
     next(error);
   }
 });
 
 // Update a turnaround rule
-router.put('/turnaround-rules/aircraft-type/:id', async (req, res, next) => {
+router.put('/turnaround-rules/:aircraftTypeId', async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { min_turnaround_minutes } = req.body;
-    
-    // Validate required fields
-    if (min_turnaround_minutes === undefined) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'min_turnaround_minutes is required' 
-      });
-    }
-    
-    // Validate that min_turnaround_minutes is a positive integer
-    if (min_turnaround_minutes <= 0 || !Number.isInteger(min_turnaround_minutes)) {
-      return res.status(400).json({ 
-        error: true, 
-        message: 'min_turnaround_minutes must be a positive integer' 
-      });
-    }
-    
-    try {
-      const updatedRule = await configService.updateTurnaroundRule(id, {
-        min_turnaround_minutes
-      });
-      
-      res.json(updatedRule);
-    } catch (error) {
-      if (error.message.includes('not found')) {
-        return res.status(404).json({ error: true, message: error.message });
-      }
-      throw error;
-    }
+    const { aircraftTypeId } = req.params;
+    const updatedRule = await configService.updateTurnaroundRule(parseInt(aircraftTypeId, 10), req.body);
+    res.json(updatedRule);
   } catch (error) {
     next(error);
   }
 });
 
 // Delete a turnaround rule
-router.delete('/turnaround-rules/aircraft-type/:id', async (req, res, next) => {
+router.delete('/turnaround-rules/:aircraftTypeId', async (req, res, next) => {
   try {
-    const { id } = req.params;
-    
-    const deletedCount = await configService.deleteTurnaroundRule(id);
-    
-    if (deletedCount === 0) {
-      return res.status(404).json({ 
-        error: true, 
-        message: 'Turnaround rule not found for this aircraft type' 
-      });
-    }
-    
+    const { aircraftTypeId } = req.params;
+    await configService.deleteTurnaroundRule(parseInt(aircraftTypeId, 10));
     res.status(204).send();
   } catch (error) {
+    next(error);
+  }
+});
+
+// --- Time Slots Endpoints ---
+
+// Get all time slots
+router.get('/time-slots', async (req, res, next) => {
+  try {
+    const timeSlots = await configService.getTimeSlots();
+    res.json(timeSlots);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get active time slots only
+router.get('/time-slots/active', async (req, res, next) => {
+  try {
+    const timeSlots = await configService.getActiveTimeSlots();
+    res.json(timeSlots);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get a specific time slot by ID
+router.get('/time-slots/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const timeSlot = await configService.getTimeSlotById(parseInt(id, 10));
+    res.json(timeSlot);
+  } catch (error) {
+    if (error.message === 'Time slot not found') {
+      return res.status(404).json({ message: 'Time slot not found' });
+    }
+    next(error);
+  }
+});
+
+// Create a new time slot
+router.post('/time-slots', async (req, res, next) => {
+  try {
+    const newTimeSlot = await configService.createTimeSlot(req.body);
+    res.status(201).json(newTimeSlot);
+  } catch (error) {
+    if (error.message === 'A time slot with this name already exists') {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === 'End time must be after start time') {
+      return res.status(400).json({ message: error.message });
+    }
+    next(error);
+  }
+});
+
+// Update a time slot
+router.put('/time-slots/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updatedTimeSlot = await configService.updateTimeSlot(parseInt(id, 10), req.body);
+    res.json(updatedTimeSlot);
+  } catch (error) {
+    if (error.message === 'Time slot not found') {
+      return res.status(404).json({ message: 'Time slot not found' });
+    }
+    if (error.message === 'A time slot with this name already exists') {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === 'End time must be after start time') {
+      return res.status(400).json({ message: error.message });
+    }
+    next(error);
+  }
+});
+
+// Delete a time slot
+router.delete('/time-slots/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await configService.deleteTimeSlot(parseInt(id, 10));
+    res.status(204).send();
+  } catch (error) {
+    if (error.message === 'Time slot not found') {
+      return res.status(404).json({ message: 'Time slot not found' });
+    }
     next(error);
   }
 });

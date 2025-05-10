@@ -1,0 +1,33 @@
+STAND UTILIZATION REPORT
+=======================
+
+Stand: A1
+Utilization Rate: 29.69%
+Peak Periods: 0
+Idle Periods: 5
+Suboptimal Allocations: 0
+-------------------------------------------
+Stand: A2
+Utilization Rate: 15.63%
+Peak Periods: 0
+Idle Periods: 4
+Suboptimal Allocations: 0
+-------------------------------------------
+Stand: B1
+Utilization Rate: 14.06%
+Peak Periods: 1
+Idle Periods: 2
+Suboptimal Allocations: 0
+-------------------------------------------
+Stand: B2
+Utilization Rate: 21.88%
+Peak Periods: 1
+Idle Periods: 3
+Suboptimal Allocations: 0
+-------------------------------------------
+Stand: C1
+Utilization Rate: 21.88%
+Peak Periods: 0
+Idle Periods: 3
+Suboptimal Allocations: 0
+-------------------------------------------

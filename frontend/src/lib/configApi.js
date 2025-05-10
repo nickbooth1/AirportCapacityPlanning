@@ -37,14 +37,14 @@ export const getAllTurnaroundRules = async () => {
  * @param {number} aircraftTypeId - The aircraft type ID
  * @returns {Promise<Object>} The turnaround rule
  */
-export const getTurnaroundRuleByAircraftType = async (aircraftTypeId) => {
-  const response = await api.get(`/api/config/turnaround-rules/aircraft-type/${aircraftTypeId}`);
+export const getTurnaroundRuleByAircraftTypeId = async (aircraftTypeId) => {
+  const response = await api.get(`/api/config/turnaround-rules/${aircraftTypeId}`);
   return response.data;
 };
 
 /**
  * Create a new turnaround rule
- * @param {Object} ruleData - The rule data to create
+ * @param {Object} ruleData - The rule data
  * @returns {Promise<Object>} The created rule
  */
 export const createTurnaroundRule = async (ruleData) => {
@@ -55,11 +55,11 @@ export const createTurnaroundRule = async (ruleData) => {
 /**
  * Update a turnaround rule
  * @param {number} aircraftTypeId - The aircraft type ID
- * @param {Object} ruleData - The rule data to update
+ * @param {Object} ruleData - The rule data
  * @returns {Promise<Object>} The updated rule
  */
 export const updateTurnaroundRule = async (aircraftTypeId, ruleData) => {
-  const response = await api.put(`/api/config/turnaround-rules/aircraft-type/${aircraftTypeId}`, ruleData);
+  const response = await api.put(`/api/config/turnaround-rules/${aircraftTypeId}`, ruleData);
   return response.data;
 };
 
@@ -69,5 +69,65 @@ export const updateTurnaroundRule = async (aircraftTypeId, ruleData) => {
  * @returns {Promise<void>}
  */
 export const deleteTurnaroundRule = async (aircraftTypeId) => {
-  await api.delete(`/api/config/turnaround-rules/aircraft-type/${aircraftTypeId}`);
+  await api.delete(`/api/config/turnaround-rules/${aircraftTypeId}`);
+};
+
+// Time Slots
+
+/**
+ * Get all time slots
+ * @returns {Promise<Array>} List of time slots
+ */
+export const getTimeSlots = async () => {
+  const response = await api.get('/api/config/time-slots');
+  return response.data;
+};
+
+/**
+ * Get active time slots only
+ * @returns {Promise<Array>} List of active time slots
+ */
+export const getActiveTimeSlots = async () => {
+  const response = await api.get('/api/config/time-slots/active');
+  return response.data;
+};
+
+/**
+ * Get a time slot by ID
+ * @param {number} id - The time slot ID
+ * @returns {Promise<Object>} The time slot
+ */
+export const getTimeSlotById = async (id) => {
+  const response = await api.get(`/api/config/time-slots/${id}`);
+  return response.data;
+};
+
+/**
+ * Create a new time slot
+ * @param {Object} slotData - The time slot data
+ * @returns {Promise<Object>} The created time slot
+ */
+export const createTimeSlot = async (slotData) => {
+  const response = await api.post('/api/config/time-slots', slotData);
+  return response.data;
+};
+
+/**
+ * Update a time slot
+ * @param {number} id - The time slot ID
+ * @param {Object} slotData - The time slot data
+ * @returns {Promise<Object>} The updated time slot
+ */
+export const updateTimeSlot = async (id, slotData) => {
+  const response = await api.put(`/api/config/time-slots/${id}`, slotData);
+  return response.data;
+};
+
+/**
+ * Delete a time slot
+ * @param {number} id - The time slot ID
+ * @returns {Promise<void>}
+ */
+export const deleteTimeSlot = async (id) => {
+  await api.delete(`/api/config/time-slots/${id}`);
 }; 

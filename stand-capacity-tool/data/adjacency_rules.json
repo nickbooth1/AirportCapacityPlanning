@@ -1,0 +1,25 @@
+[
+  {
+    "primaryStandID": "Stand01",
+    "aircraftTypeTrigger": "A380",
+    "affectedStandID": "Stand02",
+    "restrictionType": "MAX_AIRCRAFT_SIZE_REDUCED_TO",
+    "restrictedToAircraftTypeOrSize": "Code C",
+    "notes": "When Stand01 has an A380, Stand02 can only handle Code C aircraft"
+  },
+  {
+    "primaryStandID": "Stand02",
+    "aircraftTypeTrigger": "B777",
+    "affectedStandID": "Stand03",
+    "restrictionType": "MAX_AIRCRAFT_SIZE_REDUCED_TO",
+    "restrictedToAircraftTypeOrSize": "Code C",
+    "notes": "When Stand02 has a B777, Stand03 can only handle Code C aircraft"
+  },
+  {
+    "primaryStandID": "Stand01",
+    "aircraftTypeTrigger": "A380",
+    "affectedStandID": "Stand03",
+    "restrictionType": "NO_USE_AFFECTED_STAND",
+    "notes": "When Stand01 has an A380, Stand03 cannot be used"
+  }
+] 

@@ -1,0 +1,527 @@
+[
+  {
+    "StandName": "T1-S1",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S2",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S3",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S4",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S5",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S6",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S7",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S8",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S9",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S10",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S11",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S12",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S13",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S14",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-S15",
+    "Terminal": "1",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R1",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R2",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R3",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R4",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R5",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R6",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R7",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R8",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R9",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T1-R10",
+    "Terminal": "1",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S1",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S2",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S3",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S4",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S5",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S6",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S7",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S8",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S9",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S10",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S11",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S12",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S13",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S14",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-S15",
+    "Terminal": "2",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R1",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R2",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R3",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R4",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R5",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R6",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R7",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R8",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R9",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T2-R10",
+    "Terminal": "2",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S1",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S2",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S3",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Super",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S4",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S5",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S6",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S7",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S8",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S9",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S10",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S11",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S12",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S13",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S14",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-S15",
+    "Terminal": "3",
+    "IsContactStand": true,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R1",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R2",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R3",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R4",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R5",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Wide",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R6",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R7",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R8",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R9",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  },
+  {
+    "StandName": "T3-R10",
+    "Terminal": "3",
+    "IsContactStand": false,
+    "SizeLimit": "Narrow",
+    "AdjacencyRules": {}
+  }
+]

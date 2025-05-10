@@ -1,0 +1,79 @@
+[
+  {
+    "arrival_flight_id": "AZ7553A",
+    "departure_flight_id": "LH9563D",
+    "min_transfer_minutes": 52,
+    "max_transfer_minutes": 161,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "AC8800A",
+    "departure_flight_id": "TK7698D",
+    "min_transfer_minutes": 36,
+    "max_transfer_minutes": 139,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "EI2828A",
+    "departure_flight_id": "AF3176D",
+    "min_transfer_minutes": 42,
+    "max_transfer_minutes": 175,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "AC1581A",
+    "departure_flight_id": "LX7076D",
+    "min_transfer_minutes": 52,
+    "max_transfer_minutes": 129,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "NH8632A",
+    "departure_flight_id": "LH9401D",
+    "min_transfer_minutes": 60,
+    "max_transfer_minutes": 121,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "BA9386A",
+    "departure_flight_id": "OS2986D",
+    "min_transfer_minutes": 34,
+    "max_transfer_minutes": 132,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "CX7312A",
+    "departure_flight_id": "BA9591D",
+    "min_transfer_minutes": 51,
+    "max_transfer_minutes": 157,
+    "is_critical": true
+  },
+  {
+    "arrival_flight_id": "AA8277A",
+    "departure_flight_id": "TK2047D",
+    "min_transfer_minutes": 47,
+    "max_transfer_minutes": 130,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "AC6330A",
+    "departure_flight_id": "AA2545D",
+    "min_transfer_minutes": 33,
+    "max_transfer_minutes": 123,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "SQ9723A",
+    "departure_flight_id": "MS7526D",
+    "min_transfer_minutes": 40,
+    "max_transfer_minutes": 132,
+    "is_critical": false
+  },
+  {
+    "arrival_flight_id": "JL3638A",
+    "departure_flight_id": "SK1113D",
+    "min_transfer_minutes": 42,
+    "max_transfer_minutes": 175,
+    "is_critical": false
+  }
+]

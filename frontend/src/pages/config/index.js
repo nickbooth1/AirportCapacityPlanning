@@ -14,7 +14,8 @@ import {
 import { 
   Settings as SettingsIcon, 
   ScheduleRounded as ScheduleIcon,
-  LocationCity as LocationCityIcon
+  LocationCity as LocationCityIcon,
+  AccessTime as TimeIcon
 } from '@mui/icons-material';
 
 const ConfigIndexPage = () => {
@@ -37,7 +38,7 @@ const ConfigIndexPage = () => {
         </Typography>
         
         <Grid container spacing={4} mt={2}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6} lg={3}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -59,7 +60,7 @@ const ConfigIndexPage = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6} lg={3}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -81,7 +82,7 @@ const ConfigIndexPage = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6} lg={3}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -98,6 +99,28 @@ const ConfigIndexPage = () => {
               <CardActions>
                 <Button size="small" color="primary" href="/config/turnaround-rules">
                   Manage Rules
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <TimeIcon fontSize="large" color="primary" />
+                  <Typography variant="h5" component="h2" ml={1}>
+                    Time Slots
+                  </Typography>
+                </Box>
+                <Typography>
+                  Define custom time slots that can be referenced throughout the system.
+                  Create slots for operational periods like morning peak, afternoon lull, or evening rush.
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small" color="primary" href="/config/time-slots">
+                  Manage Time Slots
                 </Button>
               </CardActions>
             </Card>

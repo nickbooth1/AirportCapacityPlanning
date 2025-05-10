@@ -1,0 +1,102 @@
+[
+  {
+    "aircraftTypeID": "B738",
+    "averageTurnaroundMinutes": 45,
+    "sizeCategory": "NARROW_BODY",
+    "currentFleetSize": 150,
+    "projectedRetirements": {
+      "2023": 5,
+      "2024": 10,
+      "2025": 15,
+      "2026": 20,
+      "2027": 25
+    },
+    "projectedAdditions": {
+      "2023": 15,
+      "2024": 20,
+      "2025": 25,
+      "2026": 20,
+      "2027": 15
+    }
+  },
+  {
+    "aircraftTypeID": "A320",
+    "averageTurnaroundMinutes": 40,
+    "sizeCategory": "NARROW_BODY",
+    "currentFleetSize": 180,
+    "projectedRetirements": {
+      "2023": 3,
+      "2024": 5,
+      "2025": 10,
+      "2026": 15,
+      "2027": 20
+    },
+    "projectedAdditions": {
+      "2023": 20,
+      "2024": 25,
+      "2025": 30,
+      "2026": 25,
+      "2027": 20
+    }
+  },
+  {
+    "aircraftTypeID": "B77W",
+    "averageTurnaroundMinutes": 90,
+    "sizeCategory": "WIDE_BODY",
+    "currentFleetSize": 50,
+    "projectedRetirements": {
+      "2023": 1,
+      "2024": 2,
+      "2025": 3,
+      "2026": 5,
+      "2027": 7
+    },
+    "projectedAdditions": {
+      "2023": 5,
+      "2024": 7,
+      "2025": 8,
+      "2026": 6,
+      "2027": 5
+    }
+  },
+  {
+    "aircraftTypeID": "A380",
+    "averageTurnaroundMinutes": 120,
+    "sizeCategory": "WIDE_BODY",
+    "currentFleetSize": 10,
+    "projectedRetirements": {
+      "2023": 1,
+      "2024": 2,
+      "2025": 2,
+      "2026": 1,
+      "2027": 1
+    },
+    "projectedAdditions": {
+      "2023": 0,
+      "2024": 0,
+      "2025": 0,
+      "2026": 0,
+      "2027": 0
+    }
+  },
+  {
+    "aircraftTypeID": "E190",
+    "averageTurnaroundMinutes": 30,
+    "sizeCategory": "REGIONAL",
+    "currentFleetSize": 80,
+    "projectedRetirements": {
+      "2023": 5,
+      "2024": 8,
+      "2025": 10,
+      "2026": 12,
+      "2027": 15
+    },
+    "projectedAdditions": {
+      "2023": 10,
+      "2024": 12,
+      "2025": 15,
+      "2026": 12,
+      "2027": 10
+    }
+  }
+] 

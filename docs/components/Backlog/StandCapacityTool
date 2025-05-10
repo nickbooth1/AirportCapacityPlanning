@@ -1,0 +1,81 @@
+Problem Statement:
+I need an algorithm which can identify the capacity by plane type at an airport, based upon the capability and availability of its stands, the gap between usage of stands, average turnaround times by plane type, and considering potential impacts from stand adjacencies.
+
+Algorithm:
+1.  **Define Time Slots for a Typical Day:**
+    *   Retrieve `SlotDurationMinutes` (e.g., from `OperationalSettings`).
+    *   Retrieve `OperatingDayStartTime` and `OperatingDayEndTime` (e.g., from `OperationalSettings`).
+    *   Generate all time slots for a single, typical operational day based on these settings.
+2.  **Get Stand Information:** For each stand at the airport, retrieve:
+    *   `StandID`.
+    *   `BaseCompatibleAircraftTypeIDs`: A list of aircraft type identifiers the stand can accommodate under optimal, non-restricted conditions.
+3.  **Get Aircraft Type Information:** For each relevant aircraft type, retrieve:
+    *   `AircraftTypeID`.
+    *   `AverageTurnaroundMinutes`.
+4.  **Get Operational Settings:**
+    *   `GapBetweenFlightsMinutes`.
+5.  **Get Stand Adjacency Rules:** Retrieve `StandAdjacencyRulesData`.
+6.  **Calculate Typical Day Capacity per Slot (Core Logic):**
+    *   Initialize two capacity data structures:
+        *   `BestCaseCapacity` (e.g., map of `Slot -> AircraftType -> Count`) to zero.
+        *   `WorstCaseCapacity` (e.g., map of `Slot -> AircraftType -> Count`) to zero.
+    *   For each generated time slot in the typical day:
+        *   For each stand (`current_stand`):
+            *   *(Maintenance is NOT considered in this baseline calculation)*
+
+            *   **Determine Stand Capability for Best Case:**
+                *   `current_stand_best_case_compatible_types` = `current_stand.BaseCompatibleAircraftTypeIDs`.
+
+            *   **Determine Stand Capability for Worst Case (due to Adjacencies):**
+                *   `current_stand_worst_case_compatible_types` = `current_stand.BaseCompatibleAircraftTypeIDs`.
+                *   Iterate through `StandAdjacencyRulesData`:
+                    *   If a rule applies where `current_stand` is an `AffectedStandID`:
+                        *   Assume the `PrimaryStandID` for that rule *is* occupied by an `AircraftTypeTrigger` that imposes the *most restrictive* possible limitation on `current_stand`.
+                        *   Adjust `current_stand_worst_case_compatible_types` based on this most restrictive rule (e.g., filter down to a smaller size category like "Code C", or remove prohibited types).
+                        *   *(Note: If multiple rules could affect `current_stand`, apply the one that results in the most significant restriction for this "worst-case" view).*
+
+            *   **Calculate for Best Case:**
+                *   For each `AircraftTypeID` in `current_stand_best_case_compatible_types`:
+                    *   Calculate total occupation time required: `AverageTurnaroundMinutes` + `GapBetweenFlightsMinutes`.
+                    *   Determine how many aircraft of this type can be processed on `current_stand` (0 or 1 usually).
+                    *   Increment the count in `BestCaseCapacity` for this `Slot` and `AircraftTypeID`.
+
+            *   **Calculate for Worst Case:**
+                *   For each `AircraftTypeID` in `current_stand_worst_case_compatible_types`:
+                    *   Calculate total occupation time required: `AverageTurnaroundMinutes` + `GapBetweenFlightsMinutes`.
+                    *   Determine how many aircraft of this type can be processed on `current_stand` (0 or 1 usually).
+                    *   Increment the count in `WorstCaseCapacity` for this `Slot` and `AircraftTypeID`.
+
+7.  **Store/Output Typical Day Baseline Capacities:**
+    *   The result provides two views:
+        *   `BestCaseCapacity`: Maximum aircraft of each type per slot, assuming no adjacency restrictions.
+        *   `WorstCaseCapacity`: Maximum aircraft of each type per slot, assuming the most restrictive potential adjacencies were active.
+
+8.  **Note on Interpretation:**
+    *   The `BestCaseCapacity` is a theoretical upper limit.
+    *   The `WorstCaseCapacity` is a theoretical lower bound if all most restrictive adjacencies were simultaneously active.
+    *   Actual operational capacity will vary dynamically based on real-time stand assignments and the specific adjacencies that become active. These figures provide a reference range.
+
+Data Structure:
+*   **`OperationalSettings`**: (Sourced from configuration, expected to be stored in a database and user-configurable)
+    *   `GapBetweenFlightsMinutes`: integer
+    *   `SlotDurationMinutes`: integer
+    *   `OperatingDayStartTime`: string (e.g., "HH:MM:SS")
+    *   `OperatingDayEndTime`: string (e.g., "HH:MM:SS")
+*   **`AircraftTypeData`**: (Array of objects)
+    *   `AircraftTypeID`: string
+    *   `AverageTurnaroundMinutes`: integer
+*   **`StandData`**: (Array of objects, representing all stands at the airport)
+    *   `StandID`: string
+    *   `BaseCompatibleAircraftTypeIDs`: array of strings (representing compatibility under optimal, non-restricted conditions)
+*   **`StandAdjacencyRulesData`**: (Array of objects, defining inter-stand restrictions. Sourced from configuration/database.)
+    *   `PrimaryStandID`: string (The stand whose use by a specific aircraft triggers a rule)
+    *   `AircraftTypeTrigger`: string or array of strings (Specific aircraft type(s) or size category on `PrimaryStandID` that causes the restriction)
+    *   `AffectedStandID`: string (The adjacent stand that is impacted by the rule)
+    *   `RestrictionType`: enum (e.g., `NO_USE_AFFECTED_STAND`, `MAX_AIRCRAFT_SIZE_REDUCED_TO`, `AIRCRAFT_TYPE_PROHIBITED_ON_AFFECTED_STAND`)
+    *   `RestrictedToAircraftTypeOrSize`: string (e.g., "Code C", specific aircraft type if `RestrictionType` implies a new limit for `AffectedStandID`)
+    *   `(Optional) Notes`: string (Descriptive text for the rule)
+
+Outputs:
+- Plane types capacity by slots (Best Case - no active adjacency restrictions)
+- Plane types capacity by slots (Worst Case - assuming most restrictive potential adjacencies active)
