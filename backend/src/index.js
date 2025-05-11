@@ -53,6 +53,12 @@ app.get('/test-db', async (req, res) => {
 // API routes
 app.use('/api/maintenance', maintenanceRoutes);
 
+// Import routes
+const apiRoutes = require('./routes');
+
+// Mount API routes
+app.use('/api', apiRoutes);
+
 // Import and use other routes
 const terminalsRoutes = require('./routes/terminals');
 const piersRoutes = require('./routes/piers');
@@ -66,6 +72,8 @@ const ghaRoutes = require('./routes/ghaRoutes');
 const airportConfigRoutes = require('./routes/airportConfig');
 const flightUploadRoutes = require('./routes/api/flightUpload');
 const flightDataRoutes = require('./routes/api/flightData');
+const standConstraintsRoutes = require('./routes/stand-constraints');
+const standAdjacenciesRoutes = require('./routes/standAdjacencies');
 
 app.use('/api/terminals', terminalsRoutes);
 app.use('/api/piers', piersRoutes);
@@ -79,6 +87,8 @@ app.use('/api/ghas', ghaRoutes);
 app.use('/api/airport-config', airportConfigRoutes);
 app.use('/api/flights/upload', flightUploadRoutes);
 app.use('/api/flights', flightDataRoutes);
+app.use('/api/stand-constraints', standConstraintsRoutes);
+app.use('/api/stand-adjacencies', standAdjacenciesRoutes);
 
 // Add mock routes for airlines and airport-config
 app.get('/api/airlines', (req, res) => {

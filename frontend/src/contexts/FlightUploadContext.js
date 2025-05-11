@@ -136,7 +136,7 @@ export const FlightUploadProvider = ({ children }) => {
           reject(new Error('Upload aborted'));
         });
         
-        xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL || ''}/api/flights/upload`, true);
+        xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL || ''}/flights/upload`, true);
         
         // Ensure credentials are included (cookies for auth)
         xhr.withCredentials = true;

@@ -7,7 +7,7 @@ import api from './api';
  * @returns {Promise<Object>} The settings data
  */
 export const getOperationalSettings = async () => {
-  const response = await api.get('/api/config/settings');
+  const response = await api.get('/config/settings');
   return response.data;
 };
 
@@ -17,7 +17,7 @@ export const getOperationalSettings = async () => {
  * @returns {Promise<Object>} The updated settings
  */
 export const updateOperationalSettings = async (settings) => {
-  const response = await api.put('/api/config/settings', settings);
+  const response = await api.put('/config/settings', settings);
   return response.data;
 };
 
@@ -28,7 +28,7 @@ export const updateOperationalSettings = async (settings) => {
  * @returns {Promise<Array>} List of turnaround rules
  */
 export const getAllTurnaroundRules = async () => {
-  const response = await api.get('/api/config/turnaround-rules');
+  const response = await api.get('/config/turnaround-rules');
   return response.data;
 };
 
@@ -38,7 +38,7 @@ export const getAllTurnaroundRules = async () => {
  * @returns {Promise<Object>} The turnaround rule
  */
 export const getTurnaroundRuleByAircraftTypeId = async (aircraftTypeId) => {
-  const response = await api.get(`/api/config/turnaround-rules/${aircraftTypeId}`);
+  const response = await api.get(`/config/turnaround-rules/${aircraftTypeId}`);
   return response.data;
 };
 
@@ -48,7 +48,7 @@ export const getTurnaroundRuleByAircraftTypeId = async (aircraftTypeId) => {
  * @returns {Promise<Object>} The created rule
  */
 export const createTurnaroundRule = async (ruleData) => {
-  const response = await api.post('/api/config/turnaround-rules', ruleData);
+  const response = await api.post('/config/turnaround-rules', ruleData);
   return response.data;
 };
 
@@ -59,7 +59,7 @@ export const createTurnaroundRule = async (ruleData) => {
  * @returns {Promise<Object>} The updated rule
  */
 export const updateTurnaroundRule = async (aircraftTypeId, ruleData) => {
-  const response = await api.put(`/api/config/turnaround-rules/${aircraftTypeId}`, ruleData);
+  const response = await api.put(`/config/turnaround-rules/${aircraftTypeId}`, ruleData);
   return response.data;
 };
 
@@ -69,7 +69,7 @@ export const updateTurnaroundRule = async (aircraftTypeId, ruleData) => {
  * @returns {Promise<void>}
  */
 export const deleteTurnaroundRule = async (aircraftTypeId) => {
-  await api.delete(`/api/config/turnaround-rules/${aircraftTypeId}`);
+  await api.delete(`/config/turnaround-rules/${aircraftTypeId}`);
 };
 
 // Time Slots
@@ -79,7 +79,7 @@ export const deleteTurnaroundRule = async (aircraftTypeId) => {
  * @returns {Promise<Array>} List of time slots
  */
 export const getTimeSlots = async () => {
-  const response = await api.get('/api/config/time-slots');
+  const response = await api.get('/config/time-slots');
   return response.data;
 };
 
@@ -88,7 +88,7 @@ export const getTimeSlots = async () => {
  * @returns {Promise<Array>} List of active time slots
  */
 export const getActiveTimeSlots = async () => {
-  const response = await api.get('/api/config/time-slots/active');
+  const response = await api.get('/config/time-slots/active');
   return response.data;
 };
 
@@ -98,7 +98,7 @@ export const getActiveTimeSlots = async () => {
  * @returns {Promise<Object>} The time slot
  */
 export const getTimeSlotById = async (id) => {
-  const response = await api.get(`/api/config/time-slots/${id}`);
+  const response = await api.get(`/config/time-slots/${id}`);
   return response.data;
 };
 
@@ -108,7 +108,7 @@ export const getTimeSlotById = async (id) => {
  * @returns {Promise<Object>} The created time slot
  */
 export const createTimeSlot = async (slotData) => {
-  const response = await api.post('/api/config/time-slots', slotData);
+  const response = await api.post('/config/time-slots', slotData);
   return response.data;
 };
 
@@ -119,7 +119,7 @@ export const createTimeSlot = async (slotData) => {
  * @returns {Promise<Object>} The updated time slot
  */
 export const updateTimeSlot = async (id, slotData) => {
-  const response = await api.put(`/api/config/time-slots/${id}`, slotData);
+  const response = await api.put(`/config/time-slots/${id}`, slotData);
   return response.data;
 };
 
@@ -129,5 +129,5 @@ export const updateTimeSlot = async (id, slotData) => {
  * @returns {Promise<void>}
  */
 export const deleteTimeSlot = async (id) => {
-  await api.delete(`/api/config/time-slots/${id}`);
+  await api.delete(`/config/time-slots/${id}`);
 }; 

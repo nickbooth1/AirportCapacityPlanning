@@ -5,10 +5,17 @@ const maintenanceController = require('../controllers/maintenanceController');
 // Maintenance requests routes
 router.get('/requests', maintenanceController.getAllRequests);
 router.post('/requests', maintenanceController.createRequest);
+
+// Specific routes must come before wildcard routes
+router.get('/requests/stand/:standId', maintenanceController.getRequestsByStand);
+
+// Request-specific capacity impact route
+router.get('/requests/:id/capacity-impact', maintenanceController.getRequestCapacityImpact);
+
+// Request-specific routes with ID
 router.get('/requests/:id', maintenanceController.getRequestById);
 router.put('/requests/:id', maintenanceController.updateRequest);
-router.put('/requests/:id/status', maintenanceController.updateRequestStatus); // Added for status update
-router.get('/requests/stand/:standId', maintenanceController.getRequestsByStand);
+router.put('/requests/:id/status', maintenanceController.updateRequestStatus);
 
 // Maintenance approvals routes
 router.post('/approvals', maintenanceController.createApproval);

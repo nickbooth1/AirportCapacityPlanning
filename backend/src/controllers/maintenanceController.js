@@ -169,6 +169,30 @@ exports.getCapacityImpact = async (req, res, next) => {
   }
 };
 
+/**
+ * Get capacity impact for a specific maintenance request
+ * This endpoint calculates how a maintenance request affects stand capacity
+ */
+exports.getRequestCapacityImpact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    console.log(`Calculating capacity impact for maintenance request ${id}`);
+    
+    const impactAnalysis = await maintenanceCapacityService.calculateRequestCapacityImpact(
+      id,
+      startDate || null,
+      endDate || null
+    );
+    
+    res.json(impactAnalysis);
+  } catch (error) {
+    console.error(`Error getting request capacity impact: ${error.message}`);
+    next(error);
+  }
+};
+
 // Recurring Maintenance (Add later if needed)
 /*
 exports.getAllRecurringSchedules = async (req, res, next) => { ... };

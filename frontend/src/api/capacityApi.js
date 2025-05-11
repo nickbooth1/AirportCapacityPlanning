@@ -10,7 +10,7 @@ import { API_BASE_URL } from '../config';
  */
 export const calculateCapacity = async (date) => {
   try {
-    const url = new URL(`${API_BASE_URL}/api/capacity/calculate`);
+    const url = new URL(`${API_BASE_URL}/capacity/calculate`);
     if (date) {
       url.searchParams.append('date', date);
     }
@@ -35,7 +35,7 @@ export const calculateCapacity = async (date) => {
  */
 export const getCapacitySettings = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/capacity/settings`);
+    const response = await fetch(`${API_BASE_URL}/capacity/settings`);
     
     if (!response.ok) {
       const errorData = await response.json();

@@ -13,8 +13,8 @@ exports.up = function(knex) {
           table.increments('id').primary();
           table.integer('stand_id').notNullable().references('id').inTable('stands');
           table.integer('adjacent_stand_id').notNullable().references('id').inTable('stands');
-          table.string('impact_direction').comment('Direction of impact (e.g., BOTH, TO_ADJACENT, FROM_ADJACENT)');
-          table.string('restriction_type').comment('Type of restriction (e.g., NO_USE_AFFECTED_STAND, MAX_AIRCRAFT_SIZE_REDUCED_TO, AIRCRAFT_TYPE_PROHIBITED_ON_AFFECTED_STAND)');
+          table.string('impact_direction').comment('Direction of impact (e.g., BOTH, LEFT, RIGHT, FRONT, BEHIND)');
+          table.string('restriction_type').comment('Type of restriction (e.g., no_use, size_limited, aircraft_type_limited)');
           table.string('max_aircraft_size_code').comment('Maximum aircraft size code when restricted');
           table.text('notes').nullable();
           table.boolean('is_active').defaultTo(true);

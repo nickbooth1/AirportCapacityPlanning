@@ -88,23 +88,11 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
           </ListItemIcon>
           <ListItemText primary="Maintenance Requests" />
         </ListItem>
-        <ListItem button component={Link} href="/maintenance/calendar">
-          <ListItemIcon>
-            <EventIcon />
-          </ListItemIcon>
-          <ListItemText primary="Maintenance Calendar" />
-        </ListItem>
-        <ListItem button component={Link} href="/maintenance/impact">
-          <ListItemIcon>
-            <InsertChartIcon />
-          </ListItemIcon>
-          <ListItemText primary="Capacity Impact" />
-        </ListItem>
-        <ListItem button component={Link} href="/capacity">
+        <ListItem button component={Link} href="/new-capacity">
           <ListItemIcon>
             <AssessmentIcon />
           </ListItemIcon>
-          <ListItemText primary="Stand Capacity" />
+          <ListItemText primary="Stand Capacity Tool" />
         </ListItem>
         <Divider sx={{ my: 1 }} />
         <ListItem button component={Link} href="/config">

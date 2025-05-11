@@ -32,11 +32,11 @@ const NavigationSidebar = () => {
         <ListItemText primary="Aircraft Types" />
       </ListItem>
       
-      <ListItem button component={Link} href="/capacity">
+      <ListItem button component={Link} href="/new-capacity">
         <ListItemIcon>
           <AssessmentIcon />
         </ListItemIcon>
-        <ListItemText primary="Stand Capacity" />
+        <ListItemText primary="Stand Capacity Tool" />
       </ListItem>
 
       <ListItem button component={Link} href="/config">

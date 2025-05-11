@@ -1,0 +1,38 @@
+# Airport Capacity Planner - Backend
+
+This repository contains the backend for the Airport Capacity Planner application.
+
+## Troubleshooting
+
+### API URL Issues
+
+If you are having issues with API connections:
+
+1. Check the baseURL in `frontend/src/lib/api.js` to make sure it has the correct prefix (e.g., with or without `/api`)
+2. Check individual API calls to make sure they aren't adding duplicate `/api` prefixes
+
+### Stand Capacity Calculation Issues
+
+If the stand capacity calculation shows zero values:
+
+1. **Check Stand-Aircraft Compatibility Data**: Make sure entries exist in the `stand_aircraft_constraints` table
+   - Run `node src/scripts/update-stand-constraints.js` to populate constraints
+
+2. **Model Adaptation Issue**: The most common problem is that the database model IDs need to be mapped to the ICAO/IATA codes
+   - Database constraint records use numeric IDs (e.g., `1`, `2`) 
+   - The capacity calculator expects aircraft type codes (e.g., `A320`, `B77W`)
+   - The `standCapacityService.adaptForCalculation` method must convert from IDs to codes
+   
+3. **Time Slots**: Ensure time slots are properly defined with valid time ranges
+   - Run `node src/scripts/update-time-slots.js` to create basic time slots
+
+4. **Turnaround Rules**: Make sure turnaround times are defined for aircraft types
+   - Run `node src/scripts/update-turnaround-rules.js` to create basic rules
+
+5. **Operational Settings**: Ensure operational settings exist in the database
+   - Create a record in the `operational_settings` table with valid values
+
+To verify that everything is set up correctly, you can run:
+```
+node src/scripts/verify-capacity-calculation.js
+``` 

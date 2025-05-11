@@ -30,12 +30,12 @@ const TurnaroundRuleForm = ({ rule, onSaveSuccess, onCancel }) => {
     const fetchAircraftTypes = async () => {
       try {
         setFetchingTypes(true);
-        const response = await api.get('/api/aircraft-types');
+        const response = await api.get('/aircraft-types');
         
         // Filter out aircraft types that already have rules (for new rule creation)
         if (!rule) {
           // For existing rules, we need to know which ones to exclude
-          const rulesResponse = await api.get('/api/config/turnaround-rules');
+          const rulesResponse = await api.get('/config/turnaround-rules');
           const existingRuleTypeIds = rulesResponse.data.map(r => r.aircraft_type_id);
           
           setAircraftTypes(response.data.filter(type => 
