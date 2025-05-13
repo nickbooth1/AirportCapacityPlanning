@@ -1,0 +1,32 @@
+[
+  {
+    "icao_code": "A320",
+    "size_category_code": "C",
+    "averageTurnaroundMinutes": 40,
+    "bodyType": "narrowBody"
+  },
+  {
+    "icao_code": "B738",
+    "size_category_code": "C",
+    "averageTurnaroundMinutes": 45,
+    "bodyType": "narrowBody"
+  },
+  {
+    "icao_code": "E190",
+    "size_category_code": "C",
+    "averageTurnaroundMinutes": 35,
+    "bodyType": "narrowBody"
+  },
+  {
+    "icao_code": "B77W",
+    "size_category_code": "E",
+    "averageTurnaroundMinutes": 90,
+    "bodyType": "wideBody"
+  },
+  {
+    "icao_code": "A350",
+    "size_category_code": "E",
+    "averageTurnaroundMinutes": 80,
+    "bodyType": "wideBody"
+  }
+] 

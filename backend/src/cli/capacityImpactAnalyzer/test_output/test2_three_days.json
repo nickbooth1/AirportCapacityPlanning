@@ -1,0 +1,110 @@
+[
+  {
+    "date": "2023-12-15",
+    "originalDailyCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "finalNetCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  },
+  {
+    "date": "2023-12-16",
+    "originalDailyCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "finalNetCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  },
+  {
+    "date": "2023-12-17",
+    "originalDailyCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "finalNetCapacity": {
+      "narrowBody": 0,
+      "wideBody": 0,
+      "total": 1872
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  }
+]

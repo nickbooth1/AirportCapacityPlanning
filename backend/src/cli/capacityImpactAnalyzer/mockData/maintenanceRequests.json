@@ -1,0 +1,102 @@
+[
+  {
+    "id": "MR001",
+    "stand_id_or_code": "S101",
+    "title": "S101 Pavement Repair",
+    "description": "Repair damaged concrete slabs at stand S101",
+    "status_id": 2,
+    "statusName": "Approved",
+    "start_datetime": "2023-12-15T08:00:00Z",
+    "end_datetime": "2023-12-15T14:00:00Z"
+  },
+  {
+    "id": "MR002",
+    "stand_id_or_code": "S102",
+    "title": "S102 Jetbridge Maintenance",
+    "description": "Scheduled maintenance of jetbridge at S102",
+    "status_id": 1,
+    "statusName": "Requested",
+    "start_datetime": "2023-12-15T10:00:00Z",
+    "end_datetime": "2023-12-15T12:00:00Z"
+  },
+  {
+    "id": "MR003",
+    "stand_id_or_code": "L101",
+    "title": "L101 Lighting System Upgrade",
+    "description": "Upgrade existing lighting system at L101",
+    "status_id": 4,
+    "statusName": "In Progress",
+    "start_datetime": "2023-12-15T09:00:00Z",
+    "end_datetime": "2023-12-15T17:00:00Z"
+  },
+  {
+    "id": "MR004",
+    "stand_id_or_code": "L102",
+    "title": "L102 Drainage System Repair",
+    "description": "Fix drainage issues at stand L102",
+    "status_id": 5,
+    "statusName": "Completed",
+    "start_datetime": "2023-12-14T08:00:00Z",
+    "end_datetime": "2023-12-15T10:00:00Z"
+  },
+  {
+    "id": "MR005",
+    "stand_id_or_code": "F103",
+    "title": "F103 Power Cable Installation",
+    "description": "Install new power cables for stand F103",
+    "status_id": 1,
+    "statusName": "Requested",
+    "start_datetime": "2023-12-16T07:00:00Z",
+    "end_datetime": "2023-12-16T15:00:00Z"
+  },
+  {
+    "id": "MR006",
+    "stand_id_or_code": "F104",
+    "title": "F104 GPU Replacement",
+    "description": "Replace faulty GPU at stand F104",
+    "status_id": 2,
+    "statusName": "Approved",
+    "start_datetime": "2023-12-16T08:00:00Z",
+    "end_datetime": "2023-12-16T12:00:00Z"
+  },
+  {
+    "id": "MR007",
+    "stand_id_or_code": "R104",
+    "title": "R104 Temporary Closure - Construction",
+    "description": "Temporary closure of R104 for terminal expansion project",
+    "status_id": 2,
+    "statusName": "Approved",
+    "start_datetime": "2023-12-15T00:00:00Z",
+    "end_datetime": "2023-12-17T23:59:59Z"
+  },
+  {
+    "id": "MR008",
+    "stand_id_or_code": "R103",
+    "title": "R103 Safety Inspection",
+    "description": "Annual safety inspection of stand R103",
+    "status_id": 4,
+    "statusName": "In Progress",
+    "start_datetime": "2023-12-15T13:00:00Z",
+    "end_datetime": "2023-12-15T15:00:00Z"
+  },
+  {
+    "id": "MR009",
+    "stand_id_or_code": "S103",
+    "title": "S103 Line Repainting",
+    "description": "Repainting of stand markings at S103",
+    "status_id": 2,
+    "statusName": "Approved",
+    "start_datetime": "2023-12-17T07:00:00Z",
+    "end_datetime": "2023-12-17T11:00:00Z"
+  },
+  {
+    "id": "MR010",
+    "stand_id_or_code": "S104",
+    "title": "S104 Emergency Repair",
+    "description": "Emergency repair of damaged fuel hydrant at S104",
+    "status_id": 2,
+    "statusName": "Approved",
+    "start_datetime": "2023-12-15T15:00:00Z",
+    "end_datetime": "2023-12-15T18:00:00Z"
+  }
+] 

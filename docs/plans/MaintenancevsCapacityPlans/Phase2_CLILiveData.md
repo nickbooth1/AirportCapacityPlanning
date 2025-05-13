@@ -1,87 +1,171 @@
-# Phase 2: CLI Tool with Live Data - Detailed Plan
+# Phase 2: CLI Tool with Live Data - Implementation Details
 
-## 1. Goal
+## Overview
 
-Transition the CLI tool developed in Phase 1 to use live data sources (actual service calls and database queries) instead of mock files. This phase validates the data integration aspects and ensures the analyzer works with real-world data structures and potential inconsistencies.
+Phase 2 builds upon the initial Phase 1 implementation by replacing mock data sources with live database and service connections. This allows the tool to analyze the impact of maintenance requests on stand capacity using real-time data from the airport's production systems.
 
-## 2. Prerequisites
+## Architecture
 
-- [ ] Completion of Phase 1: CLI tool functions correctly with mock data.
-- [ ] Backend services (`StandCapacityToolService`, `MaintenanceRequestService`) are accessible and operational.
-- [ ] Database models (`Stand`, `AircraftType`, `OperationalSettings`, `MaintenanceStatusType`, `MaintenanceRequest`) are defined and the database is populated with test data.
-- [ ] Clarity on how the CLI tool will authenticate or access backend services and the database (e.g., running within the backend context, API calls, direct DB connection setup for scripts).
+The architecture follows the same core pattern as Phase 1, but with the following key differences:
 
-## 3. Task Breakdown
+1. **Live Data Sources**: Instead of reading from static JSON files, the tool connects to the database and uses service classes to fetch and process data.
+2. **Async Processing**: The CLI is now asynchronous to handle database queries and service calls.
+3. **Error Handling**: More robust error handling and connection management for production use.
 
-### 3.1. Setup for Live Data Access
+### Core Components
 
-- [ ] **Database Connection:**
-    - [ ] Ensure the CLI script environment can connect to the development/test database (e.g., using Knex instance from `backend/src/utils/db.js` or a similar setup).
-    - [ ] Handle database connection configuration securely (e.g., via environment variables if the script is run in a standalone manner).
-- [ ] **Service Access:**
-    - [ ] Determine if `StandCapacityToolService` and `MaintenanceRequestService` can be directly imported and used within the `cli.js` script (if running as part of the backend Node.js application).
-    - [ ] Alternatively, if services are only accessible via API endpoints, prepare helper functions in `cli.js` to make these HTTP requests (e.g., using `axios` or `node-fetch`).
+1. **Live CLI Interface** (`live_cli.js`): The main entry point with command-line argument handling and orchestration.
+2. **Database Connector** (`db.js`): Utility for database connection management.
+3. **Services**:
+   - `StandCapacityToolService`: Calculates stand capacity based on infrastructure and operational settings.
+   - `MaintenanceRequestService`: Fetches and manages maintenance request data.
+4. **Analyzer Module** (`analyzer.js`): The same core algorithm from Phase 1, used to process capacity impact.
 
-### 3.2. Modify Data Fetching in `cli.js` (or a new `live_cli.js`)
+## Implementation
 
-- [ ] **Replace Mock `dailyGrossCapacityTemplate.json` Loading:**
-    - [ ] Implement a function to call `standCapacityToolService.calculateCapacity({ useDefinedTimeSlots: false, standIds: [/*all active stand DB IDs*/] })`.
-    - [ ] Ensure the output from this service call is transformed into the `dailyGrossCapacityTemplate` structure expected by `analyzer.js` (specifically the `bestCaseCapacity` and `timeSlots` parts).
-- [ ] **Replace Mock `maintenanceRequests.json` Loading:**
-    - [ ] Implement a function to call `maintenanceRequestService.getAllRequests({ startDate: options.startDate, endDate: options.endDate, status: options.maintenanceStatusIdsToInclude.definite.concat(options.maintenanceStatusIdsToInclude.potential) })`.
-    - [ ] Map `stand_id` from database to `standCode` if necessary for consistency with `analyzer.js` expectations.
-    - [ ] Fetch `statusName` by joining with `MaintenanceStatusType` or doing a lookup.
-- [ ] **Replace Mock `stands.json` Loading:**
-    - [ ] Implement a function to query the `stands` table (e.g., `Stand.query().where('is_active', true)`).
-    - [ ] For each stand, determine its `compatibleAircraftICAOs` by replicating the logic from `standCapacityToolService.convertStandsData()` (query `stand_aircraft_constraints`, then fallback to `max_aircraft_size_code`). This might involve creating a shared utility or adapting parts of the service logic.
-    - [ ] Structure the data into the `Map<standCode, { dbId, compatibleAircraftICAOs }>` format.
-- [ ] **Replace Mock `aircraftTypes.json` Loading:**
-    - [ ] Implement a function to query the `aircraft_types` table (e.g., `AircraftType.query().where('is_active', true)`).
-    - [ ] Include `icao_code`, `size_category_code`, and `averageTurnaroundMinutes` (this might require a join or separate query for turnaround rules, similar to `standCapacityToolService.getAircraftTypes`).
-    - [ ] Apply the `getBodyType(sizeCategoryCode)` utility.
-    - [ ] Structure data into `Map<icaoCode, { sizeCategory, averageTurnaroundMinutes, bodyType }>`.
-- [ ] **Replace Mock `operationalSettings.json` Loading:**
-    - [ ] Implement a function to query the `operational_settings` table (e.g., `OperationalSettings.query().first()`).
-    - [ ] Extract `default_gap_minutes` and `slot_duration_minutes`.
-- [ ] **Replace Mock `maintenanceStatusTypes.json` Loading (if not hardcoded):**
-    - [ ] Implement a function to query `maintenance_status_types` table if a dynamic lookup is preferred over hardcoding in `analyzer.js`.
+### Database Connection
 
-### 3.3. Adapt `analyzer.js` (if necessary)
+The database connector (`db.js`) provides a consistent interface for connecting to the PostgreSQL database and uses the application's Knex configuration. It includes:
 
-- [ ] The core `analyzer.js` logic should ideally require minimal changes if the data structures prepared by `cli.js` (now from live sources) match those from the mock data phase.
-- [ ] Review and adjust any assumptions made about data fields that might differ slightly when coming from live sources (e.g., date formats, exact field names after joins).
+- Connection initialization
+- Connection pooling
+- Graceful connection termination
+- Error handling
 
-### 3.4. Update `cli.js` Command-Line Arguments
+### Services
 
-- [ ] Remove `--mockDataDir` argument as it's no longer needed.
-- [ ] Add any new arguments required for live data fetching if parameters like specific stand IDs for analysis are to be fetched live rather than using "all active".
-- [ ] Ensure `--startDate` and `--endDate` are still primary inputs.
+#### StandCapacityToolService
 
-### 3.5. Testing with Live Data
+This service is responsible for calculating the baseline stand capacity:
 
-- [ ] **Environment Setup:** Ensure the CLI tool is run in an environment where it has access to the database and necessary services/APIs.
-- [ ] **Test Scenarios:**
-    - [ ] Run with a small, controlled set of live data to verify connections and basic output.
-    - [ ] Test with various date ranges against the live data.
-    - [ ] Monitor logs from `standCapacityToolService` and `maintenanceRequestService` if calls are made to them, to ensure they are receiving correct parameters.
-    - [ ] Compare output against known maintenance schedules and expected capacity impacts in the test/dev environment.
-- [ ] **Data Consistency Checks:**
-    - [ ] Verify that `standCode` from maintenance requests correctly maps to stands used in capacity calculations.
-    - [ ] Ensure `aircraftTypeICAO` codes are consistent across all data sources.
-- [ ] **Error Handling:**
-    - [ ] Test how the CLI tool handles failures in fetching data from any live source (e.g., database down, service error).
-    - [ ] Implement more robust error reporting (e.g., specific error messages for data fetching failures).
+- Fetches time slots from the database or generates defaults
+- For each time slot, calculates the capacity for each aircraft type
+- Takes into account stand-aircraft compatibility constraints
+- Applies operational parameters (turnaround times, buffer times)
 
-### 3.6. Refine and Document
+#### MaintenanceRequestService
 
-- [ ] Update `README.md` in `capacityImpactAnalyzer/` with new instructions for running the CLI tool with live data, including any environment setup or configuration needed.
-- [ ] Document any discrepancies found between mock data assumptions and live data behavior, and how they were resolved.
+This service handles maintenance request data:
 
-## 4. Definition of Done for Phase 2
+- Fetches maintenance requests for a specified date range
+- Filters by status types (Requested, Approved, In Progress, etc.)
+- Joins with related data (stand codes, status names, etc.)
+- Formats the data for compatibility with the analyzer
 
-- [ ] The CLI tool can successfully fetch all required data from live backend services and/or the database.
-- [ ] The data fetched is correctly transformed and fed into the `analyzer.js` core logic.
-- [ ] The CLI tool produces the same structured JSON output as in Phase 1, but based on live data.
-- [ ] Test scenarios with live data confirm the tool's ability to connect to sources and produce plausible results.
-- [ ] Error handling for live data fetching is implemented.
-- [ ] The `README.md` is updated for live data mode. 
+### Live CLI
+
+The `live_cli.js` script provides the command-line interface:
+
+- Parses command-line arguments (start date, end date, output file)
+- Initializes database connection
+- Loads live data through services
+- Calls the analyzer with the loaded data
+- Outputs results to console or file
+- Handles proper cleanup (database connection closing)
+
+## Usage
+
+```bash
+# Run analysis with live data for a specific date range
+node live_cli.js --startDate 2023-12-15 --endDate 2023-12-17
+
+# Save results to a file
+node live_cli.js --startDate 2023-12-15 --endDate 2023-12-17 --outputFile ./output.json
+```
+
+## Expected Output
+
+The output format remains consistent with Phase 1, providing a detailed breakdown of capacity impacts:
+
+```json
+[
+  {
+    "date": "2023-12-15",
+    "originalDailyCapacity": {
+      "narrowBody": 216,
+      "wideBody": 82,
+      "total": 298
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 208,
+      "wideBody": 73,
+      "total": 281
+    },
+    "finalNetCapacity": {
+      "narrowBody": 204,
+      "wideBody": 73,
+      "total": 277
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 8,
+          "wideBody": 9,
+          "total": 17
+        },
+        "requests": [
+          // Maintenance requests causing definite impact
+        ]
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 4,
+          "wideBody": 0,
+          "total": 4
+        },
+        "requests": [
+          // Maintenance requests causing potential impact
+        ]
+      }
+    }
+  },
+  // Additional days...
+]
+```
+
+## Testing
+
+To test the live implementation:
+
+1. **Database Connection**:
+   ```bash
+   # Verify database connection
+   node -e "require('./src/utils/db').initialize().then(() => console.log('Connected')).catch(e => console.error(e)).finally(() => process.exit())"
+   ```
+
+2. **Date Range Tests**:
+   ```bash
+   # Test with a single day
+   node live_cli.js --startDate 2023-12-15 --endDate 2023-12-15
+   
+   # Test with multiple days
+   node live_cli.js --startDate 2023-12-15 --endDate 2023-12-17
+   
+   # Test with a month-long range
+   node live_cli.js --startDate 2023-12-01 --endDate 2023-12-31
+   ```
+
+3. **Error Handling**:
+   ```bash
+   # Test invalid date format
+   node live_cli.js --startDate 15-12-2023 --endDate 2023-12-17
+   
+   # Test start date after end date
+   node live_cli.js --startDate 2023-12-18 --endDate 2023-12-17
+   ```
+
+## Implementation Status
+
+- [x] Database connector
+- [x] StandCapacityToolService implementation
+- [x] MaintenanceRequestService implementation 
+- [x] Live CLI implementation with error handling
+- [x] Documentation
+- [ ] Integration tests
+- [ ] Performance optimization for large date ranges
+
+## Next Steps
+
+1. Complete comprehensive testing with live database connections
+2. Optimize performance for large date ranges (potentially using batch processing)
+3. Move to Phase 3: Backend Service Implementation with API endpoints for the frontend 

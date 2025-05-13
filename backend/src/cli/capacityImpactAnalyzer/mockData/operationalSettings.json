@@ -1,0 +1,6 @@
+{
+  "default_gap_minutes": 15,
+  "slot_duration_minutes": 60,
+  "operating_start_time": "06:00:00",
+  "operating_end_time": "22:00:00"
+} 

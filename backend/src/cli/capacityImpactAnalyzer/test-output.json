@@ -1,0 +1,211 @@
+[
+  {
+    "date": "2023-12-15",
+    "originalDailyCapacity": {
+      "narrowBody": 532,
+      "wideBody": 168,
+      "total": 700
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 499,
+      "wideBody": 102,
+      "total": 601
+    },
+    "finalNetCapacity": {
+      "narrowBody": 490,
+      "wideBody": 102,
+      "total": 592
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 33,
+          "wideBody": 66,
+          "total": 99
+        },
+        "requests": [
+          {
+            "id": "MR004",
+            "title": "L102 Drainage System Repair",
+            "standCode": "L102",
+            "statusName": "Completed",
+            "startTime": "2023-12-14T08:00:00Z",
+            "endTime": "2023-12-15T10:00:00Z"
+          },
+          {
+            "id": "MR007",
+            "title": "R104 Temporary Closure - Construction",
+            "standCode": "R104",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00Z",
+            "endTime": "2023-12-17T23:59:59Z"
+          },
+          {
+            "id": "MR001",
+            "title": "S101 Pavement Repair",
+            "standCode": "S101",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T08:00:00Z",
+            "endTime": "2023-12-15T14:00:00Z"
+          },
+          {
+            "id": "MR003",
+            "title": "L101 Lighting System Upgrade",
+            "standCode": "L101",
+            "statusName": "In Progress",
+            "startTime": "2023-12-15T09:00:00Z",
+            "endTime": "2023-12-15T17:00:00Z"
+          },
+          {
+            "id": "MR008",
+            "title": "R103 Safety Inspection",
+            "standCode": "R103",
+            "statusName": "In Progress",
+            "startTime": "2023-12-15T13:00:00Z",
+            "endTime": "2023-12-15T15:00:00Z"
+          },
+          {
+            "id": "MR010",
+            "title": "S104 Emergency Repair",
+            "standCode": "S104",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T15:00:00Z",
+            "endTime": "2023-12-15T18:00:00Z"
+          }
+        ]
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 9,
+          "wideBody": 0,
+          "total": 9
+        },
+        "requests": [
+          {
+            "id": "MR002",
+            "title": "S102 Jetbridge Maintenance",
+            "standCode": "S102",
+            "statusName": "Requested",
+            "startTime": "2023-12-15T10:00:00Z",
+            "endTime": "2023-12-15T12:00:00Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "date": "2023-12-16",
+    "originalDailyCapacity": {
+      "narrowBody": 532,
+      "wideBody": 168,
+      "total": 700
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 517,
+      "wideBody": 136,
+      "total": 653
+    },
+    "finalNetCapacity": {
+      "narrowBody": 490,
+      "wideBody": 136,
+      "total": 626
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 15,
+          "wideBody": 32,
+          "total": 47
+        },
+        "requests": [
+          {
+            "id": "MR007",
+            "title": "R104 Temporary Closure - Construction",
+            "standCode": "R104",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00Z",
+            "endTime": "2023-12-17T23:59:59Z"
+          },
+          {
+            "id": "MR006",
+            "title": "F104 GPU Replacement",
+            "standCode": "F104",
+            "statusName": "Approved",
+            "startTime": "2023-12-16T08:00:00Z",
+            "endTime": "2023-12-16T12:00:00Z"
+          }
+        ]
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 27,
+          "wideBody": 0,
+          "total": 27
+        },
+        "requests": [
+          {
+            "id": "MR005",
+            "title": "F103 Power Cable Installation",
+            "standCode": "F103",
+            "statusName": "Requested",
+            "startTime": "2023-12-16T07:00:00Z",
+            "endTime": "2023-12-16T15:00:00Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "date": "2023-12-17",
+    "originalDailyCapacity": {
+      "narrowBody": 532,
+      "wideBody": 168,
+      "total": 700
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 517,
+      "wideBody": 136,
+      "total": 653
+    },
+    "finalNetCapacity": {
+      "narrowBody": 517,
+      "wideBody": 136,
+      "total": 653
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 15,
+          "wideBody": 32,
+          "total": 47
+        },
+        "requests": [
+          {
+            "id": "MR007",
+            "title": "R104 Temporary Closure - Construction",
+            "standCode": "R104",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00Z",
+            "endTime": "2023-12-17T23:59:59Z"
+          },
+          {
+            "id": "MR009",
+            "title": "S103 Line Repainting",
+            "standCode": "S103",
+            "statusName": "Approved",
+            "startTime": "2023-12-17T07:00:00Z",
+            "endTime": "2023-12-17T11:00:00Z"
+          }
+        ]
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  }
+]

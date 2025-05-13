@@ -1,0 +1,82 @@
+[
+  {
+    "code": "S101",
+    "dbId": 1,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "S102",
+    "dbId": 2,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "S103",
+    "dbId": 3,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "S104",
+    "dbId": 4,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "S105",
+    "dbId": 5,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "L101",
+    "dbId": 6,
+    "compatibleAircraftICAOs": ["B77W", "A350"]
+  },
+  {
+    "code": "L102",
+    "dbId": 7,
+    "compatibleAircraftICAOs": ["B77W", "A350"]
+  },
+  {
+    "code": "L103",
+    "dbId": 8,
+    "compatibleAircraftICAOs": ["B77W", "A350"]
+  },
+  {
+    "code": "F101",
+    "dbId": 9,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "F102",
+    "dbId": 10,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "F103",
+    "dbId": 11,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "F104",
+    "dbId": 12,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "R101",
+    "dbId": 13,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "R102",
+    "dbId": 14,
+    "compatibleAircraftICAOs": ["A320", "B738", "E190"]
+  },
+  {
+    "code": "R103",
+    "dbId": 15,
+    "compatibleAircraftICAOs": ["B77W", "A350"]
+  },
+  {
+    "code": "R104",
+    "dbId": 16,
+    "compatibleAircraftICAOs": ["B77W", "A350"]
+  }
+] 
