@@ -25,7 +25,7 @@ const BATCH_SIZE = 1000;
 const createBatcher = (processBatch, size = BATCH_SIZE) => {
   let batch = [];
   
-  return through2.obj(
+  const batcher = through2.obj(
     function (chunk, enc, callback) {
       batch.push(chunk);
       
@@ -50,6 +50,16 @@ const createBatcher = (processBatch, size = BATCH_SIZE) => {
       }
     }
   );
+  
+  // Add explicit flush method
+  batcher.flush = async function() {
+    if (batch.length > 0) {
+      await processBatch(batch);
+      batch = [];
+    }
+  };
+  
+  return batcher;
 };
 
 class FlightValidationService {
@@ -61,218 +71,129 @@ class FlightValidationService {
   }
 
   /**
-   * Validate flight data for a specific upload
-   * Uses streaming and batch processing for high performance
-   * @param {number} uploadId - The ID of the upload to validate
-   * @returns {Promise<Object>} - Validation results summary
+   * Handle batch updates for flight validation results
+   * @param {Array} batch - Batch of flight validation results to update
+   * @returns {Promise<void>}
    */
-  async validateFlightData(uploadId) {
-    console.log(`Starting validation for upload ${uploadId}`);
-    const startTime = performance.now();
+  async handleBatch(batch) {
+    if (!batch || batch.length === 0) return;
     
     try {
-      // Get the upload record
-      const upload = await db('flight_uploads').where({ id: uploadId }).first();
-      if (!upload) {
-        throw new Error(`Upload ${uploadId} not found`);
-      }
-      
-      // Create or update validation record
-      let validation = await db('flight_validations')
-        .where({ upload_id: uploadId })
-        .first();
-      
-      if (!validation) {
-        // Create new validation record
-        const [validationId] = await db('flight_validations')
-          .insert({
-            upload_id: uploadId,
-            validation_status: 'in_progress',
-            started_at: new Date()
-          });
-        
-        validation = await db('flight_validations')
-          .where({ id: validationId })
-          .first();
-      } else {
-        // Update existing validation record
-        await db('flight_validations')
-          .where({ id: validation.id })
+      // For each flight, prepare a separate update query with proper JSON casting
+      // This avoids the type mismatch error
+      for (const item of batch) {
+        await db('flights')
+          .where({ id: item.id })
           .update({
-            validation_status: 'in_progress',
-            valid_count: 0,
-            invalid_count: 0,
-            started_at: new Date(),
-            completed_at: null
+            validation_status: item.validation_status,
+            validation_errors: db.raw('?::json', [
+              item.validation_errors ? JSON.stringify(item.validation_errors) : null
+            ]),
+            airline_name: item.airline_name,
+            origin_destination_name: item.origin_destination_name
           });
       }
-      
-      // Process in batches using streams
+    } catch (error) {
+      console.error('Error updating flight validation batch:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Validate flight data for a specific upload
+   * 
+   * @param {number} uploadId - Upload ID
+   * @returns {Promise<{validFlights: number, invalidFlights: number, totalFlights: number}>} - Validation results
+   */
+  async validateFlightData(uploadId) {
+    console.info(`Starting validation for upload ${uploadId}`);
+    try {
+      // Get all flights for this upload
+      const flights = await db('flights')
+        .where({ upload_id: uploadId })
+        .select('*');
+
+      if (!flights || flights.length === 0) {
+        console.warn(`No flights found for upload ${uploadId}`);
+        return {
+          validFlights: 0,
+          invalidFlights: 0,
+          totalFlights: 0
+        };
+      }
+
+      // Process flights in batches to prevent memory issues
       let validCount = 0;
       let invalidCount = 0;
-      let totalProcessed = 0;
+      let processedCount = 0;
       
-      const fileStream = fs.createReadStream(upload.file_path);
+      // Create an array to collect batch operations
+      let batchOperations = [];
       
-      const handleBatch = async (flightBatch) => {
-        // Validate flights in parallel within batch
-        const validationPromises = flightBatch.map(flight => this.validateSingleFlight({
-          ...flight,
-          upload_id: uploadId
-        }));
+      // Use for loop instead of for...of with destructuring which can cause iteration errors
+      for (let i = 0; i < flights.length; i++) {
+        const flight = flights[i];
+        const validationResult = await this.validateSingleFlight(flight);
         
-        const validationResults = await Promise.all(validationPromises);
-        
-        // Prepare updates for batch processing
-        const toUpdate = validationResults.map(result => {
-          const updateData = {
-            id: result.flightId,
-            validation_status: result.isValid ? 'valid' : 'invalid',
-            validation_errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null
-          };
-          
-          // Add enriched data if available
-          if (result.enrichedData) {
-            if (result.enrichedData.airline_name) {
-              updateData.airline_name = result.enrichedData.airline_name;
-            }
-            if (result.enrichedData.origin_destination_name) {
-              updateData.origin_destination_name = result.enrichedData.origin_destination_name;
-            }
-          }
-          
-          return updateData;
-        });
-        
-        // Count results
-        validCount += validationResults.filter(r => r.isValid).length;
-        invalidCount += validationResults.filter(r => !r.isValid).length;
-        totalProcessed += flightBatch.length;
-        
-        // Update database in a single transaction for better performance
-        await db.transaction(async (trx) => {
-          // Process updates in chunks to avoid query size limits
-          const updateChunks = [];
-          for (let i = 0; i < toUpdate.length; i += 500) {
-            updateChunks.push(toUpdate.slice(i, i + 500));
-          }
-          
-          for (const chunk of updateChunks) {
-            // Build a case statement for each field to update
-            // This is more efficient than running separate queries
-            await trx.raw(`
-              UPDATE flights 
-              SET validation_status = CASE 
-                ${chunk.map(f => `WHEN id = ${f.id} THEN '${f.validation_status}'`).join(' ')}
-              END,
-              validation_errors = CASE 
-                ${chunk.map(f => `WHEN id = ${f.id} THEN ${f.validation_errors ? `'${f.validation_errors.replace(/'/g, "''")}'` : 'NULL'}`).join(' ')}
-              END,
-              airline_name = CASE 
-                ${chunk.map(f => `WHEN id = ${f.id} THEN ${f.airline_name ? `'${f.airline_name.replace(/'/g, "''")}'` : 'NULL'}`).join(' ')}
-              END,
-              origin_destination_name = CASE 
-                ${chunk.map(f => `WHEN id = ${f.id} THEN ${f.origin_destination_name ? `'${f.origin_destination_name.replace(/'/g, "''")}'` : 'NULL'}`).join(' ')}
-              END
-              WHERE id IN (${chunk.map(f => f.id).join(',')})
-            `);
-          }
-          
-          // Create validation error records for invalid flights
-          const errorRecords = [];
-          
-          for (const result of validationResults) {
-            if (!result.isValid && result.errors.length > 0) {
-              result.errors.forEach(error => {
-                errorRecords.push({
-                  flight_id: result.flightId,
-                  error_type: error.code.toLowerCase(),
-                  error_severity: error.severity || 'error',
-                  error_message: error.message,
-                  created_at: new Date(),
-                  updated_at: new Date()
-                });
-              });
-            }
-          }
-          
-          // Insert error records in chunks
-          if (errorRecords.length > 0) {
-            const errorChunks = [];
-            for (let i = 0; i < errorRecords.length; i += 500) {
-              errorChunks.push(errorRecords.slice(i, i + 500));
-            }
-            
-            for (const chunk of errorChunks) {
-              await trx('flight_validation_errors').insert(chunk);
-            }
-          }
-        });
-        
-        // Log progress periodically
-        if (totalProcessed % 5000 === 0 || totalProcessed < 5000) {
-          console.log(`Validated ${totalProcessed} flights (${validCount} valid, ${invalidCount} invalid)`);
+        // Update counters based on validation result
+        if (validationResult.isValid) {
+          validCount++;
+        } else {
+          invalidCount++;
         }
-      };
-      
-      await new Promise((resolve, reject) => {
-        let flightId = 0;
         
-        fileStream
-          .pipe(csvParser())
-          .pipe(through2.obj(function(chunk, enc, callback) {
-            // Transform CSV row to flight object and assign ID
-            flightId++;
-            this.push({
-              ...chunk,
-              id: flightId  // Temp ID for tracking
-            });
-            callback();
-          }))
-          .pipe(createBatcher(handleBatch))
-          .on('finish', resolve)
-          .on('error', reject);
-      });
+        // Add to batch operations
+        batchOperations.push({
+          id: flight.id,
+          validation_status: validationResult.isValid ? 'valid' : 'invalid',
+          validation_errors: validationResult.isValid ? null : JSON.stringify(validationResult.errors),
+          airline_name: validationResult.airline_name || null,
+          origin_destination_name: validationResult.origin_destination_name || null
+        });
+        
+        // Process batch when it reaches the batch size
+        if (batchOperations.length >= BATCH_SIZE) {
+          await this.handleBatch(batchOperations);
+          batchOperations = [];
+        }
+        
+        processedCount++;
+      }
       
-      const endTime = performance.now();
-      const duration = (endTime - startTime) / 1000;
-      console.log(`Validation completed in ${duration.toFixed(2)} seconds`);
+      // Process any remaining batch operations
+      if (batchOperations.length > 0) {
+        await this.handleBatch(batchOperations);
+      }
       
-      // Update validation record
-      await db('flight_validations')
-        .where({ id: validation.id })
+      // Update upload record with validation status
+      await db('flight_uploads')
+        .where({ id: uploadId })
         .update({
           validation_status: 'completed',
-          valid_count: validCount,
-          invalid_count: invalidCount,
-          completed_at: new Date()
+          processing_status: 'validated',
+          valid_flights: validCount,
+          invalid_flights: invalidCount,
+          total_flights: validCount + invalidCount
         });
-      
-      // Update cache for fast access
-      this.validationCache = this.validationCache || {};
-      this.validationCache[uploadId] = {
-        totalFlights: totalProcessed,
-        validFlights: validCount,
-        invalidFlights: invalidCount,
-        updatedAt: new Date()
-      };
+
+      console.info(`Validated ${processedCount} flights (${validCount} valid, ${invalidCount} invalid)`);
+      console.info(`Validation completed for upload ${uploadId}`);
       
       return {
-        uploadId,
-        totalFlights: totalProcessed,
         validFlights: validCount,
         invalidFlights: invalidCount,
-        duration
+        totalFlights: processedCount
       };
     } catch (error) {
-      console.error(`Error validating flights for upload ${uploadId}:`, error);
+      console.error(`Error validating flights for upload ${uploadId}: ${error}`);
       
-      // Update validation record to failed status
-      await db('flight_validations')
-        .where({ upload_id: uploadId })
+      // Update upload record with error
+      await db('flight_uploads')
+        .where({ id: uploadId })
         .update({
           validation_status: 'failed',
-          completed_at: new Date()
+          processing_status: 'error',
+          error_message: error.message
         });
       
       throw error;
@@ -501,10 +422,22 @@ class FlightValidationService {
         query = query.where({ validation_status: validationStatus });
       }
       
-      // Get total count with optimized query
-      const countQuery = query.clone().count('id as count');
-      const { count } = await countQuery.first();
-      const total = parseInt(count, 10);
+      // Get total count with a separate query instead of including it in the main query
+      const countQuery = db('flights')
+        .where({ upload_id: uploadId })
+        .count('id as count');
+      
+      // Apply the same filters to the count query
+      if (flightNature) {
+        countQuery.where({ flight_nature: flightNature });
+      }
+      
+      if (validationStatus) {
+        countQuery.where({ validation_status: validationStatus });
+      }
+      
+      const countResult = await countQuery.first();
+      const total = parseInt(countResult.count, 10);
       
       // Calculate pagination
       const offset = (page - 1) * limit;

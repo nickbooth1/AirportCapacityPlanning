@@ -30,22 +30,40 @@ class FlightUploadService {
    * @param {string} uploadInfo.displayName - Custom display name for the upload
    * @param {string} uploadInfo.filePath - Path to uploaded file
    * @param {number} uploadInfo.fileSize - File size in bytes
-   * @param {string|number} uploadInfo.userId - User ID
    * @returns {Promise<number>} Upload ID
    */
   async recordUpload(uploadInfo) {
-    const { filename, displayName, filePath, fileSize, userId } = uploadInfo;
+    const { filename, displayName, filePath, fileSize } = uploadInfo;
     
     try {
-      const [id] = await db('flight_uploads').insert({
+      console.log('Recording upload with info:', { filename, displayName, fileSize });
+      
+      // Using returning to explicitly get the ID back
+      const result = await db('flight_uploads').insert({
         filename,
         display_name: displayName, // Store the custom display name
         file_path: filePath,
         file_size: fileSize,
-        user_id: userId,
         upload_status: 'pending',
-        created_at: db.fn.now()
-      });
+        created_at: new Date()
+      }).returning('id');
+      
+      // Handle different database return formats (PostgreSQL vs SQLite)
+      let id;
+      if (Array.isArray(result) && result.length > 0) {
+        // PostgreSQL returns array of objects
+        id = result[0].id || result[0];
+      } else if (typeof result === 'number') {
+        // SQLite might return just the number
+        id = result;
+      } else {
+        // Fallback - get the last inserted ID
+        const lastInsertResult = await db('flight_uploads')
+          .select('id')
+          .orderBy('id', 'desc')
+          .first();
+        id = lastInsertResult.id;
+      }
       
       console.log(`Upload recorded with ID: ${id}`);
       return id;
@@ -64,7 +82,6 @@ class FlightUploadService {
    * @param {number} uploadInfo.fileSize - File size in bytes
    * @param {number} uploadInfo.chunkSize - Chunk size in bytes
    * @param {number} uploadInfo.totalChunks - Total number of chunks
-   * @param {string|number} uploadInfo.userId - User ID
    * @param {string} uploadInfo.chunksPath - Path to chunks directory
    * @returns {Promise<number>} Upload ID
    */
@@ -75,25 +92,51 @@ class FlightUploadService {
       displayName,
       fileSize, 
       chunkSize, 
-      totalChunks, 
-      userId, 
+      totalChunks,
       chunksPath 
     } = uploadInfo;
     
     try {
-      const [id] = await db('flight_uploads').insert({
+      console.log('Recording chunked upload with info:', { 
+        uploadId, 
+        filename, 
+        displayName,
+        fileSize, 
+        chunkSize, 
+        totalChunks,
+        chunksPath 
+      });
+      
+      // Using returning to explicitly get the ID back
+      const result = await db('flight_uploads').insert({
         external_id: uploadId,
         filename,
         display_name: displayName, // Store the custom display name
         file_size: fileSize,
-        user_id: userId,
         upload_status: 'uploading',
         upload_type: 'chunked',
         total_chunks: totalChunks,
         uploaded_chunks: 0,
         chunks_path: chunksPath,
-        created_at: db.fn.now()
-      });
+        created_at: new Date()
+      }).returning('id');
+      
+      // Handle different database return formats (PostgreSQL vs SQLite)
+      let id;
+      if (Array.isArray(result) && result.length > 0) {
+        // PostgreSQL returns array of objects
+        id = result[0].id || result[0];
+      } else if (typeof result === 'number') {
+        // SQLite might return just the number
+        id = result;
+      } else {
+        // Fallback - get the last inserted ID
+        const lastInsertResult = await db('flight_uploads')
+          .select('id')
+          .orderBy('id', 'desc')
+          .first();
+        id = lastInsertResult.id;
+      }
       
       console.log(`Chunked upload recorded with ID: ${id}`);
       return id;
@@ -340,6 +383,14 @@ class FlightUploadService {
     const startMemory = getMemoryUsage();
     
     try {
+      // Check if this upload has been mapped, and use the mapped file if available
+      const upload = await this.getUploadById(uploadId);
+      
+      if (upload.has_been_mapped && upload.mapped_file_path && fs.existsSync(upload.mapped_file_path)) {
+        console.log(`Using mapped file for upload ${uploadId}: ${upload.mapped_file_path}`);
+        filePath = upload.mapped_file_path;
+      }
+      
       // Update status to processing
       await db('flight_uploads')
         .where({ id: uploadId })
@@ -360,7 +411,12 @@ class FlightUploadService {
       // Use streaming to process the file with minimal memory usage
       await pipeline(
         fs.createReadStream(filePath),
-        csv(),
+        csv({
+          strict: false,
+          headers: true,
+          skipLines: 0,
+          relax_column_count: true
+        }),
         new stream.Transform({
           objectMode: true,
           transform: async function(chunk, encoding, callback) {
@@ -386,6 +442,12 @@ class FlightUploadService {
                   const dateStr = `${year}-${month}-${day}T${timePart}:00`;
                   estimatedTime = new Date(dateStr);
                 }
+              }
+              
+              // If no scheduled time was found, set a default to avoid database errors
+              if (!scheduledTime) {
+                scheduledTime = new Date();
+                console.log(`No scheduled time found for a row, using current time as default: ${scheduledTime}`);
               }
               
               // Map the CSV columns to database fields based on actual table structure
@@ -646,9 +708,9 @@ class FlightUploadService {
    * @returns {Promise<Object>} - Result object
    */
   async approveFlights(uploadId, { flightIds, approveAll, excludeInvalid }) {
-    // Start a transaction
-    return db.transaction(async (trx) => {
-      try {
+    try {
+      // Use Knex transaction for atomic operations
+      return await db.transaction(async (trx) => {
         // Setup base query
         let query = trx('flights').where({ upload_id: uploadId });
         
@@ -661,25 +723,27 @@ class FlightUploadService {
           query = query.where({ validation_status: 'valid' });
         }
         
-        // Update flights to 'imported' status
-        const updateResult = await query.update({ import_status: 'imported' });
+        // Update flights to approved status
+        const result = await query.update({ import_status: 'imported' });
         
-        // If excluding invalid flights, mark them as excluded
-        if (excludeInvalid) {
-          await trx('flights')
-            .where({ upload_id: uploadId, validation_status: 'invalid' })
-            .update({ import_status: 'excluded' });
-        }
+        // Update upload status
+        await trx('flight_uploads')
+          .where({ id: uploadId })
+          .update({ 
+            upload_status: 'approved',
+            updated_at: new Date()
+          });
         
         return {
           success: true,
-          message: `${updateResult} flights marked for import`,
-          importedCount: updateResult
+          count: result,
+          message: `${result} flights approved for import`
         };
-      } catch (error) {
-        throw error;
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error approving flights:', error);
+      throw error;
+    }
   }
 
   /**

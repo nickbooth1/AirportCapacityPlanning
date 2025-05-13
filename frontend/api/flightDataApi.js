@@ -175,6 +175,223 @@ const flightDataApi = {
    */
   deleteFlightUpload: async (uploadId) => {
     return flightUploadApi.deleteFlightUpload(uploadId);
+  },
+
+  /**
+   * Process a flight schedule from upload
+   * @param {number} uploadId - Upload ID to process
+   * @param {Object} options - Processing options
+   * @param {boolean} options.skipValidation - Skip validation step
+   * @param {boolean} options.skipAllocation - Skip allocation step
+   * @param {Object} options.allocationSettings - Custom allocation settings
+   * @returns {Promise<Object>} Processing result
+   */
+  processFlightSchedule: async (uploadId, options = {}) => {
+    try {
+      // Validate the uploadId to ensure it's a valid number
+      const validUploadId = parseInt(uploadId, 10);
+      
+      if (isNaN(validUploadId) || validUploadId <= 0) {
+        throw new Error('Invalid upload ID provided');
+      }
+      
+      // Use the validated upload ID in the request
+      const response = await axios.post(`${API_URL}/api/flight-schedules/process/${validUploadId}`, options);
+      return response.data;
+    } catch (error) {
+      console.error('Error processing flight schedule:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get a list of flight schedules
+   * @param {Object} filters - Filter criteria
+   * @param {number} page - Page number
+   * @param {number} limit - Results per page
+   * @returns {Promise<Object>} Flight schedules
+   */
+  getFlightSchedules: async (filters = {}, page = 1, limit = 20) => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('page', page);
+      params.append('limit', limit);
+      
+      if (filters.status) {
+        params.append('status', filters.status);
+      }
+      
+      const response = await axios.get(`${API_URL}/api/flight-schedules?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching flight schedules:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get a flight schedule by ID
+   * @param {number} id - Schedule ID
+   * @returns {Promise<Object>} Flight schedule
+   */
+  getFlightSchedule: async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching flight schedule ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get allocations for a flight schedule
+   * @param {number} scheduleId - Schedule ID
+   * @param {Object} filters - Filter criteria
+   * @param {number} page - Page number
+   * @param {number} limit - Results per page
+   * @returns {Promise<Object>} Allocation results
+   */
+  getScheduleAllocations: async (scheduleId, filters = {}, page = 1, limit = 100) => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('page', page);
+      params.append('limit', limit);
+      
+      if (filters.standId) {
+        params.append('standId', filters.standId);
+      }
+      
+      if (filters.flightNature) {
+        params.append('flightNature', filters.flightNature);
+      }
+      
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${scheduleId}/allocations?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching allocations for schedule ${scheduleId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get unallocated flights for a schedule
+   * @param {number} scheduleId - Schedule ID
+   * @param {number} page - Page number
+   * @param {number} limit - Results per page
+   * @returns {Promise<Object>} Unallocated flights
+   */
+  getUnallocatedFlights: async (scheduleId, page = 1, limit = 100) => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('page', page);
+      params.append('limit', limit);
+      
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${scheduleId}/unallocated?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching unallocated flights for schedule ${scheduleId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get utilization metrics for a schedule
+   * @param {number} scheduleId - Schedule ID
+   * @param {Object} params - Query parameters
+   * @param {string} params.timePeriod - Time period (daily, hourly)
+   * @param {number} params.standId - Filter by stand ID
+   * @param {string} params.terminal - Filter by terminal
+   * @returns {Promise<Object>} Utilization metrics
+   */
+  getUtilizationMetrics: async (scheduleId, params = {}) => {
+    try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      
+      if (params.timePeriod) {
+        queryParams.append('timePeriod', params.timePeriod);
+      }
+      
+      if (params.standId) {
+        queryParams.append('standId', params.standId);
+      }
+      
+      if (params.terminal) {
+        queryParams.append('terminal', params.terminal);
+      }
+      
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${scheduleId}/utilization?${queryParams.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching utilization metrics for schedule ${scheduleId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get allocation issues for a schedule
+   * @param {number} scheduleId - Schedule ID
+   * @param {Object} filters - Filter criteria
+   * @returns {Promise<Object>} Allocation issues
+   */
+  getAllocationIssues: async (scheduleId, filters = {}) => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      if (filters.issueType) {
+        params.append('issueType', filters.issueType);
+      }
+      
+      if (filters.severity) {
+        params.append('severity', filters.severity);
+      }
+      
+      if (filters.resolved !== undefined) {
+        params.append('resolved', filters.resolved);
+      }
+      
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${scheduleId}/issues?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching allocation issues for schedule ${scheduleId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get a comprehensive report for a schedule
+   * @param {number} scheduleId - Schedule ID
+   * @returns {Promise<Object>} Comprehensive report
+   */
+  getScheduleReport: async (scheduleId) => {
+    try {
+      const response = await axios.get(`${API_URL}/api/flight-schedules/${scheduleId}/report`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching report for schedule ${scheduleId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Update schedule status
+   * @param {number} scheduleId - Schedule ID
+   * @param {string} status - New status
+   * @returns {Promise<Object>} Update result
+   */
+  updateScheduleStatus: async (scheduleId, status) => {
+    try {
+      const response = await axios.put(`${API_URL}/api/flight-schedules/${scheduleId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating status for schedule ${scheduleId}:`, error);
+      throw error;
+    }
   }
 };
 

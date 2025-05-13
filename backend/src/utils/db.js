@@ -45,11 +45,15 @@ Object.keys(knexInstance).forEach(key => {
 dbFunction.queryBuilder = knexInstance.queryBuilder.bind(knexInstance);
 dbFunction.raw = knexInstance.raw.bind(knexInstance);
 
+// Explicitly bind transaction method since it's critical for many operations
+dbFunction.transaction = knexInstance.transaction.bind(knexInstance);
+
 // Ensure raw is also available via the builder when used in Objection.js context
 dbFunction.knex = function() {
   const builder = {
     queryBuilder: knexInstance.queryBuilder.bind(knexInstance),
-    raw: knexInstance.raw.bind(knexInstance)
+    raw: knexInstance.raw.bind(knexInstance),
+    transaction: knexInstance.transaction.bind(knexInstance) // Also add transaction to the builder
   };
   
   // Add all knex methods to the builder

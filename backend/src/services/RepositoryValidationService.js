@@ -7,8 +7,8 @@ const AirportService = require('./AirportService');
  */
 class RepositoryValidationService {
   constructor() {
-    this.airlineService = new AirlineService();
-    this.airportService = new AirportService();
+    this.airlineService = AirlineService;
+    this.airportService = AirportService;
     this.cache = {
       airlines: new Map(),
       airports: new Map(),

@@ -11,12 +11,25 @@ class FlightUploadController {
    */
   async uploadFile(req, res) {
     try {
+      console.log('Upload request received:', {
+        hasFiles: !!req.files,
+        filesKeys: req.files ? Object.keys(req.files) : 'none',
+        body: req.body
+      });
+      
       if (!req.files || Object.keys(req.files).length === 0) {
         return res.status(400).json({ error: 'No file was uploaded' });
       }
 
       const file = req.files.file;
       const displayName = req.body.displayName; // Get custom display name if provided
+      
+      console.log('Received file upload request:', {
+        filename: file.name,
+        size: file.size, 
+        displayName: displayName || file.name,
+        mimetype: file.mimetype
+      });
       
       // Check file type (must be CSV)
       if (!file.name.endsWith('.csv')) {
@@ -40,32 +53,46 @@ class FlightUploadController {
       const uniqueFilename = `${timestamp}_${file.name}`;
       const filePath = path.join(uploadsDir, uniqueFilename);
       
-      // Save file to server
-      await file.mv(filePath);
+      console.log('Moving file to:', filePath);
       
-      // Record upload in database
-      const uploadService = new FlightUploadService();
-      const uploadId = await uploadService.recordUpload({
-        filename: file.name,
-        displayName: displayName || file.name, // Use custom display name if provided
-        filePath: filePath,
-        fileSize: file.size,
-        userId: req.user ? req.user.id : 'anonymous' // Use user ID if available
-      });
+      try {
+        // Save file to server
+        await file.mv(filePath);
+        console.log('File moved successfully');
+      } catch (mvError) {
+        console.error('Error moving file:', mvError);
+        return res.status(500).json({ error: `Error saving file: ${mvError.message}` });
+      }
       
-      // Start processing the file in the background
-      uploadService.processUpload(uploadId, filePath).catch(error => {
-        console.error(`Error processing upload ${uploadId}:`, error);
-      });
-      
-      return res.status(201).json({ 
-        id: uploadId,
-        status: 'pending',
-        message: 'File uploaded successfully and is being processed' 
-      });
+      try {
+        // Record upload in database (removing user_id reference)
+        const uploadService = new FlightUploadService();
+        const uploadId = await uploadService.recordUpload({
+          filename: file.name,
+          displayName: displayName || file.name, // Use custom display name if provided
+          filePath: filePath,
+          fileSize: file.size
+        });
+        
+        console.log(`File uploaded with ID: ${uploadId}, starting processing`);
+        
+        // Start processing the file in the background
+        uploadService.processUpload(uploadId, filePath).catch(error => {
+          console.error(`Error processing upload ${uploadId}:`, error);
+        });
+        
+        return res.status(201).json({ 
+          id: uploadId,
+          status: 'pending',
+          message: 'File uploaded successfully and is being processed' 
+        });
+      } catch (dbError) {
+        console.error('Database error during upload:', dbError);
+        return res.status(500).json({ error: `Database error: ${dbError.message}` });
+      }
     } catch (error) {
       console.error('File upload error:', error);
-      return res.status(500).json({ error: 'File upload failed' });
+      return res.status(500).json({ error: `File upload failed: ${error.message}` });
     }
   }
   
@@ -367,16 +394,17 @@ class FlightUploadController {
   async getValidationResults(req, res) {
     try {
       const { id } = req.params;
-      const { page = 1, limit = 100, flightNature, validationStatus } = req.query;
+      const { page = 1, limit = 100, flightNature, validationStatus, sort, direction } = req.query;
       
       const validationService = new FlightValidationService();
-      const results = await validationService.getValidationResults(
-        id, 
-        parseInt(page, 10), 
-        parseInt(limit, 10),
+      const results = await validationService.getValidationResults(id, {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         flightNature,
-        validationStatus
-      );
+        validationStatus,
+        sort,
+        direction
+      });
       
       if (!results) {
         return res.status(404).json({ error: 'Upload not found or validation results not available' });

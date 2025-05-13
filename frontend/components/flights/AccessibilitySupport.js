@@ -23,8 +23,8 @@ import { visuallyHidden } from '@mui/utils';
 const AccessibilitySupport = ({
   componentId,
   status,
-  errorMessage,
-  progress,
+  errorMessage = '',
+  progress = 0,
   onSpaceKey,
   onEnterKey,
   onEscapeKey
@@ -144,11 +144,6 @@ AccessibilitySupport.propTypes = {
   onSpaceKey: PropTypes.func,
   onEnterKey: PropTypes.func,
   onEscapeKey: PropTypes.func
-};
-
-AccessibilitySupport.defaultProps = {
-  errorMessage: '',
-  progress: 0
 };
 
 export default AccessibilitySupport; 

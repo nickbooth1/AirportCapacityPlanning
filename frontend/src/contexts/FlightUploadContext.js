@@ -91,7 +91,7 @@ export const FlightUploadProvider = ({ children }) => {
   /**
    * Upload the selected file to the server
    * @param {string} displayName - Optional custom name for the upload
-   * @returns {Promise<boolean>} Success indicator
+   * @returns {Promise<Object|false>} Response data on success, false on failure
    */
   const uploadFile = async (displayName) => {
     if (!selectedFile) {
@@ -136,7 +136,15 @@ export const FlightUploadProvider = ({ children }) => {
           reject(new Error('Upload aborted'));
         });
         
-        xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL || ''}/flights/upload`, true);
+        // Fix the URL to avoid double 'api' prefix
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '');
+        const uploadEndpoint = '/api/flights/upload';
+        // Ensure we don't end up with double /api/ in the path
+        const url = apiUrl.endsWith('/api') 
+          ? `${apiUrl}${uploadEndpoint.substring(4)}` 
+          : `${apiUrl}${uploadEndpoint}`;
+          
+        xhr.open('POST', url, true);
         
         // Ensure credentials are included (cookies for auth)
         xhr.withCredentials = true;
@@ -152,13 +160,21 @@ export const FlightUploadProvider = ({ children }) => {
         xhr.send(formData);
       });
       
+      console.log('Upload response:', response);
+      
+      // Ensure we have a valid upload ID
+      if (!response || !response.id) {
+        throw new Error('Invalid response: missing upload ID');
+      }
+      
       setUploadId(response.id);
       setStatus(UploadStatus.PROCESSING);
       
       // Start polling for status updates
       startStatusPolling(response.id);
       
-      return true;
+      // Return the response data instead of just true
+      return { ...response, success: true };
     } catch (error) {
       console.error('File upload error:', error);
       setError(error.message || 'Upload failed');
@@ -180,7 +196,31 @@ export const FlightUploadProvider = ({ children }) => {
     // Poll every 2 seconds
     const interval = setInterval(async () => {
       try {
-        const statusData = await flightUploadApi.getUploadStatus(id);
+        // Use the correct API URL format to avoid double 'api'
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '');
+        // Fix the endpoint path - should be "/id/status" not "/status/id"
+        const statusEndpoint = `/api/flights/upload/${id}/status`;
+        // Ensure we don't end up with double /api/ in the path
+        const url = apiUrl.endsWith('/api') 
+          ? `${apiUrl}${statusEndpoint.substring(4)}` 
+          : `${apiUrl}${statusEndpoint}`;
+          
+        console.log(`Checking upload status at: ${url}`);
+          
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Status check failed with status: ${response.status}`);
+        }
+        
+        const statusData = await response.json();
+        console.log(`Upload status response:`, statusData);
         
         if (statusData.status === 'completed') {
           clearInterval(interval);

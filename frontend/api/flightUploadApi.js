@@ -13,7 +13,10 @@ export const uploadFlightData = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await fetch(`${API_BASE_URL}/api/flights/upload`, {
+    // Ensure no duplicated API prefix
+    const endpoint = API_BASE_URL.endsWith('/api') ? '/flights/upload' : '/api/flights/upload';
+    
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         // Don't set Content-Type when using FormData - browser will set it with boundary
@@ -47,7 +50,12 @@ export const uploadFlightData = async (file) => {
  */
 export const getUploadStatus = async (uploadId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/flights/upload/status/${uploadId}`, {
+    // Ensure no duplicated API prefix
+    const endpoint = API_BASE_URL.endsWith('/api') 
+      ? `/flights/upload/${uploadId}/status` 
+      : `/api/flights/upload/${uploadId}/status`;
+    
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -80,7 +88,12 @@ export const getUploadStatus = async (uploadId) => {
  */
 export const validateFlights = async (uploadId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/flights/upload/${uploadId}/validate`, {
+    // Ensure no duplicated API prefix
+    const endpoint = API_BASE_URL.endsWith('/api') 
+      ? `/flights/upload/${uploadId}/validate` 
+      : `/api/flights/upload/${uploadId}/validate`;
+    
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -122,7 +135,12 @@ export const getValidationResults = async (uploadId, options = {}) => {
   try {
     const { page = 1, limit = 100, flightNature, validationStatus, sort, direction } = options;
     
-    const url = new URL(`${API_BASE_URL}/api/flights/upload/${uploadId}/validation`);
+    // Ensure no duplicated API prefix
+    const endpoint = API_BASE_URL.endsWith('/api') 
+      ? `/flights/upload/${uploadId}/validation` 
+      : `/api/flights/upload/${uploadId}/validation`;
+    
+    const url = new URL(`${API_BASE_URL}${endpoint}`);
     url.searchParams.append('page', page);
     url.searchParams.append('limit', limit);
     
@@ -289,7 +307,12 @@ export const getDepartureFlights = async (uploadId, options = {}) => {
  */
 export const getValidationStats = async (uploadId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/flights/upload/${uploadId}/validation/stats`, {
+    // Ensure no duplicated API prefix
+    const endpoint = API_BASE_URL.endsWith('/api') 
+      ? `/flights/upload/${uploadId}/validation/stats` 
+      : `/api/flights/upload/${uploadId}/validation/stats`;
+    
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

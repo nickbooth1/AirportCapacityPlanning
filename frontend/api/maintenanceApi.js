@@ -180,7 +180,7 @@ export const createApproval = async (approvalData) => {
  */
 export const getRequestCapacityImpact = async (requestId, options = {}) => {
   try {
-    const url = new URL(`${API_BASE_URL}/maintenance/requests/${requestId}/capacity-impact`);
+    const url = new URL(`${API_BASE_URL}/api/maintenance/requests/${requestId}/capacity-impact`);
     
     // Add optional parameters
     if (options.startDate) {
@@ -189,6 +189,8 @@ export const getRequestCapacityImpact = async (requestId, options = {}) => {
     if (options.endDate) {
       url.searchParams.append('endDate', options.endDate);
     }
+    
+    console.log('Sending capacity impact request to:', url.toString());
     
     const response = await fetch(url);
     

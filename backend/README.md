@@ -35,4 +35,36 @@ If the stand capacity calculation shows zero values:
 To verify that everything is set up correctly, you can run:
 ```
 node src/scripts/verify-capacity-calculation.js
-``` 
+```
+
+# Database Migrations
+
+## Troubleshooting Migrations
+
+If you encounter errors with missing tables in the database, such as "relation does not exist" errors, it might be because some required migrations haven't been run. Here's how to troubleshoot:
+
+1. Check if the table exists in the database:
+   ```sql
+   SELECT EXISTS (
+     SELECT FROM information_schema.tables 
+     WHERE table_name = 'table_name'
+   );
+   ```
+
+2. Check the status of migrations:
+   ```bash
+   npx knex migrate:list
+   ```
+
+3. If migrations are showing as pending but the tables already exist (which can happen if migrations were run manually or via another tool), you can mark them as completed in the knex_migrations table:
+   ```sql
+   INSERT INTO knex_migrations (name, batch, migration_time) 
+   VALUES ('migration_name.js', (SELECT MAX(batch) FROM knex_migrations) + 1, NOW());
+   ```
+
+4. If tables are missing entirely, you can create them with SQL commands:
+   ```sql
+   CREATE TABLE IF NOT EXISTS table_name (...);
+   ```
+
+5. After manual changes, restart the server to ensure all changes are picked up. 

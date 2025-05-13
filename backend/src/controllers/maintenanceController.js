@@ -175,10 +175,24 @@ exports.getCapacityImpact = async (req, res, next) => {
  */
 exports.getRequestCapacityImpact = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    let { id } = req.params;
     const { startDate, endDate } = req.query;
     
     console.log(`Calculating capacity impact for maintenance request ${id}`);
+    
+    // Validate UUID format
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidPattern.test(id)) {
+      console.error(`Invalid UUID format for request ID: ${id}`);
+      
+      // Try to format the ID if it doesn't have dashes but is the right length
+      if (/^[0-9a-f]{32}$/i.test(id)) {
+        id = `${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}`;
+        console.log(`Reformatted ID as UUID: ${id}`);
+      } else {
+        return res.status(400).json({ message: 'Invalid request ID format. Must be a valid UUID.' });
+      }
+    }
     
     const impactAnalysis = await maintenanceCapacityService.calculateRequestCapacityImpact(
       id,

@@ -57,11 +57,11 @@ router.post('/abort', FlightUploadController.abortChunkedUpload);
 router.get('/status/:id', FlightUploadController.getChunkedUploadStatus);
 
 /**
- * @route   GET /api/flights/upload/status/:id
+ * @route   GET /api/flights/upload/:id/status
  * @desc    Check the status of an upload
  * @access  Private
  */
-router.get('/status/:id', FlightUploadController.getUploadStatus);
+router.get('/:id/status', FlightUploadController.getUploadStatus);
 
 /**
  * @route   GET /api/flights/upload/:id/validation

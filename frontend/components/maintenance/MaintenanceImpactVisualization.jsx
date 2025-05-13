@@ -27,6 +27,27 @@ const MaintenanceImpactVisualization = ({ requestId }) => {
       setLoading(true);
       setError(null);
       
+      // Log the request ID to help debug the format issue
+      console.log('Fetching capacity impact for request ID:', requestId);
+      console.log('Request ID type:', typeof requestId);
+      
+      // Check if the requestId matches UUID format
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidPattern.test(requestId)) {
+        console.error('Invalid UUID format for requestId:', requestId);
+        // Try to format the ID if it's a number or doesn't have dashes
+        let formattedId = requestId;
+        
+        // Handle case where ID might be missing dashes
+        if (/^[0-9a-f]{32}$/i.test(requestId)) {
+          formattedId = `${requestId.slice(0,8)}-${requestId.slice(8,12)}-${requestId.slice(12,16)}-${requestId.slice(16,20)}-${requestId.slice(20)}`;
+          console.log('Reformatted ID as UUID:', formattedId);
+          const data = await getRequestCapacityImpact(formattedId);
+          setImpactData(data);
+          return;
+        }
+      }
+      
       const data = await getRequestCapacityImpact(requestId);
       
       // We don't need to parse date fields here as they're not being returned

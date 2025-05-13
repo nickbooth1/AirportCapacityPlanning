@@ -224,9 +224,28 @@ const UploadTool = ({
       uploader.start();
     } else {
       // Use standard upload with the custom name
-      const success = await uploadFile(uploadName || undefined);
-      if (success) {
-        onUploadSuccess?.({ id: uploadId, filename: selectedFile.name, displayName: uploadName });
+      try {
+        const response = await uploadFile(uploadName || undefined);
+        
+        if (response && response.success) {
+          console.log('Upload completed with response:', response);
+          // Use the id from the direct response instead of relying on context state
+          const uploadedId = response.id || uploadId;
+          
+          if (uploadedId) {
+            onUploadSuccess?.({ 
+              id: uploadedId, 
+              filename: selectedFile.name, 
+              displayName: uploadName || selectedFile.name 
+            });
+          } else {
+            console.error('Upload ID not available in response');
+            onUploadError?.('Upload ID not available');
+          }
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        onUploadError?.(error.message || 'Upload failed');
       }
     }
   };
@@ -514,26 +533,13 @@ const UploadTool = ({
 };
 
 UploadTool.propTypes = {
-  /** Title displayed at the top of the component */
   title: PropTypes.string,
-  
-  /** Helper text explaining the upload action */
   description: PropTypes.string,
-  
-  /** Array of accepted file extensions */
   acceptedFileTypes: PropTypes.arrayOf(PropTypes.string),
-  
-  /** Maximum file size in MB */
   maxFileSize: PropTypes.number,
-  
-  /** Callback function triggered when upload completes successfully */
   onUploadSuccess: PropTypes.func,
-  
-  /** Callback function triggered when upload fails */
   onUploadError: PropTypes.func,
-  
-  /** Whether to show detailed progress information */
   showProgressDetails: PropTypes.bool
 };
 
-export default UploadTool; 
+export default UploadTool;

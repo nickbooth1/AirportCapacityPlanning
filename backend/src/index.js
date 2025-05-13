@@ -22,7 +22,8 @@ Model.knex(db);
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000'
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true
 }));
 app.use(express.json()); // Parse JSON request bodies
 app.use(morgan('dev')); // Logging
@@ -72,6 +73,7 @@ const ghaRoutes = require('./routes/ghaRoutes');
 const airportConfigRoutes = require('./routes/airportConfig');
 const flightUploadRoutes = require('./routes/api/flightUpload');
 const flightDataRoutes = require('./routes/api/flightData');
+const flightScheduleRoutes = require('./routes/api/flightSchedule');
 const standConstraintsRoutes = require('./routes/stand-constraints');
 const standAdjacenciesRoutes = require('./routes/standAdjacencies');
 
@@ -87,6 +89,7 @@ app.use('/api/ghas', ghaRoutes);
 app.use('/api/airport-config', airportConfigRoutes);
 app.use('/api/flights/upload', flightUploadRoutes);
 app.use('/api/flights', flightDataRoutes);
+app.use('/api/flight-schedules', flightScheduleRoutes);
 app.use('/api/stand-constraints', standConstraintsRoutes);
 app.use('/api/stand-adjacencies', standAdjacenciesRoutes);
 
@@ -126,34 +129,7 @@ app.get('/api/airlines', (req, res) => {
 //   });
 // });
 
-app.get('/api/airport-config', (req, res) => {
-  const mockConfig = {
-    data: {
-      baseAirport: {
-        id: 1,
-        code: 'LHR',
-        name: 'London Heathrow',
-        city: 'London',
-        country: 'GB',
-        timezone: 'Europe/London'
-      }
-    }
-  };
-  res.json(mockConfig);
-});
-
-app.get('/api/airport-config/allocations', (req, res) => {
-  const mockAllocations = {
-    data: [
-      { id: 1, airlineId: 1, terminalId: 5, ghaId: null },
-      { id: 2, airlineId: 2, terminalId: 1, ghaId: null },
-      { id: 3, airlineId: 3, terminalId: 2, ghaId: null },
-      { id: 4, airlineId: 4, terminalId: 3, ghaId: null },
-      { id: 5, airlineId: 5, terminalId: 4, ghaId: null }
-    ]
-  };
-  res.json(mockAllocations);
-});
+// Remove mock routes for airport-config since we're now using real routes
 
 // Error handling
 app.use(errorHandler);

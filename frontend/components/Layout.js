@@ -32,7 +32,9 @@ import {
   FlightTakeoff as FlightTakeoffIcon,
   FlightLand as FlightLandIcon,
   Engineering as EngineeringIcon,
-  Handyman as HandymanIcon
+  Handyman as HandymanIcon,
+  CloudUpload as CloudUploadIcon,
+  ViewList as ViewListIcon
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -72,6 +74,18 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
             <FlightIcon />
           </ListItemIcon>
           <ListItemText primary="Flights" />
+        </ListItem>
+        <ListItem button component={Link} href="/flights/upload">
+          <ListItemIcon>
+            <CloudUploadIcon />
+          </ListItemIcon>
+          <ListItemText primary="Upload Flight Schedule" />
+        </ListItem>
+        <ListItem button component={Link} href="/flights/schedules">
+          <ListItemIcon>
+            <ViewListIcon />
+          </ListItemIcon>
+          <ListItemText primary="Flight Schedules" />
         </ListItem>
         <ListItem button component={Link} href="/stands">
           <ListItemIcon>
