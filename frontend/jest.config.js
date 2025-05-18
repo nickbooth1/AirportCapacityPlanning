@@ -9,11 +9,19 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
+  transform: {
+    "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { 
+      presets: ["@babel/preset-env", ["@babel/preset-react", { runtime: "automatic" }]] 
+    }]
+  },
   moduleNameMapper: {
     // Handle module aliases (if you configured them in your Next.js config)
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/pages/(.*)$': '<rootDir>/pages/$1',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    // Style and asset mocks
+    '\\.(css|less|sass|scss)$': '<rootDir>/tests/mocks/styleMock.js',
+    '\\.(gif|ttf|eot|svg|png|jpg|jpeg)$': '<rootDir>/tests/mocks/fileMock.js',
     // Mock antd components
     'antd/lib/table': '<rootDir>/tests/mocks/antdMock.js',
     'antd/lib/modal': '<rootDir>/tests/mocks/antdMock.js',
@@ -59,7 +67,11 @@ const customJestConfig = {
     '@ant-design/icons/(.*)$': '<rootDir>/tests/mocks/iconsMock.js',
   },
   moduleDirectories: ['node_modules', '<rootDir>/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!antd|@ant-design|rc-.*)'
+  ],
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig); 
+module.exports = createJestConfig(customJestConfig);

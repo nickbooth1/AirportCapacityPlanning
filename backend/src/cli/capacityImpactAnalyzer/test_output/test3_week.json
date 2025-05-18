@@ -2,100 +2,201 @@
   {
     "date": "2023-12-15",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 342,
+      "wideBody": 30,
+      "total": 372
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 333,
+      "wideBody": 30,
+      "total": 363
     },
     "maintenanceImpacts": {
       "definite": {
         "reduction": {
-          "narrowBody": 0,
-          "wideBody": 0,
-          "total": 0
+          "narrowBody": 42,
+          "wideBody": 66,
+          "total": 108
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "e0a9b8c7-4d5e-7f6e-1d2c-3b4a5c6d7e8f",
+            "title": "L102 Drainage System Repair",
+            "standCode": "L102",
+            "statusName": "Completed",
+            "startTime": "2023-12-14T08:00:00.000Z",
+            "endTime": "2023-12-15T10:00:00.000Z"
+          },
+          {
+            "id": "b3d2e1f0-7a8b-0c9d-4e5f-6e7d8c9b0a1b",
+            "title": "L102 Temporary Closure - Construction",
+            "standCode": "L102",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00.000Z",
+            "endTime": "2023-12-17T23:59:59.000Z"
+          },
+          {
+            "id": "b7f6a5e7-1e2d-4c3b-8a9f-0d1c2b3a4e5f",
+            "title": "S101 Pavement Repair",
+            "standCode": "S101",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T08:00:00.000Z",
+            "endTime": "2023-12-15T14:00:00.000Z"
+          },
+          {
+            "id": "d9f8e7d6-3f4f-6e5d-0c1b-2a3b4c5d6e7f",
+            "title": "L101 Lighting System Upgrade",
+            "standCode": "L101",
+            "statusName": "In Progress",
+            "startTime": "2023-12-15T09:00:00.000Z",
+            "endTime": "2023-12-15T17:00:00.000Z"
+          },
+          {
+            "id": "c4e3f2a1-8b9c-1d0e-5f6a-7f8e9d0c1b2c",
+            "title": "L103 Safety Inspection",
+            "standCode": "L103",
+            "statusName": "In Progress",
+            "startTime": "2023-12-15T13:00:00.000Z",
+            "endTime": "2023-12-15T15:00:00.000Z"
+          },
+          {
+            "id": "e6a5b4c3-0d1e-3f2a-7b8c-9b0a1f2e3d4e",
+            "title": "S104 Emergency Repair",
+            "standCode": "S104",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T15:00:00.000Z",
+            "endTime": "2023-12-15T18:00:00.000Z"
+          }
+        ]
       },
       "potential": {
         "reduction": {
-          "narrowBody": 0,
+          "narrowBody": 9,
           "wideBody": 0,
-          "total": 0
+          "total": 9
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "c8e7d6c5-2f3e-5d4c-9b0a-1e2d3f4e5f6a",
+            "title": "S102 Jetbridge Maintenance",
+            "standCode": "S102",
+            "statusName": "Requested",
+            "startTime": "2023-12-15T10:00:00.000Z",
+            "endTime": "2023-12-15T12:00:00.000Z"
+          }
+        ]
       }
     }
   },
   {
     "date": "2023-12-16",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 369,
+      "wideBody": 64,
+      "total": 433
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 342,
+      "wideBody": 64,
+      "total": 406
     },
     "maintenanceImpacts": {
       "definite": {
         "reduction": {
-          "narrowBody": 0,
-          "wideBody": 0,
-          "total": 0
+          "narrowBody": 15,
+          "wideBody": 32,
+          "total": 47
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "b3d2e1f0-7a8b-0c9d-4e5f-6e7d8c9b0a1b",
+            "title": "L102 Temporary Closure - Construction",
+            "standCode": "L102",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00.000Z",
+            "endTime": "2023-12-17T23:59:59.000Z"
+          },
+          {
+            "id": "a2c1d0e9-6f7e-9a8b-3f4e-5d6c7b8a9f0a",
+            "title": "S104 GPU Replacement",
+            "standCode": "S104",
+            "statusName": "Approved",
+            "startTime": "2023-12-16T08:00:00.000Z",
+            "endTime": "2023-12-16T12:00:00.000Z"
+          }
+        ]
       },
       "potential": {
         "reduction": {
-          "narrowBody": 0,
+          "narrowBody": 27,
           "wideBody": 0,
-          "total": 0
+          "total": 27
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "f1b0c9d8-5e6f-8a7b-2e3d-4c5b6a7d8e9f",
+            "title": "S103 Power Cable Installation",
+            "standCode": "S103",
+            "statusName": "Requested",
+            "startTime": "2023-12-16T07:00:00.000Z",
+            "endTime": "2023-12-16T15:00:00.000Z"
+          }
+        ]
       }
     }
   },
   {
     "date": "2023-12-17",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 369,
+      "wideBody": 64,
+      "total": 433
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 369,
+      "wideBody": 64,
+      "total": 433
     },
     "maintenanceImpacts": {
       "definite": {
         "reduction": {
-          "narrowBody": 0,
-          "wideBody": 0,
-          "total": 0
+          "narrowBody": 15,
+          "wideBody": 32,
+          "total": 47
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "b3d2e1f0-7a8b-0c9d-4e5f-6e7d8c9b0a1b",
+            "title": "L102 Temporary Closure - Construction",
+            "standCode": "L102",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00.000Z",
+            "endTime": "2023-12-17T23:59:59.000Z"
+          },
+          {
+            "id": "d5f4a3b2-9c0d-2e1f-6a7b-8a9f0e1d2c3d",
+            "title": "S103 Line Repainting",
+            "standCode": "S103",
+            "statusName": "Approved",
+            "startTime": "2023-12-17T07:00:00.000Z",
+            "endTime": "2023-12-17T11:00:00.000Z"
+          }
+        ]
       },
       "potential": {
         "reduction": {
@@ -110,19 +211,19 @@
   {
     "date": "2023-12-18",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "maintenanceImpacts": {
       "definite": {
@@ -146,19 +247,19 @@
   {
     "date": "2023-12-19",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "maintenanceImpacts": {
       "definite": {
@@ -182,19 +283,19 @@
   {
     "date": "2023-12-20",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "maintenanceImpacts": {
       "definite": {
@@ -218,19 +319,19 @@
   {
     "date": "2023-12-21",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "maintenanceImpacts": {
       "definite": {

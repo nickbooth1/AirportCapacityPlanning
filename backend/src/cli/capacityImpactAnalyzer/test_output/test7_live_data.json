@@ -2,28 +2,45 @@
   {
     "date": "2023-12-15",
     "originalDailyCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
     },
     "capacityAfterDefiniteImpact": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 54,
+      "total": 438
     },
     "finalNetCapacity": {
-      "narrowBody": 0,
-      "wideBody": 0,
-      "total": 1872
+      "narrowBody": 384,
+      "wideBody": 54,
+      "total": 438
     },
     "maintenanceImpacts": {
       "definite": {
         "reduction": {
           "narrowBody": 0,
-          "wideBody": 0,
-          "total": 0
+          "wideBody": 42,
+          "total": 42
         },
-        "requests": []
+        "requests": [
+          {
+            "id": "e0a9b8c7-4d5e-7f6e-1d2c-3b4a5c6d7e8f",
+            "title": "L102 Drainage System Repair",
+            "standCode": "L102",
+            "statusName": "Completed",
+            "startTime": "2023-12-14T08:00:00.000Z",
+            "endTime": "2023-12-15T10:00:00.000Z"
+          },
+          {
+            "id": "b3d2e1f0-7a8b-0c9d-4e5f-6e7d8c9b0a1b",
+            "title": "L102 Temporary Closure - Construction",
+            "standCode": "L102",
+            "statusName": "Approved",
+            "startTime": "2023-12-15T00:00:00.000Z",
+            "endTime": "2023-12-17T23:59:59.000Z"
+          }
+        ]
       },
       "potential": {
         "reduction": {

@@ -1,0 +1,32 @@
+{
+  "version": "2023-11-01",
+  "lastUpdated": "2023-11-01T12:00:00Z",
+  "source": "IATA/ICAO Reference Data",
+  "data": [
+    {
+      "TerminalCode": "T1",
+      "Terminal": "Terminal 1",
+      "AirportCode": "LHR"
+    },
+    {
+      "TerminalCode": "T2",
+      "Terminal": "Terminal 2",
+      "AirportCode": "LHR"
+    },
+    {
+      "TerminalCode": "T3",
+      "Terminal": "Terminal 3",
+      "AirportCode": "LHR"
+    },
+    {
+      "TerminalCode": "T4",
+      "Terminal": "Terminal 4",
+      "AirportCode": "LHR"
+    },
+    {
+      "TerminalCode": "T5",
+      "Terminal": "Terminal 5",
+      "AirportCode": "LHR"
+    }
+  ]
+} 

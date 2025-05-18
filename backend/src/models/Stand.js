@@ -56,7 +56,7 @@ class Stand extends Model {
   // Define modifiers inside the class
   static modifiers = {
     selectName(builder) {
-      builder.select('id', 'name');
+      builder.select('id', 'name', 'code');
     }
     // Add other modifiers for Pier if needed
   };

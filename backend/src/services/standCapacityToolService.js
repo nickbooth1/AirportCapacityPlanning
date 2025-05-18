@@ -16,7 +16,8 @@ const StandModel = require('../models/Stand');
 const AircraftTypeModel = require('../models/AircraftType');
 const StandAdjacencyRuleModel = require('../models/StandAdjacencyRule');
 const OperationalSettingsModel = require('../models/OperationalSettings');
-const { db } = require('../utils/db');
+const db = require('../utils/db');
+const { getBodyType } = require('../cli/capacityImpactAnalyzer/analyzer');
 
 class StandCapacityToolService {
   /**

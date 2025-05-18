@@ -1,6 +1,131 @@
-# Airport Capacity Planner - Backend
+# Airport Capacity Planning System - Backend
 
-This repository contains the backend for the Airport Capacity Planner application.
+This is the backend component of the Airport Capacity Planning System, providing API endpoints, data processing, and business logic for stand allocation and capacity planning.
+
+## Overview
+
+The backend handles:
+
+- Flight schedule data processing
+- Stand allocation algorithms
+- Capacity planning calculations
+- Maintenance schedule integration
+- Data validation and reporting
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v14+)
+- MySQL or PostgreSQL
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   cd backend
+   npm install
+   ```
+3. Set up environment variables (see `.env.example`)
+4. Initialize the database:
+   ```
+   npm run db:migrate
+   npm run db:seed
+   ```
+5. Start the development server:
+   ```
+   npm run dev
+   ```
+
+## API Documentation
+
+The API documentation is available at `/api-docs` when the server is running.
+
+## Testing Framework
+
+The backend includes a comprehensive testing framework for validating the system's functionality. The testing framework is designed to progressively test the system with increasing levels of complexity.
+
+### Running Tests
+
+#### Individual Tests
+
+Run specific tests with:
+
+```bash
+# Run the sample test (16 flights)
+node run-tests.js
+
+# Run the peak hour test (48 flights)
+node run-tests.js peak-hour
+
+# Run the full day test (200 flights)
+node run-tests.js full-day
+```
+
+#### Complete Test Suite
+
+Run all tests in sequence:
+
+```bash
+node run-all-tests.js
+```
+
+### Test Documentation
+
+Detailed documentation on the testing framework, test scenarios, and how to extend the tests is available in the [test README](./test/README.md).
+
+## Key Components
+
+### Flight Processing
+
+- `/src/services/FlightProcessorService.js` - Handles flight schedule processing
+- `/src/services/adapted/StandAllocationAdapter.js` - Adapts flight data for allocation
+
+### Stand Allocation
+
+- `/src/services/standCapacityService.js` - Calculates stand capacity
+- `/src/services/adapted/calculator/` - Allocation algorithms and utilities
+
+### Maintenance Integration
+
+- `/src/services/maintenance/` - Maintenance scheduling and integration
+
+## Database Structure
+
+The system uses a relational database with the following key tables:
+
+- `flights` - Flight schedule data
+- `stands` - Stand information and constraints
+- `airlines` - Airline preferences and requirements
+- `stand_allocations` - Results of stand allocation
+- `stand_maintenance_requests` - Maintenance scheduling
+
+## Development
+
+### Code Style
+
+This project follows JavaScript Standard Style. Run linting:
+
+```
+npm run lint
+```
+
+### Test Coverage
+
+Generate test coverage reports:
+
+```
+npm run test:coverage
+```
+
+### CI/CD
+
+Continuous integration is configured to run tests and linting on all PRs.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## Troubleshooting
 

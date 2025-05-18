@@ -1,0 +1,38 @@
+[
+  {
+    "date": "2023-12-15",
+    "originalDailyCapacity": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "finalNetCapacity": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  }
+]

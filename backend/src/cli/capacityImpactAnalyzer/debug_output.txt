@@ -1,0 +1,49 @@
+Database connection test successful
+Database connection verified successfully
+Loading live data from database and services...
+Fetching stand capacity data...
+Fetching maintenance requests...
+Fetching stands data...
+Fetching aircraft types data...
+Fetching operational settings...
+Fetching maintenance status types...
+Analyzing capacity impact from 2023-12-15 to 2023-12-15...
+[
+  {
+    "date": "2023-12-15",
+    "originalDailyCapacity": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "capacityAfterDefiniteImpact": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "finalNetCapacity": {
+      "narrowBody": 384,
+      "wideBody": 96,
+      "total": 480
+    },
+    "maintenanceImpacts": {
+      "definite": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      },
+      "potential": {
+        "reduction": {
+          "narrowBody": 0,
+          "wideBody": 0,
+          "total": 0
+        },
+        "requests": []
+      }
+    }
+  }
+]
+Analysis complete. Processed 1 days.

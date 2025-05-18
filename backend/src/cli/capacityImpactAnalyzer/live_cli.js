@@ -98,10 +98,15 @@ async function loadLiveData(options) {
       statusIds: [...maintenanceStatusIdsToInclude.definite, ...maintenanceStatusIdsToInclude.potential]
     });
     
-    // Transform maintenance requests to expected format if needed
+    console.log(`Found ${allMaintenanceRequests.length} maintenance requests between ${options.startDate} and ${options.endDate}`);
+    if (allMaintenanceRequests.length > 0) {
+      console.log('First maintenance request:', allMaintenanceRequests[0]);
+    }
+    
+    // Format for consistency with expected structure in analyzer
     const formattedMaintenanceRequests = allMaintenanceRequests.map(req => ({
       id: req.id,
-      stand_id_or_code: req.stand_code || req.stand_id,
+      stand_id_or_code: req.stand_id_or_code,
       title: req.title,
       description: req.description,
       status_id: req.status_id,
@@ -110,16 +115,21 @@ async function loadLiveData(options) {
       end_datetime: req.end_datetime
     }));
     
+    console.log('After transformation:', formattedMaintenanceRequests[0]);
+    
     // 3. Get all stands
     console.log('Fetching stands data...');
     const standsData = await db.select('*').from('stands').where('is_active', true);
+    console.log(`Found ${standsData.length} active stands`);
     
     // 4. Get all aircraft types
     console.log('Fetching aircraft types data...');
     const aircraftTypesData = await db.select('*').from('aircraft_types').where('is_active', true);
+    console.log(`Found ${aircraftTypesData.length} active aircraft types`);
     
     // Get stand aircraft constraints
     const standConstraints = await db.select('*').from('stand_aircraft_constraints');
+    console.log(`Found ${standConstraints.length} stand-aircraft constraints`);
     
     // Create a map of stand_id to compatible aircraft types
     const standConstraintsMap = new Map();
@@ -127,7 +137,12 @@ async function loadLiveData(options) {
       if (!standConstraintsMap.has(constraint.stand_id)) {
         standConstraintsMap.set(constraint.stand_id, []);
       }
-      standConstraintsMap.get(constraint.stand_id).push(constraint.aircraft_type_icao);
+      
+      // We need to find the aircraft type ICAO code from the aircraft_type_id
+      const aircraftType = aircraftTypesData.find(type => type.id === constraint.aircraft_type_id);
+      if (aircraftType) {
+        standConstraintsMap.get(constraint.stand_id).push(aircraftType.icao_code);
+      }
     }
     
     // Format stands data - process them synchronously to avoid async issues
@@ -148,6 +163,9 @@ async function loadLiveData(options) {
         compatibleAircraftICAOs
       });
     }
+    
+    console.log(`Processed ${stands.length} stands with compatibility info`);
+    console.log('First stand example:', stands[0]);
     
     // Format aircraft types data
     const aircraftTypes = aircraftTypesData.map(type => ({
@@ -171,6 +189,22 @@ async function loadLiveData(options) {
     // 6. Get maintenance status types
     console.log('Fetching maintenance status types...');
     const statusTypes = await db.select('*').from('maintenance_status_types');
+    
+    // Prepare reference Maps for faster lookup
+    const standsMap = new Map();
+    stands.forEach(stand => {
+      // Add entry with the stand code as key
+      standsMap.set(stand.code, {
+        dbId: stand.dbId,
+        compatibleAircraftICAOs: stand.compatibleAircraftICAOs
+      });
+      
+      // Also add an entry with the stand_id format (for fallback)
+      standsMap.set(`stand_${stand.dbId}`, {
+        dbId: stand.dbId,
+        compatibleAircraftICAOs: stand.compatibleAircraftICAOs
+      });
+    });
     
     return {
       dailyGrossCapacityTemplate,

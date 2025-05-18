@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Typography, Box, Button, Grid, Paper } from '@mui/material';
 import Link from 'next/link';
 import Layout from '../components/Layout';
+import DashboardCapacityImpact from '../components/dashboard/DashboardCapacityImpact';
 
 export default function Home() {
   return (
@@ -15,8 +16,12 @@ export default function Home() {
             Optimize your terminal, pier, and stand management
           </Typography>
         </Box>
+
+        <Box mb={4}>
+          <DashboardCapacityImpact />
+        </Box>
         
-        <Grid container spacing={4} justifyContent="center" my={4}>
+        <Grid container spacing={4} justifyContent="center">
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h5" component="h2" gutterBottom>

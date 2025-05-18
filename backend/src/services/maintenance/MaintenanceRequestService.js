@@ -16,6 +16,8 @@ class MaintenanceRequestService {
    */
   async getAllRequests({ startDate, endDate, statusIds = [] }) {
     try {
+      console.log(`Fetching maintenance requests from ${startDate} to ${endDate}`);
+      
       let query = db.select(
         'mr.*',
         'mst.name as statusName',
@@ -39,18 +41,47 @@ class MaintenanceRequestService {
       ]);
       
       const requests = await query;
+      console.log(`Found ${requests.length} maintenance requests`);
+      if (requests.length > 0) {
+        console.log('First request:', requests[0]);
+      }
+      
+      // Get stand codes for any maintenance requests that don't have them
+      const standIds = requests
+        .filter(req => !req.stand_code && req.stand_id)
+        .map(req => req.stand_id);
+      
+      let standsMap = new Map();
+      if (standIds.length > 0) {
+        const stands = await db.select('id', 'code').from('stands').whereIn('id', standIds);
+        stands.forEach(stand => {
+          standsMap.set(stand.id, stand.code);
+        });
+      }
       
       // Format for consistency with expected structure in analyzer
-      return requests.map(req => ({
-        id: req.id,
-        stand_id_or_code: req.stand_code || req.stand_id,
-        title: req.title,
-        description: req.description,
-        status_id: req.status_id,
-        statusName: req.statusName,
-        start_datetime: req.start_datetime,
-        end_datetime: req.end_datetime
-      }));
+      const formattedRequests = requests.map(req => {
+        // Find stand code by first checking the joined stand code or falling back to stand_id
+        let standCode = req.stand_code;
+        if (!standCode && req.stand_id) {
+          standCode = standsMap.get(req.stand_id);
+        }
+        
+        return {
+          id: req.id,
+          stand_id_or_code: standCode || `stand_${req.stand_id}`, // Ensure we have a valid string
+          title: req.title,
+          description: req.description,
+          status_id: req.status_id,
+          statusName: req.statusName,
+          start_datetime: req.start_datetime,
+          end_datetime: req.end_datetime
+        };
+      });
+      
+      console.log('Formatted first request:', formattedRequests.length > 0 ? formattedRequests[0] : 'No requests found');
+      
+      return formattedRequests;
     } catch (error) {
       console.error('Error fetching maintenance requests:', error);
       throw error;
@@ -79,9 +110,18 @@ class MaintenanceRequestService {
         throw new Error(`Maintenance request with ID ${id} not found`);
       }
       
+      // Get stand code if not already available
+      let standCode = request.stand_code;
+      if (!standCode && request.stand_id) {
+        const stand = await db.select('code').from('stands').where('id', request.stand_id).first();
+        if (stand) {
+          standCode = stand.code;
+        }
+      }
+      
       return {
         id: request.id,
-        stand_id_or_code: request.stand_code || request.stand_id,
+        stand_id_or_code: standCode || `stand_${request.stand_id}`,
         title: request.title,
         description: request.description,
         status_id: request.status_id,

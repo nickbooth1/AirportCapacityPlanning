@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../utils/db');
+const db = require('../utils/db');
 
 // Get all terminals
 router.get('/', async (req, res, next) => {

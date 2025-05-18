@@ -47,4 +47,32 @@ export const getCapacitySettings = async () => {
     console.error('Error getting capacity settings:', error);
     throw error;
   }
+};
+
+/**
+ * Get capacity impact analysis for a date range
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @param {string} endDate - End date in YYYY-MM-DD format
+ * @returns {Promise<Object>} Capacity impact analysis data
+ */
+export const getCapacityImpactAnalysis = async (startDate, endDate) => {
+  try {
+    const url = new URL(`${API_BASE_URL}/api/capacity/impact-analysis`);
+    url.searchParams.append('startDate', startDate);
+    url.searchParams.append('endDate', endDate);
+    
+    console.log('API Request URL:', url.toString());
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to retrieve capacity impact analysis');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting capacity impact analysis:', error);
+    throw error;
+  }
 }; 

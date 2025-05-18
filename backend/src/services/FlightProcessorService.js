@@ -25,172 +25,276 @@ class FlightProcessorService {
   }
 
   /**
-   * Process a flight schedule from upload through validation to stand allocation
-   * @param {number} uploadId - The ID of the uploaded flight schedule
+   * Process a flight schedule from an upload
+   * @param {number} uploadId - Upload ID
    * @param {Object} options - Processing options
-   * @param {boolean} options.skipValidation - Skip validation step
-   * @param {boolean} options.skipAllocation - Skip allocation step
-   * @param {Object} options.allocationSettings - Settings for stand allocation
-   * @returns {Promise<object>} Process results
+   * @returns {Promise<Object>} Processing result
    */
   async processFlightSchedule(uploadId, options = {}) {
-    console.log(`Starting flight schedule processing for upload ${uploadId} with options:`, JSON.stringify(options));
-    const startTime = Date.now();
+    console.log(`[DEBUG] ========== PROCESS FLIGHT SCHEDULE START ==========`);
+    console.log(`[DEBUG] Processing flight schedule for upload ${uploadId} with options:`, JSON.stringify(options));
+    
+    let scheduleId = null;
+    let validationResults = null;
     
     try {
-      // 1. Fetch upload information
-      const upload = await this.uploadService.getUploadById(uploadId);
+      // 1. Validate input
+      if (!uploadId) {
+        throw new Error('Upload ID is required');
+      }
+      
+      if (typeof uploadId !== 'number') {
+        uploadId = parseInt(uploadId, 10);
+        
+        if (isNaN(uploadId)) {
+          throw new Error('Invalid upload ID - must be a number');
+        }
+      }
+      
+      console.log(`[DEBUG] Validated upload ID: ${uploadId}`);
+      
+      // 2. Create flight schedule
+      const db = require('../db');
+      
+      // Check if upload exists
+      const upload = await db('flight_uploads').where('id', uploadId).first();
       if (!upload) {
-        throw new Error(`Upload not found with ID: ${uploadId}`);
+        throw new Error(`Upload with ID ${uploadId} not found`);
       }
       
-      console.log(`Retrieved upload: ${upload.id} (${upload.filename})`);
+      console.log(`[DEBUG] Found upload: ${upload.id} - ${upload.file_name || 'Unnamed'}`);
       
-      // 2. Create flight schedule record
-      const scheduleId = await this.createFlightSchedule(uploadId);
-      console.log(`Created flight schedule with ID: ${scheduleId}`);
+      // Create schedule for this upload
+      const schedule = {
+        name: `Schedule from ${upload.file_name || `Upload ${uploadId}`}`,
+        description: `Generated from upload ${uploadId} on ${new Date().toLocaleString()}`,
+        upload_id: uploadId,
+        created_by: upload.user_id || 1, // Default to 1 if no user ID
+        status: 'processing',
+        created_at: new Date(),
+        updated_at: new Date()
+      };
       
-      if (!scheduleId) {
-        throw new Error('Failed to create flight schedule - no ID returned');
+      console.log(`[DEBUG] Creating flight schedule:`, JSON.stringify(schedule));
+      
+      // Insert schedule
+      const [insertedIdObj] = await db('flight_schedules').insert(schedule).returning('id');
+      // Extract the actual ID value
+      scheduleId = typeof insertedIdObj === 'object' && insertedIdObj !== null ? insertedIdObj.id : insertedIdObj;
+      console.log(`[DEBUG] Inserted schedule ID type: ${typeof insertedIdObj}, value:`, insertedIdObj);
+      
+      console.log(`[DEBUG] Created flight schedule with ID: ${scheduleId}`);
+      
+      // 3. Set date range based on flights
+      const dateRange = await db('flights')
+        .where('upload_id', uploadId)
+        .min('scheduled_datetime as earliest')
+        .max('scheduled_datetime as latest')
+        .first();
+      
+      if (dateRange && dateRange.earliest && dateRange.latest) {
+        console.log(`[DEBUG] Flight date range: ${dateRange.earliest} to ${dateRange.latest}`);
+        
+        await db('flight_schedules')
+          .where('id', scheduleId)
+          .update({
+            start_date: new Date(dateRange.earliest),
+            end_date: new Date(dateRange.latest)
+          });
       }
-      
-      // 3. Update status to processing
-      await db('flight_schedules')
-        .where('id', scheduleId)
-        .update({ status: 'processing' });
       
       // 4. Run validation (unless skipped)
-      let validationResults = null;
       if (!options.skipValidation) {
-        console.log(`Running validation for upload ${uploadId}`);
+        console.log(`[DEBUG] Running validation for upload ${uploadId}`);
         try {
           validationResults = await this.validateFlightData(uploadId);
-          console.log(`Validation completed for upload ${uploadId}:`, JSON.stringify(validationResults));
+          console.log(`[DEBUG] Validation completed with results:`, JSON.stringify(validationResults));
           await this.storeValidationResults(scheduleId, validationResults);
           
           if (validationResults.invalidFlights > 0) {
-            console.log(`Found ${validationResults.invalidFlights} invalid flights out of ${validationResults.totalFlights} total flights`);
+            console.log(`[DEBUG] Found ${validationResults.invalidFlights} invalid flights out of ${validationResults.totalFlights} total flights`);
           }
         } catch (validationError) {
-          console.error(`Validation error for upload ${uploadId}:`, validationError);
+          console.error(`[DEBUG] Validation error:`, validationError);
           throw new Error(`Validation failed: ${validationError.message}`);
         }
+      } else {
+        console.log(`[DEBUG] Validation skipped as requested`);
       }
       
       // 5. Run stand allocation (unless skipped)
       let allocationResults = null;
       if (!options.skipAllocation) {
-        console.log(`Running stand allocation for upload ${uploadId}`);
+        console.log(`[DEBUG] ========== STAND ALLOCATION START ==========`);
         
         try {
           // Prepare data for stand allocation
-          console.log(`Preparing allocation data for upload ${uploadId}`);
+          console.log(`[DEBUG] Preparing allocation data for upload ${uploadId}`);
           const allocationInput = await this.prepareAllocationData(uploadId);
-          console.log(`Allocation input prepared with ${allocationInput.flights.length} flights, ${allocationInput.stands.length} stands, and ${allocationInput.airlines.length} airlines`);
+          console.log(`[DEBUG] Allocation input prepared with:
+            - ${allocationInput.flights.length} flights 
+            - ${allocationInput.stands.length} stands
+            - ${allocationInput.airlines.length} airlines`);
+          
+          // Log sample data
+          if (allocationInput.flights.length > 0) {
+            console.log(`[DEBUG] Sample flight:`, JSON.stringify(allocationInput.flights[0]));
+          }
+          
+          if (allocationInput.stands.length > 0) {
+            console.log(`[DEBUG] Sample stand:`, JSON.stringify(allocationInput.stands[0]));
+          }
+          
+          // Check if we have valid data for allocation
+          if (allocationInput.flights.length === 0) {
+            console.warn(`[DEBUG] No flights to allocate for upload ${uploadId}`);
+          }
+          
+          if (allocationInput.stands.length === 0) {
+            console.warn(`[DEBUG] No stands available for allocation`);
+          }
           
           // Run stand allocation
-          console.log(`Executing stand allocation for upload ${uploadId}`);
+          console.log(`[DEBUG] Executing stand allocation algorithm`);
           allocationResults = await this.runStandAllocation(allocationInput, options.allocationSettings);
-          console.log(`Allocation completed with results:`, JSON.stringify({
-            allocated: allocationResults.allocated?.length || 0, 
-            unallocated: allocationResults.unallocated?.length || 0
-          }));
+          console.log(`[DEBUG] Allocation completed with:
+            - ${allocationResults.allocated?.length || 0} allocated flights 
+            - ${allocationResults.unallocated?.length || 0} unallocated flights
+            - Allocation rate: ${allocationResults.allocationRate?.toFixed(2) || 0}%`);
           
           // Store allocation results
-          console.log(`Storing allocation results for schedule ${scheduleId}`);
-          await this.storeAllocationResults(scheduleId, allocationResults);
-          console.log(`Successfully stored allocation results for schedule ${scheduleId}`);
+          console.log(`[DEBUG] Storing allocation results for schedule ${scheduleId}`);
+          const storedAllocations = await this.storeAllocationResults(scheduleId, allocationResults);
+          console.log(`[DEBUG] Successfully stored ${storedAllocations.length} allocation records`);
           
           // Calculate and store utilization metrics
-          console.log(`Calculating utilization metrics for schedule ${scheduleId}`);
+          console.log(`[DEBUG] Calculating utilization metrics`);
           const utilizationMetrics = await this.calculateUtilizationMetrics(scheduleId, allocationResults);
-          console.log(`Calculated ${utilizationMetrics.length} utilization metrics`);
+          if (utilizationMetrics && utilizationMetrics.length > 0) {
+            console.log(`[DEBUG] Generated ${utilizationMetrics.length} utilization metrics`);
+            await this.storeUtilizationMetrics(scheduleId, utilizationMetrics);
+          } else {
+            console.warn(`[DEBUG] No utilization metrics generated`);
+          }
           
-          // Identify and store utilization issues
-          console.log(`Identifying utilization issues for schedule ${scheduleId}`);
-          const issues = await this.identifyUtilizationIssues(scheduleId, utilizationMetrics);
-          console.log(`Identified ${issues.length} utilization issues`);
+          // Identify and store allocation issues
+          console.log(`[DEBUG] Identifying allocation issues`);
+          const allocationIssues = await this.identifyAllocationIssues(scheduleId, allocationResults, utilizationMetrics);
+          if (allocationIssues && allocationIssues.length > 0) {
+            console.log(`[DEBUG] Identified ${allocationIssues.length} allocation issues`);
+            await this.storeAllocationIssues(scheduleId, allocationIssues);
+          } else {
+            console.log(`[DEBUG] No allocation issues identified`);
+          }
+          
+          console.log(`[DEBUG] ========== STAND ALLOCATION COMPLETE ==========`);
         } catch (allocationError) {
-          console.error('Error during allocation process:', allocationError);
-          console.error('Stack trace:', allocationError.stack);
+          console.error(`[DEBUG] Allocation error:`, allocationError);
+          console.error(`[DEBUG] Allocation error stack:`, allocationError.stack);
           
-          // Still continue the process, but mark allocation as failed
+          // Update status to failed
           await db('flight_schedules')
             .where('id', scheduleId)
-            .update({ 
-              status: 'validation_only',
-              updated_at: new Date()
-            });
-        }
-      }
-      
-      // 6. Update status to completed
-      if (scheduleId) {
-        const finalStatus = allocationResults ? 
-          (!options.skipAllocation ? 'allocated' : (!options.skipValidation ? 'validated' : 'draft')) :
-          (!options.skipValidation ? 'validated' : 'draft');
-          
-        await db('flight_schedules')
-          .where('id', scheduleId)
-          .update({ 
-            status: finalStatus,
-            updated_at: new Date()
-          });
-      } else {
-        console.warn('Cannot update schedule status - no valid schedule ID available');
-      }
-      
-      const endTime = Date.now();
-      
-      console.log(`Flight schedule processing completed in ${(endTime - startTime) / 1000} seconds`);
-      
-      return {
-        scheduleId,
-        uploadId,
-        validation: validationResults,
-        allocation: allocationResults ? {
-          allocated: allocationResults.allocated?.length || 0,
-          unallocated: allocationResults.unallocated?.length || 0
-        } : null,
-        processingTime: (endTime - startTime) / 1000
-      };
-    } catch (error) {
-      console.error(`Error processing flight schedule for upload ${uploadId}:`, error);
-      console.error('Stack trace:', error.stack);
-      
-      // Update status to failed for both upload and schedule
-      try {
-        // Truncate error message to avoid DB error with varchar limits
-        let errorMessage = error.message || "Unknown error";
-        
-        // Ensure error message is not too long for the database field
-        if (errorMessage && errorMessage.length > 250) {
-          errorMessage = errorMessage.substring(0, 247) + '...';
-        }
-          
-        await db('flight_uploads')
-          .where('id', uploadId)
-          .update({ 
-            upload_status: 'failed',
-            error_message: errorMessage
-          });
-        
-        // Get schedule ID
-        const schedule = await db('flight_schedules')
-          .where('upload_id', uploadId)
-          .orderBy('created_at', 'desc')
-          .first();
-        
-        if (schedule) {
-          await db('flight_schedules')
-            .where('id', schedule.id)
             .update({ 
               status: 'failed',
               updated_at: new Date()
             });
+            
+          throw new Error(`Allocation failed: ${allocationError.message}`);
         }
-      } catch (dbError) {
-        console.error('Error updating status after failure:', dbError);
+      } else {
+        console.log(`[DEBUG] Stand allocation skipped as requested`);
+      }
+      
+      // 6. Update status to completed
+      if (scheduleId) {
+        // Check allocation counts from database
+        let allocatedCount = 0;
+        let unallocatedCount = 0;
+        
+        try {
+          // Get allocated count from database
+          const allocatedResult = await db('stand_allocations')
+            .where('schedule_id', scheduleId)
+            .count('id as count')
+            .first();
+            
+          if (allocatedResult) {
+            allocatedCount = parseInt(allocatedResult.count, 10) || 0;
+          }
+          
+          // Get unallocated count from database
+          const unallocatedResult = await db('unallocated_flights')
+            .where('schedule_id', scheduleId)
+            .count('id as count')
+            .first();
+            
+          if (unallocatedResult) {
+            unallocatedCount = parseInt(unallocatedResult.count, 10) || 0;
+          }
+          
+          console.log(`[DEBUG] Final counts from database: ${allocatedCount} allocated, ${unallocatedCount} unallocated`);
+          
+          // Update allocation results with actual counts from database
+          if (allocationResults) {
+            allocationResults.allocated = allocationResults.allocated || [];
+            allocationResults.unallocated = allocationResults.unallocated || [];
+            
+            // Set the actual allocation counts
+            allocationResults.allocated.length = allocatedCount;
+            allocationResults.unallocated.length = unallocatedCount;
+          }
+        } catch (countError) {
+          console.error('[DEBUG] Error getting allocation counts from database:', countError);
+        }
+        
+        // Set the final status
+        const finalStatus = allocatedCount > 0 ? 
+          'allocated' : 
+          (!options.skipValidation ? 'validated' : 'draft');
+        
+        console.log(`[DEBUG] Setting schedule ${scheduleId} final status to: ${finalStatus}`);
+        
+        await db('flight_schedules')
+          .where('id', scheduleId)
+          .update({ 
+            status: finalStatus,
+            allocated_flights: allocatedCount,
+            unallocated_flights: unallocatedCount,
+            allocated_at: allocatedCount > 0 ? new Date() : null,
+            updated_at: new Date()
+          });
+      }
+      
+      console.log(`[DEBUG] ========== PROCESS FLIGHT SCHEDULE COMPLETE ==========`);
+      
+      // Return result
+      return {
+        success: true,
+        scheduleId,
+        validation: validationResults,
+        allocation: allocationResults ? {
+          allocated: allocationResults.allocated?.length || 0,
+          unallocated: allocationResults.unallocated?.length || 0,
+          allocationRate: allocationResults.allocationRate || 0
+        } : null
+      };
+    } catch (error) {
+      console.error(`[DEBUG] Error processing flight schedule:`, error);
+      console.error(`[DEBUG] Error stack:`, error.stack);
+      
+      // Update status to failed if schedule was created
+      if (scheduleId) {
+        try {
+          await db('flight_schedules')
+            .where('id', scheduleId)
+            .update({ 
+              status: 'failed',
+              updated_at: new Date()
+            });
+        } catch (updateError) {
+          console.error(`[DEBUG] Error updating schedule status to failed:`, updateError);
+        }
       }
       
       throw error;
@@ -333,159 +437,113 @@ class FlightProcessorService {
   }
   
   /**
-   * Prepare data for stand allocation
+   * Prepare data for the stand allocation algorithm
    * @param {number} uploadId - Upload ID
-   * @returns {Promise<Object>} Data for stand allocation
+   * @returns {Promise<Object>} Data formatted for allocation
    */
   async prepareAllocationData(uploadId) {
     try {
       console.log(`Preparing allocation data for upload ${uploadId}`);
       
-      // Fetch flights from database
+      // Get flights from database
       const flights = await db('flights')
-        .where({ 
-          upload_id: uploadId,
-          validation_status: 'valid' // Only use valid flights
-        })
+        .where({ upload_id: uploadId })
         .select('*');
       
-      console.log(`Found ${flights.length} valid flights for allocation`);
-      
       if (!flights || flights.length === 0) {
-        console.warn(`No valid flights found for upload ${uploadId}`);
+        throw new Error(`No flights found for upload ${uploadId}`);
+      }
+      
+      // Get the base airport configuration
+      const airportConfigService = require('./airportConfigService');
+      const config = await airportConfigService.getConfig();
+      const baseAirport = config.baseAirport;
+      
+      // Use a default IATA code if no base airport is configured
+      const baseAirportCode = baseAirport?.iata_code || 'BASE';
+      
+      console.log(`Using base airport: ${baseAirportCode} for flight normalization`);
+      
+      // Normalize flight data for the allocation service
+      const normalizedFlights = flights.map(flight => {
+        const isArrival = flight.flight_nature === 'A';
+        const isDeparture = flight.flight_nature === 'D' || !isArrival; // Default to departure if not specified
+        
         return {
-          flights: [],
-          stands: [],
-          airlines: []
+          // Core flight identifiers
+          id: flight.id,
+          FlightID: flight.id,
+          // Flight details - use actual data from database fields
+          FlightNumber: flight.flight_number || flight.id.toString(), // Use flight number from DB or ID as fallback
+          AircraftType: flight.aircraft_type_iata || 'UNKN',
+          AircraftSize: flight.aircraft_size_category || 'C', // Default to medium
+          Airline: flight.airline_iata || 'UNKN',
+          // Set origin/destination using base airport
+          Origin: isArrival ? flight.origin_destination_iata : baseAirportCode,
+          Destination: isDeparture ? flight.origin_destination_iata : baseAirportCode,
+          // Times
+          ScheduledArrival: isArrival ? flight.scheduled_datetime : null,
+          ScheduledDeparture: isDeparture ? flight.scheduled_datetime : null,
+          EstimatedArrival: isArrival ? (flight.estimated_datetime || flight.scheduled_datetime) : null,
+          EstimatedDeparture: isDeparture ? (flight.estimated_datetime || flight.scheduled_datetime) : null,
+          // Additional properties
+          Terminal: flight.terminal,
+          IsArrival: isArrival,
+          IsDeparture: isDeparture,
+          TurnaroundTime: 45, // Default turnaround time in minutes
+          Registration: flight.registration || `${flight.airline_iata || 'UNKN'}${flight.flight_number || 'UNKN'}-REG`
         };
-      }
-      
-      // Normalize flight data
-      const normalizedFlights = [];
-      
-      for (const flight of flights) {
-        try {
-          // Ensure flight has the required fields
-          if (!flight.id || !flight.flight_number) {
-            console.warn(`Skipping invalid flight ID ${flight.id || 'unknown'}: missing required fields`);
-            continue;
-          }
-          
-          // Parse flight_data JSON
-          let flightData = {};
-          try {
-            if (flight.flight_data && typeof flight.flight_data === 'string') {
-              flightData = JSON.parse(flight.flight_data);
-            } else if (flight.flight_data && typeof flight.flight_data === 'object') {
-              flightData = flight.flight_data;
-            } else {
-              console.warn(`Flight ${flight.id} has missing or invalid flight_data`);
-              flightData = {};
-            }
-          } catch (parseError) {
-            console.error(`Error parsing flight_data for flight ${flight.id}:`, parseError);
-            flightData = {};
-          }
-          
-          // Extract times as Date objects
-          let scheduledArrival = null;
-          let scheduledDeparture = null;
-          let estimatedArrival = null;
-          let estimatedDeparture = null;
-          
-          try {
-            scheduledArrival = flight.scheduled_arrival_time ? new Date(flight.scheduled_arrival_time) : null;
-            scheduledDeparture = flight.scheduled_departure_time ? new Date(flight.scheduled_departure_time) : null;
-            estimatedArrival = flight.estimated_arrival_time ? new Date(flight.estimated_arrival_time) : scheduledArrival;
-            estimatedDeparture = flight.estimated_departure_time ? new Date(flight.estimated_departure_time) : scheduledDeparture;
-            
-            // Check if dates are valid
-            if (scheduledArrival && isNaN(scheduledArrival.getTime())) scheduledArrival = null;
-            if (scheduledDeparture && isNaN(scheduledDeparture.getTime())) scheduledDeparture = null;
-            if (estimatedArrival && isNaN(estimatedArrival.getTime())) estimatedArrival = scheduledArrival;
-            if (estimatedDeparture && isNaN(estimatedDeparture.getTime())) estimatedDeparture = scheduledDeparture;
-            
-            // Ensure we have at least one valid time
-            if (!scheduledArrival && !scheduledDeparture) {
-              console.warn(`Skipping flight ${flight.id} with no valid times`);
-              continue;
-            }
-          } catch (dateError) {
-            console.error(`Error parsing dates for flight ${flight.id}:`, dateError);
-            continue;
-          }
-          
-          // Create a normalized flight object
-          normalizedFlights.push({
-            FlightID: flight.id,
-            FlightNumber: flight.flight_number,
-            Registration: flight.registration || flight.aircraft_registration || '',
-            AircraftType: flight.aircraft_type || flightData.aircraft_type || '',
-            AircraftSize: flight.aircraft_size || flightData.aircraft_size || 'medium',
-            Airline: flight.airline || flightData.airline || '',
-            Origin: flight.origin || flightData.origin || '',
-            Destination: flight.destination || flightData.destination || '',
-            ScheduledArrival: scheduledArrival,
-            ScheduledDeparture: scheduledDeparture,
-            EstimatedArrival: estimatedArrival,
-            EstimatedDeparture: estimatedDeparture,
-            Terminal: flight.terminal || flightData.terminal || null,
-            StandPreferences: flight.stand_preferences || flightData.stand_preferences || [],
-            StandRestrictions: flight.stand_restrictions || flightData.stand_restrictions || [],
-            HasFixed: flight.has_fixed_allocation || false,
-            TurnaroundTime: flight.turnaround_time || flightData.turnaround_time || 45, // Default 45 minutes
-            Status: flight.status || 'scheduled'
-          });
-        } catch (flightError) {
-          console.error(`Error processing flight ${flight.id}:`, flightError);
-          continue;
-        }
-      }
+      });
       
       console.log(`Normalized ${normalizedFlights.length} flights for allocation`);
       
-      // Fetch stands from database
-      let stands = [];
-      try {
-        stands = await db('stands').select('*');
-        console.log(`Found ${stands.length} stands for allocation`);
-      } catch (standsError) {
-        console.error('Error fetching stands:', standsError);
-        stands = [];
-      }
+      // Get stands from database
+      const stands = await db('stands').select('*');
       
-      if (!stands || stands.length === 0) {
-        console.warn('No stands available for allocation');
-      }
+      console.log(`Found ${stands.length} stands for allocation`);
       
       // Normalize stand data
       const normalizedStands = stands.map(stand => ({
         StandID: stand.id,
-        Name: stand.name || `Stand ${stand.id}`,
-        Terminal: stand.terminal || '',
-        Type: stand.type || 'remote',
+        Name: stand.name,
+        Terminal: stand.terminal,
+        Type: stand.stand_type || 'remote',
         MaxAircraftSize: stand.max_aircraft_size || 'large',
         AirlinePriorities: stand.airline_priorities || [],
         Restrictions: stand.restrictions || [],
-        IsActive: stand.is_active !== false // Default to true if undefined
+        IsActive: stand.is_active || true
       }));
       
-      // Extract unique airlines
-      const airlines = [...new Set(normalizedFlights.map(f => f.Airline).filter(Boolean))];
-      
-      return {
+      // Prepare input data for allocation algorithm
+      const inputData = {
         flights: normalizedFlights,
         stands: normalizedStands,
-        airlines: airlines
+        // Add other required data for allocation
+        airlines: [{ code: 'ALL', name: 'All Airlines' }], // Default airline for testing
+        settings: {
+          allocation_priority: 'stand_utilization',
+          respect_airline_preferences: true,
+          allow_remote_stands_for_all: true
+        }
       };
+      
+      console.log(`[DEBUG] Allocation input prepared with:
+            - ${inputData.flights.length} flights 
+            - ${inputData.stands.length} stands
+            - ${inputData.airlines.length} airlines`);
+      
+      if (inputData.flights.length > 0) {
+        console.log(`[DEBUG] Sample flight: ${JSON.stringify(inputData.flights[0])}`);
+      }
+      
+      if (inputData.stands.length > 0) {
+        console.log(`[DEBUG] Sample stand: ${JSON.stringify(inputData.stands[0])}`);
+      }
+      
+      return inputData;
     } catch (error) {
-      console.error(`Error preparing allocation data for upload ${uploadId}:`, error);
-      console.error('Stack trace:', error.stack);
-      return {
-        flights: [],
-        stands: [],
-        airlines: []
-      };
+      console.error('Error preparing allocation data:', error);
+      throw error;
     }
   }
   
@@ -570,32 +628,60 @@ class FlightProcessorService {
    */
   async storeAllocationResults(scheduleId, allocationResults) {
     try {
-      console.log(`Storing allocation results for schedule ${scheduleId}`);
+      console.log(`[DEBUG] STORING ALLOCATION RESULTS - START - for schedule ${scheduleId}`);
       
       // Validate inputs
       if (!scheduleId) {
-        console.warn('No schedule ID provided for storing allocation results');
+        console.warn('[DEBUG] No schedule ID provided for storing allocation results');
         return [];
       }
       
       if (!allocationResults) {
-        console.warn('No allocation results provided');
+        console.warn('[DEBUG] No allocation results provided');
         return [];
       }
+      
+      // DEBUG: Detailed logging
+      console.log(`[DEBUG] Raw allocation results:`, JSON.stringify({
+        allocatedCount: allocationResults.allocated?.length || 0,
+        unallocatedCount: allocationResults.unallocated?.length || 0,
+        firstAllocatedFlight: allocationResults.allocated?.[0] || null,
+        firstUnallocatedFlight: allocationResults.unallocated?.[0] || null,
+      }));
       
       // Make sure we have valid arrays for allocated and unallocated flights
       const allocated = Array.isArray(allocationResults.allocated) ? allocationResults.allocated : [];
       const unallocated = Array.isArray(allocationResults.unallocated) ? allocationResults.unallocated : [];
       
-      console.log(`Processing ${allocated.length} allocated flights and ${unallocated.length} unallocated flights`);
+      console.log(`[DEBUG] Processing ${allocated.length} allocated flights and ${unallocated.length} unallocated flights`);
       
       // Process allocated flights
       const allocations = [];
       
       for (const allocation of allocated) {
         try {
-          if (!allocation.flight || !allocation.flight.id || !allocation.stand || !allocation.stand.id) {
-            console.warn('Skipping invalid allocation record:', allocation);
+          // DEBUG - Log each allocation object
+          console.log(`[DEBUG] Processing allocation:`, JSON.stringify(allocation));
+          
+          if (!allocation.flight || !allocation.stand) {
+            console.warn('[DEBUG] Skipping invalid allocation record - missing flight or stand:', JSON.stringify(allocation));
+            continue;
+          }
+          
+          // Check if flight ID exists in the correct format
+          console.log(`[DEBUG] Flight ID type: ${typeof allocation.flight.id}, value: ${allocation.flight.id}`);
+          console.log(`[DEBUG] Stand ID type: ${typeof allocation.stand.id}, value: ${allocation.stand.id}`);
+          
+          const flightId = typeof allocation.flight.id === 'string' 
+            ? parseInt(allocation.flight.id, 10) 
+            : allocation.flight.id;
+            
+          const standId = typeof allocation.stand.id === 'string'
+            ? parseInt(allocation.stand.id, 10)
+            : allocation.stand.id;
+          
+          if (isNaN(flightId) || isNaN(standId)) {
+            console.warn(`[DEBUG] Skipping invalid allocation record - invalid IDs: flightId=${flightId}, standId=${standId}`);
             continue;
           }
           
@@ -603,35 +689,46 @@ class FlightProcessorService {
           let endTime = null;
           
           try {
+            console.log(`[DEBUG] Original start_time: ${allocation.start_time}, end_time: ${allocation.end_time}`);
             startTime = allocation.start_time ? new Date(allocation.start_time) : null;
             endTime = allocation.end_time ? new Date(allocation.end_time) : null;
             
             // Validate dates
-            if (startTime && isNaN(startTime.getTime())) startTime = null;
-            if (endTime && isNaN(endTime.getTime())) endTime = null;
+            if (startTime && isNaN(startTime.getTime())) {
+              console.warn(`[DEBUG] Invalid start time: ${allocation.start_time}`);
+              startTime = null;
+            }
+            
+            if (endTime && isNaN(endTime.getTime())) {
+              console.warn(`[DEBUG] Invalid end time: ${allocation.end_time}`);
+              endTime = null;
+            }
             
             // If we have only one valid time, try to estimate the other
             if (startTime && !endTime) {
               // Add 45 minutes for turnaround time as a default
               endTime = new Date(startTime.getTime() + (45 * 60 * 1000));
+              console.log(`[DEBUG] Generated end time: ${endTime.toISOString()} from start time`);
             } else if (!startTime && endTime) {
               // Subtract 45 minutes
               startTime = new Date(endTime.getTime() - (45 * 60 * 1000));
+              console.log(`[DEBUG] Generated start time: ${startTime.toISOString()} from end time`);
             }
             
             // If we still have no valid times, skip
             if (!startTime || !endTime) {
-              console.warn(`Skipping allocation for flight ${allocation.flight.id} with no valid times`);
+              console.warn(`[DEBUG] Skipping allocation for flight ${flightId} with no valid times`);
               continue;
             }
           } catch (dateError) {
-            console.error(`Error parsing allocation times for flight ${allocation.flight.id}:`, dateError);
+            console.error(`[DEBUG] Error parsing allocation times for flight ${flightId}:`, dateError);
             continue;
           }
           
-          allocations.push({
-            flight_id: allocation.flight.id,
-            stand_id: allocation.stand.id,
+          // Create allocation record
+          const record = {
+            flight_id: flightId,
+            stand_id: standId,
             schedule_id: scheduleId,
             start_time: startTime,
             end_time: endTime,
@@ -640,11 +737,52 @@ class FlightProcessorService {
             allocation_source: 'automated',
             created_at: new Date(),
             updated_at: new Date()
-          });
+          };
+          
+          // DEBUG - Log allocation record
+          console.log(`[DEBUG] Created allocation record:`, JSON.stringify(record));
+          
+          allocations.push(record);
         } catch (allocationError) {
-          console.error('Error processing allocation record:', allocationError);
+          console.error('[DEBUG] Error processing allocation record:', allocationError);
           continue;
         }
+      }
+      
+      // Store allocated flights
+      if (allocations.length > 0) {
+        try {
+          console.log(`[DEBUG] Storing ${allocations.length} stand allocation records`);
+          
+          // Store in batches of 10 to avoid issues with large inserts
+          const batchSize = 10;
+          for (let i = 0; i < allocations.length; i += batchSize) {
+            const batch = allocations.slice(i, i + batchSize);
+            if (batch.length > 0) {
+              try {
+                console.log(`[DEBUG] Inserting batch ${i/batchSize + 1} with ${batch.length} allocations`);
+                await db('stand_allocations').insert(batch);
+                console.log(`[DEBUG] Successfully inserted batch ${i/batchSize + 1}`);
+              } catch (batchError) {
+                console.error(`[DEBUG] Error inserting allocation batch ${i/batchSize + 1}:`, batchError);
+                console.error('[DEBUG] First record in failed batch:', JSON.stringify(batch[0]));
+              }
+            }
+          }
+          
+          // Verify insertion worked
+          const count = await db('stand_allocations')
+            .where('schedule_id', scheduleId)
+            .count('id as count')
+            .first();
+            
+          console.log(`[DEBUG] After insertion, database has ${count.count} allocations for schedule ${scheduleId}`);
+        } catch (insertError) {
+          console.error('[DEBUG] Error storing stand allocations:', insertError);
+          console.error('[DEBUG] Error details:', insertError.stack);
+        }
+      } else {
+        console.warn('[DEBUG] No valid allocations to store');
       }
       
       // Process unallocated flights
@@ -653,9 +791,11 @@ class FlightProcessorService {
       for (const unallocation of unallocated) {
         try {
           if (!unallocation.flight || !unallocation.flight.id) {
-            console.warn('Skipping invalid unallocation record:', unallocation);
+            console.warn('[DEBUG] Skipping invalid unallocation record:', JSON.stringify(unallocation));
             continue;
           }
+          
+          console.log(`[DEBUG] Processing unallocated flight ID: ${unallocation.flight.id}`);
           
           unallocatedRecords.push({
             flight_id: unallocation.flight.id,
@@ -665,41 +805,37 @@ class FlightProcessorService {
             updated_at: new Date()
           });
         } catch (unallocationError) {
-          console.error('Error processing unallocation record:', unallocationError);
+          console.error('[DEBUG] Error processing unallocation record:', unallocationError);
           continue;
         }
-      }
-      
-      // Store allocated flights
-      if (allocations.length > 0) {
-        try {
-          console.log(`Storing ${allocations.length} stand allocation records`);
-          await db('stand_allocations').insert(allocations);
-        } catch (insertError) {
-          console.error('Error storing stand allocations:', insertError);
-        }
-      } else {
-        console.warn('No valid allocations to store');
       }
       
       // Store unallocated flights
       if (unallocatedRecords.length > 0) {
         try {
-          console.log(`Storing ${unallocatedRecords.length} unallocated flight records`);
+          console.log(`[DEBUG] Storing ${unallocatedRecords.length} unallocated flight records`);
           await db('unallocated_flights').insert(unallocatedRecords);
+          
+          // Verify insertion worked
+          const count = await db('unallocated_flights')
+            .where('schedule_id', scheduleId)
+            .count('id as count')
+            .first();
+            
+          console.log(`[DEBUG] After insertion, database has ${count.count} unallocated flights for schedule ${scheduleId}`);
         } catch (insertError) {
-          console.error('Error storing unallocated flights:', insertError);
+          console.error('[DEBUG] Error storing unallocated flights:', insertError);
         }
       } else {
-        console.log('No unallocated flights to store');
+        console.log('[DEBUG] No unallocated flights to store');
       }
       
-      console.log(`Completed storing allocation results for schedule ${scheduleId}`);
+      console.log(`[DEBUG] STORING ALLOCATION RESULTS - COMPLETE - for schedule ${scheduleId}`);
       
       return allocations;
     } catch (error) {
-      console.error(`Error storing allocation results for schedule ${scheduleId}:`, error);
-      console.error('Stack trace:', error.stack);
+      console.error(`[DEBUG] Error storing allocation results for schedule ${scheduleId}:`, error);
+      console.error('[DEBUG] Stack trace:', error.stack);
       return [];
     }
   }
@@ -747,64 +883,49 @@ class FlightProcessorService {
             continue;
           }
           
-          // Format date objects properly
-          let periodStart, periodEnd;
-          try {
-            periodStart = new Date(metric.period_start);
-            periodEnd = new Date(metric.period_end);
-            
-            // Skip if dates are invalid
-            if (isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime())) {
-              console.warn('Skipping metric with invalid dates:', metric);
-              continue;
-            }
-          } catch (dateError) {
-            console.warn('Error parsing dates for metric:', dateError);
-            continue;
-          }
+          // Ensure utilization_percentage is a number
+          const utilizationPercentage = typeof metric.utilization_percentage === 'number' 
+            ? metric.utilization_percentage 
+            : parseFloat(metric.utilization_percentage || 0);
           
           metricsRecords.push({
             schedule_id: scheduleId,
             stand_id: metric.stand_id,
             time_period: metric.time_period || 'daily',
-            period_start: periodStart,
-            period_end: periodEnd,
-            utilization_percentage: metric.utilization_percentage || 0,
-            minutes_utilized: metric.minutes_utilized || 0,
+            period_start: new Date(metric.period_start),
+            period_end: new Date(metric.period_end),
+            minutes_utilized: parseInt(metric.minutes_utilized || 0, 10), 
+            utilization_percentage: utilizationPercentage,
             created_at: new Date(),
             updated_at: new Date()
           });
         }
         
+        // Report what we're storing
         console.log(`Prepared ${metricsRecords.length} metric records for database storage`);
         
-        // Insert in chunks
-        const chunkSize = 500;
-        if (metricsRecords.length > 0) {
-          for (let i = 0; i < metricsRecords.length; i += chunkSize) {
-            const chunk = metricsRecords.slice(i, i + chunkSize);
-            if (chunk.length > 0) {
-              try {
-                await db('stand_utilization_metrics').insert(chunk);
-                console.log(`Inserted chunk of ${chunk.length} metrics (${i+1}-${Math.min(i+chunkSize, metricsRecords.length)} of ${metricsRecords.length})`);
-              } catch (insertError) {
-                console.error(`Error inserting metrics chunk ${i+1}-${Math.min(i+chunkSize, metricsRecords.length)}:`, insertError);
-                // Continue with next chunk
-              }
-            }
+        // Store metrics in batches to avoid exceeding query size limits
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < metricsRecords.length; i += BATCH_SIZE) {
+          const batch = metricsRecords.slice(i, i + BATCH_SIZE);
+          
+          try {
+            await db('stand_utilization_metrics').insert(batch);
+            console.log(`Inserted chunk of ${batch.length} metrics (${i+1}-${i+batch.length} of ${metricsRecords.length})`);
+          } catch (batchError) {
+            console.error(`Error storing metrics batch ${i+1}-${i+batch.length}:`, batchError);
           }
-        } else {
-          console.warn('No valid metrics records to store');
         }
         
-        return metrics;
+        console.log(`Generated ${metricsRecords.length} utilization metrics`);
+        
+        return metricsRecords;
       } catch (adapterError) {
-        console.error('Error calculating metrics with adapter:', adapterError);
+        console.error('Error in allocation adapter metric calculation:', adapterError);
         return [];
       }
     } catch (error) {
-      console.error(`Error calculating utilization metrics for schedule ${scheduleId}:`, error);
-      console.error('Error stack:', error.stack);
+      console.error('Error calculating utilization metrics:', error);
       return [];
     }
   }
@@ -855,9 +976,17 @@ class FlightProcessorService {
           // Ensure affected_entities is a valid JSON
           let affectedEntitiesJson;
           try {
-            affectedEntitiesJson = JSON.stringify(issue.affected_entities || {});
+            // First check if it's already a string
+            if (typeof issue.affected_entities === 'string') {
+              // If it's already a string, validate that it's valid JSON
+              JSON.parse(issue.affected_entities);
+              affectedEntitiesJson = issue.affected_entities;
+            } else {
+              // Otherwise stringify the object
+              affectedEntitiesJson = JSON.stringify(issue.affected_entities || {});
+            }
           } catch (jsonError) {
-            console.warn('Error serializing affected entities:', jsonError);
+            console.warn('Error processing affected entities:', jsonError);
             affectedEntitiesJson = '{}';
           }
           
@@ -900,6 +1029,163 @@ class FlightProcessorService {
     } catch (error) {
       console.error(`Error identifying utilization issues for schedule ${scheduleId}:`, error);
       console.error('Error stack:', error.stack);
+      return [];
+    }
+  }
+  
+  /**
+   * Identify allocation issues
+   * @param {number} scheduleId - Schedule ID
+   * @param {Object} allocationResults - Allocation results
+   * @param {Array} utilizationMetrics - Utilization metrics
+   * @returns {Promise<Array>} Allocation issues
+   */
+  async identifyAllocationIssues(scheduleId, allocationResults, utilizationMetrics) {
+    try {
+      console.log(`[DEBUG] Identifying allocation issues for schedule ${scheduleId}`);
+      
+      const issues = [];
+      
+      // Check if we have unallocated flights
+      if (allocationResults && allocationResults.unallocated && allocationResults.unallocated.length > 0) {
+        console.log(`[DEBUG] Found ${allocationResults.unallocated.length} unallocated flights`);
+        
+        // Group unallocated flights by reason
+        const reasonGroups = {};
+        
+        for (const unallocated of allocationResults.unallocated) {
+          const reason = unallocated.reason || 'Unknown reason';
+          reasonGroups[reason] = reasonGroups[reason] || [];
+          reasonGroups[reason].push(unallocated.flight.id);
+        }
+        
+        // Create issues for each reason group
+        for (const reason in reasonGroups) {
+          const flightCount = reasonGroups[reason].length;
+          
+          issues.push({
+            schedule_id: scheduleId,
+            issue_type: 'unallocated_flights',
+            severity: flightCount > 10 ? 'critical' : (flightCount > 5 ? 'high' : 'medium'),
+            description: `${flightCount} flights could not be allocated: ${reason}`,
+            affected_entities: JSON.stringify({
+              flight_count: flightCount,
+              flight_ids: reasonGroups[reason].slice(0, 10), // Include first 10 flight IDs
+              reason: reason
+            }),
+            recommendation: 'Review stands availability or flight schedule to resolve conflicts',
+            is_resolved: false,
+            created_at: new Date(),
+            updated_at: new Date()
+          });
+        }
+      }
+      
+      // Check utilization metrics for over-utilized stands
+      if (utilizationMetrics && utilizationMetrics.length > 0) {
+        // Get daily utilization over 90%
+        const highUtilization = utilizationMetrics.filter(
+          metric => metric.time_period === 'daily' && metric.utilization_percentage > 90
+        );
+        
+        if (highUtilization.length > 0) {
+          console.log(`[DEBUG] Found ${highUtilization.length} stands with high utilization`);
+          
+          // Group by stand
+          const standGroups = {};
+          
+          for (const metric of highUtilization) {
+            standGroups[metric.stand_id] = standGroups[metric.stand_id] || [];
+            standGroups[metric.stand_id].push(metric);
+          }
+          
+          // Create issues for each stand
+          for (const standId in standGroups) {
+            const standMetrics = standGroups[standId];
+            const maxUtilization = Math.max(...standMetrics.map(m => m.utilization_percentage));
+            
+            issues.push({
+              schedule_id: scheduleId,
+              issue_type: 'high_stand_utilization',
+              severity: maxUtilization > 95 ? 'critical' : 'high',
+              description: `Stand ${standId} has high utilization (${maxUtilization.toFixed(1)}%)`,
+              affected_entities: JSON.stringify({
+                stand_id: standId,
+                utilization_percentage: maxUtilization,
+                metrics: standMetrics.map(m => ({
+                  period_start: m.period_start,
+                  period_end: m.period_end,
+                  utilization_percentage: m.utilization_percentage
+                }))
+              }),
+              recommendation: 'Consider redistributing flights to less utilized stands',
+              is_resolved: false,
+              created_at: new Date(),
+              updated_at: new Date()
+            });
+          }
+        }
+      }
+      
+      return issues;
+    } catch (error) {
+      console.error('[DEBUG] Error identifying allocation issues:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Store allocation issues in the database
+   * @param {number} scheduleId - Schedule ID 
+   * @param {Array} issues - Allocation issues
+   * @returns {Promise<Array>} Stored issues
+   */
+  async storeAllocationIssues(scheduleId, issues) {
+    try {
+      console.log(`[DEBUG] Storing ${issues.length} allocation issues for schedule ${scheduleId}`);
+      
+      if (!issues || !Array.isArray(issues) || issues.length === 0) {
+        console.log('[DEBUG] No issues to store');
+        return [];
+      }
+      
+      // Insert issues into the database
+      await db('allocation_issues').insert(issues);
+      
+      return issues;
+    } catch (error) {
+      console.error('[DEBUG] Error storing allocation issues:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Store utilization metrics in database
+   * @param {number} scheduleId - Schedule ID
+   * @param {Array} metrics - Utilization metrics
+   * @returns {Promise<Array>} Stored metrics
+   */
+  async storeUtilizationMetrics(scheduleId, metrics) {
+    try {
+      console.log(`[DEBUG] Storing ${metrics.length} utilization metrics for schedule ${scheduleId}`);
+      
+      if (!metrics || !Array.isArray(metrics) || metrics.length === 0) {
+        console.log('[DEBUG] No metrics to store');
+        return [];
+      }
+      
+      // Add schedule ID to each metric
+      const metricsWithScheduleId = metrics.map(metric => ({
+        ...metric,
+        schedule_id: scheduleId
+      }));
+      
+      // Insert metrics into the database
+      await db('stand_utilization_metrics').insert(metricsWithScheduleId);
+      
+      return metricsWithScheduleId;
+    } catch (error) {
+      console.error('[DEBUG] Error storing utilization metrics:', error);
       return [];
     }
   }

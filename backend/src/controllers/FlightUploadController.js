@@ -36,10 +36,10 @@ class FlightUploadController {
         return res.status(400).json({ error: 'Only CSV files are allowed' });
       }
       
-      // Check file size (max 50MB)
-      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+      // Check file size (max 200MB)
+      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB in bytes
       if (file.size > MAX_FILE_SIZE) {
-        return res.status(400).json({ error: 'File size exceeds the 50MB limit' });
+        return res.status(400).json({ error: 'File size exceeds the 200MB limit' });
       }
       
       // Create uploads directory if it doesn't exist
@@ -121,10 +121,10 @@ class FlightUploadController {
         return res.status(400).json({ error: 'Only CSV files are allowed' });
       }
       
-      // Check file size (max 50MB)
-      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+      // Check file size (max 200MB)
+      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB in bytes
       if (parseInt(fileSize, 10) > MAX_FILE_SIZE) {
-        return res.status(400).json({ error: 'File size exceeds the 50MB limit' });
+        return res.status(400).json({ error: 'File size exceeds the 200MB limit' });
       }
       
       try {
@@ -427,21 +427,72 @@ class FlightUploadController {
       const { id } = req.params;
       const { flightIds, approveAll, excludeInvalid } = req.body;
       
+      console.log('Approval request received:', {
+        uploadId: id,
+        flightIds: flightIds ? flightIds.length : 'none',
+        approveAll: Boolean(approveAll),
+        excludeInvalid: Boolean(excludeInvalid)
+      });
+      
       if (!approveAll && (!flightIds || !Array.isArray(flightIds) || flightIds.length === 0)) {
         return res.status(400).json({ error: 'No flights specified for approval' });
       }
       
       const uploadService = new FlightUploadService();
+      
+      // Get the upload status to verify we have flights to approve
+      const uploadStatus = await uploadService.getUploadStatus(id);
+      
+      if (!uploadStatus) {
+        console.error(`Upload not found: ${id}`);
+        return res.status(404).json({ error: 'Upload not found' });
+      }
+      
+      console.log('Upload status for approval:', {
+        id: uploadStatus.id,
+        status: uploadStatus.status,
+        flightCount: uploadStatus.flightCount
+      });
+      
+      if (uploadStatus.flightCount === 0) {
+        console.error(`No flights found for upload: ${id}`);
+        return res.status(400).json({ error: 'No flights found for this upload' });
+      }
+      
+      // Get the list of flights to check for validation status if needed
+      if (excludeInvalid) {
+        const validationService = new FlightValidationService();
+        const results = await validationService.getValidationResults(id, { limit: 1000 });
+        
+        console.log('Validation results summary:', {
+          total: results?.total || 0,
+          validCount: results?.validCount || 0,
+          invalidCount: results?.invalidCount || 0
+        });
+        
+        if (!results || results.total === 0) {
+          console.error(`No validation results found for upload: ${id}`);
+          return res.status(400).json({ error: 'No validated flights found for this upload' });
+        }
+      }
+      
+      // Call the existing approval method
       const result = await uploadService.approveFlights(id, {
         flightIds,
         approveAll: Boolean(approveAll),
         excludeInvalid: Boolean(excludeInvalid)
       });
       
+      console.log('Approval result:', result);
+      
+      if (result.count === 0) {
+        console.warn(`Zero flights approved for upload ${id}`);
+      }
+      
       return res.json(result);
     } catch (error) {
       console.error('Error approving flights:', error);
-      return res.status(500).json({ error: 'Failed to approve flights' });
+      return res.status(500).json({ error: 'Failed to approve flights: ' + error.message });
     }
   }
   

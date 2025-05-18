@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import Layout from '../../../components/Layout';
 import flightDataApi from '../../../api/flightDataApi';
+import StandTimelineGantt from '../../../components/flights/StandTimelineGantt';
 
 // Define tab panels
 const TabPanel = (props) => {
@@ -49,6 +50,14 @@ const StandUtilizationTable = ({ metrics }) => {
     standMetrics[metric.stand_name].metrics.push(metric);
   });
 
+  // Helper function to safely format utilization percentage
+  const formatUtilization = (value) => {
+    // Convert to number if it's a string or handle null/undefined
+    const numValue = parseFloat(value);
+    // Check if it's a valid number before using toFixed
+    return !isNaN(numValue) ? `${numValue.toFixed(1)}%` : '0.0%';
+  };
+
   return (
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 650 }} aria-label="utilization table">
@@ -77,8 +86,8 @@ const StandUtilizationTable = ({ metrics }) => {
                 <TableCell>{new Date(metric.period_end).toLocaleString()}</TableCell>
                 <TableCell>
                   <Chip 
-                    label={`${metric.utilization_percentage.toFixed(1)}%`} 
-                    color={getUtilizationColor(metric.utilization_percentage)}
+                    label={formatUtilization(metric.utilization_percentage)} 
+                    color={getUtilizationColor(parseFloat(metric.utilization_percentage) || 0)}
                   />
                 </TableCell>
               </TableRow>
@@ -263,6 +272,7 @@ const AllocationResultsPage = () => {
               <Tab label="Overview" />
               <Tab label="Allocated Flights" />
               <Tab label="Unallocated Flights" />
+              <Tab label="Timeline" />
               <Tab label="Utilization" />
               <Tab label="Issues" />
             </Tabs>
@@ -415,11 +425,16 @@ const AllocationResultsPage = () => {
             </TabPanel>
 
             <TabPanel value={tabValue} index={3}>
+              <Typography variant="h6" gutterBottom>Stand Timeline</Typography>
+              <StandTimelineGantt allocations={allocations} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={4}>
               <Typography variant="h6" gutterBottom>Stand Utilization</Typography>
               <StandUtilizationTable metrics={utilizationMetrics} />
             </TabPanel>
 
-            <TabPanel value={tabValue} index={4}>
+            <TabPanel value={tabValue} index={5}>
               <Typography variant="h6" gutterBottom>Allocation Issues</Typography>
               <IssuesPanel issues={issues} />
             </TabPanel>

@@ -1,0 +1,42 @@
+{
+  "version": "2023-11-01",
+  "lastUpdated": "2023-11-01T12:00:00Z",
+  "source": "IATA/ICAO Reference Data",
+  "data": [
+    {
+      "AirlineCode": "BA",
+      "IATACode": "BA",
+      "ICAOCode": "BAW",
+      "AirlineName": "British Airways",
+      "BaseTerminal": "T5"
+    },
+    {
+      "AirlineCode": "LH",
+      "IATACode": "LH",
+      "ICAOCode": "DLH",
+      "AirlineName": "Lufthansa",
+      "BaseTerminal": "T2"
+    },
+    {
+      "AirlineCode": "AF",
+      "IATACode": "AF",
+      "ICAOCode": "AFR",
+      "AirlineName": "Air France",
+      "BaseTerminal": "T4"
+    },
+    {
+      "AirlineCode": "EK",
+      "IATACode": "EK",
+      "ICAOCode": "UAE",
+      "AirlineName": "Emirates",
+      "BaseTerminal": "T3"
+    },
+    {
+      "AirlineCode": "AA",
+      "IATACode": "AA",
+      "ICAOCode": "AAL",
+      "AirlineName": "American Airlines", 
+      "BaseTerminal": "T3"
+    }
+  ]
+} 

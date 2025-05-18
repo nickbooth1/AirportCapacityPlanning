@@ -404,6 +404,202 @@ Similar CRUD endpoints are available for operational settings at `/settings`.
 
 Similar CRUD endpoints are available for turnaround rules at `/turnaround-rules`.
 
+## Capacity API
+
+### GET /api/capacity/calculate
+
+Calculates the theoretical maximum capacity of stands based on turnaround times, aircraft size constraints, and operational settings.
+
+**Query Parameters:**
+
+- `date` (optional): Date for calculation (YYYY-MM-DD). Defaults to current date if not provided.
+
+**Response:**
+
+```json
+{
+  "calculatedAt": "2023-06-15T14:30:00Z",
+  "date": "2023-06-15",
+  "bestCaseCapacity": {
+    "Morning": {
+      "A320": 10,
+      "B738": 8
+    },
+    "Afternoon": {
+      "A320": 12,
+      "B738": 10
+    }
+  },
+  "worstCaseCapacity": {
+    "Morning": {
+      "A320": 8,
+      "B738": 6
+    },
+    "Afternoon": {
+      "A320": 10,
+      "B738": 8
+    }
+  },
+  "timeSlots": [
+    {
+      "id": 1,
+      "name": "Morning",
+      "start_time": "06:00:00",
+      "end_time": "12:00:00"
+    },
+    {
+      "id": 2,
+      "name": "Afternoon",
+      "start_time": "12:00:00",
+      "end_time": "18:00:00"
+    }
+  ]
+}
+```
+
+### GET /api/capacity/settings
+
+Returns the operational settings used for capacity calculations.
+
+**Response:**
+
+```json
+{
+  "slot_duration_minutes": 60,
+  "slot_block_size": 6,
+  "operating_start_time": "06:00:00",
+  "operating_end_time": "23:00:00",
+  "default_gap_minutes": 15
+}
+```
+
+### GET /api/capacity/impact-analysis
+
+Returns the impact of maintenance requests on daily capacity for a specified date range.
+
+**Query Parameters:**
+
+- `startDate` (required): The start date of the analysis period (YYYY-MM-DD)
+- `endDate` (required): The end date of the analysis period (YYYY-MM-DD)
+
+**Response:**
+
+```json
+{
+  "analysisDate": "2023-12-15T14:30:00Z",
+  "dateRange": {
+    "startDate": "2023-12-15",
+    "endDate": "2023-12-16"
+  },
+  "dailyImpacts": [
+    {
+      "date": "2023-12-15",
+      "originalDailyCapacity": {
+        "narrowBody": 150,
+        "wideBody": 50,
+        "total": 200
+      },
+      "capacityAfterDefiniteImpact": {
+        "narrowBody": 140,
+        "wideBody": 48,
+        "total": 188
+      },
+      "finalNetCapacity": {
+        "narrowBody": 135,
+        "wideBody": 48,
+        "total": 183
+      },
+      "maintenanceImpacts": {
+        "definite": {
+          "reduction": {
+            "narrowBody": 10,
+            "wideBody": 2,
+            "total": 12
+          },
+          "requests": [
+            {
+              "id": 1,
+              "title": "Stand 101 Lighting Repair",
+              "standCode": "S101",
+              "statusName": "Approved",
+              "startTime": "2023-12-15T08:00:00Z",
+              "endTime": "2023-12-15T14:00:00Z"
+            }
+          ]
+        },
+        "potential": {
+          "reduction": {
+            "narrowBody": 5,
+            "wideBody": 0,
+            "total": 5
+          },
+          "requests": [
+            {
+              "id": 2,
+              "title": "Stand 102 Inspection",
+              "standCode": "S102",
+              "statusName": "Requested",
+              "startTime": "2023-12-15T16:00:00Z",
+              "endTime": "2023-12-16T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "date": "2023-12-16",
+      "originalDailyCapacity": {
+        "narrowBody": 150,
+        "wideBody": 50,
+        "total": 200
+      },
+      "capacityAfterDefiniteImpact": {
+        "narrowBody": 150,
+        "wideBody": 50,
+        "total": 200
+      },
+      "finalNetCapacity": {
+        "narrowBody": 145,
+        "wideBody": 50,
+        "total": 195
+      },
+      "maintenanceImpacts": {
+        "definite": {
+          "reduction": {
+            "narrowBody": 0,
+            "wideBody": 0,
+            "total": 0
+          },
+          "requests": []
+        },
+        "potential": {
+          "reduction": {
+            "narrowBody": 5,
+            "wideBody": 0,
+            "total": 5
+          },
+          "requests": [
+            {
+              "id": 2,
+              "title": "Stand 102 Inspection",
+              "standCode": "S102",
+              "statusName": "Requested",
+              "startTime": "2023-12-15T16:00:00Z",
+              "endTime": "2023-12-16T10:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+**Error Responses:**
+
+- `400 Bad Request`: If startDate or endDate are missing or in an invalid format
+- `500 Internal Server Error`: If there's a server-side error during processing
+
 ## Error Responses
 
 ### Not Found (404)

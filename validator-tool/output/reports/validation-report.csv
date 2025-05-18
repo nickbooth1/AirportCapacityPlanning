@@ -1,0 +1,8 @@
+Severity,Code,Field,RecordID,Row,Column,Message,Value,SuggestedFix
+ERROR,E001,AircraftType,"FL002",2,AircraftType,"Missing required field: AircraftType","",""
+ERROR,E002,ScheduledTime,"FL003",3,ScheduledTime,"Invalid date format for ScheduledTime. Expected datetime","15/05/2023 14:30:00",""
+ERROR,E004,AircraftType,"FL002",2,AircraftType,"Aircraft type 'B736' not found in reference data","B736",""
+WARNING,W001,LinkID,"FL005-FL006",,,"Turnaround time of 15 minutes is less than minimum required 45 minutes for LinkID 'FL005'","15",""
+WARNING,W004,Terminal,"FL004",,,"Terminal change for linked flights may require additional time","",""
+INFO,I001,ScheduledTime,"FL003",3,ScheduledTime,"Date format identified as: DD/MM/YYYY HH:mm:ss","",
+INFO,I002,AircraftType,"FL001",,,"Aircraft type 'B738' matches Boeing 737-800","",

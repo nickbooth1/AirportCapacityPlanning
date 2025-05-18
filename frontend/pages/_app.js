@@ -5,6 +5,9 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import createEmotionCache from '../lib/createEmotionCache';
 import theme from '../lib/theme';
 import { AirportConfigProvider } from '../src/contexts/AirportConfigContext';
+import { WebSocketProvider } from '../src/contexts/WebSocketContext';
+import { AuthProvider } from '../src/contexts/AuthContext';
+import { UserPreferencesProvider } from '../src/contexts/UserPreferencesContext';
 // For Ant Design v5
 import 'antd/dist/reset.css';
 
@@ -22,9 +25,13 @@ export default function MyApp(props) {
       </Head>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AirportConfigProvider>
-          <Component {...pageProps} />
-        </AirportConfigProvider>
+        <AuthProvider>
+          <WebSocketProvider>
+            <AirportConfigProvider>
+              <Component {...pageProps} />
+            </AirportConfigProvider>
+          </WebSocketProvider>
+        </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
   );

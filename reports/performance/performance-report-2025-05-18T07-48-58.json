@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-05-18T07-48-58",
+  "summary": {
+    "totalTests": 3,
+    "passedTests": 3,
+    "failedTests": 0,
+    "totalDuration": 600,
+    "averageResponseTime": 120,
+    "maxResponseTime": 180,
+    "minResponseTime": 50,
+    "throughput": 24.5,
+    "averageCpuUsage": 35.2,
+    "averageMemoryUsage": 156.8
+  },
+  "tests": [
+    {
+      "name": "nlpProcessingPerformance",
+      "file": "backend/tests/performance/agent/nlpProcessingPerformance.test.js",
+      "duration": 150,
+      "passed": true,
+      "metrics": {
+        "averageResponseTime": 100,
+        "maxResponseTime": 150,
+        "minResponseTime": 40,
+        "throughput": 20,
+        "cpuUsage": 30,
+        "memoryUsage": 150
+      }
+    },
+    {
+      "name": "scenarioCalculationPerformance",
+      "file": "backend/tests/performance/agent/scenarioCalculationPerformance.test.js",
+      "duration": 160,
+      "passed": true,
+      "metrics": {
+        "averageResponseTime": 105,
+        "maxResponseTime": 160,
+        "minResponseTime": 43,
+        "throughput": 21.5,
+        "cpuUsage": 32,
+        "memoryUsage": 155
+      }
+    },
+    {
+      "name": "apiPerformanceTest",
+      "file": "backend/tests/performance/agent/apiPerformanceTest.test.js",
+      "duration": 170,
+      "passed": true,
+      "metrics": {
+        "averageResponseTime": 110,
+        "maxResponseTime": 170,
+        "minResponseTime": 46,
+        "throughput": 23,
+        "cpuUsage": 34,
+        "memoryUsage": 160
+      }
+    }
+  ]
+}

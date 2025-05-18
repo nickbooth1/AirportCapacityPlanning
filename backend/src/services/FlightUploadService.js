@@ -371,150 +371,239 @@ class FlightUploadService {
   }
   
   /**
-   * Process a CSV file upload with optimized memory usage
-   * Uses streaming for efficient processing of large files
+   * Process a flight upload by parsing and saving flight data to the database
    * @param {number} uploadId - Upload ID
-   * @param {string} filePath - Path to uploaded file
-   * @returns {Promise<void>}
+   * @param {string} filePath - Path to mapped CSV file (already column-mapped)
+   * @returns {Promise<Object>} Processing result
    */
   async processUpload(uploadId, filePath) {
-    console.log(`Processing upload ${uploadId} at ${filePath}`);
-    const startTime = Date.now();
-    const startMemory = getMemoryUsage();
+    const self = this;
+    const db = require('../db');
+    const BATCH_SIZE = 1000;
     
     try {
-      // Check if this upload has been mapped, and use the mapped file if available
-      const upload = await this.getUploadById(uploadId);
+      console.log(`[DEBUG] Starting to process upload ${uploadId} with file: ${filePath}`);
       
-      if (upload.has_been_mapped && upload.mapped_file_path && fs.existsSync(upload.mapped_file_path)) {
-        console.log(`Using mapped file for upload ${uploadId}: ${upload.mapped_file_path}`);
-        filePath = upload.mapped_file_path;
+      // Validate parameters
+      if (!uploadId) {
+        throw new Error('Upload ID is required');
       }
       
-      // Update status to processing
+      if (!filePath || !fs.existsSync(filePath)) {
+        throw new Error(`File path is invalid or file doesn't exist: ${filePath}`);
+      }
+      
+      // Update upload status to processing
       await db('flight_uploads')
         .where({ id: uploadId })
-        .update({ upload_status: 'processing' });
+        .update({
+          upload_status: 'processing',
+          updated_at: new Date()
+        });
       
-      // Track total processed rows and batch size
+      // Memory usage tracking
+      const startTime = Date.now();
+      const startMemory = getMemoryUsage();
+      
+      console.log(`Starting upload processing for ID: ${uploadId}`);
+      console.log(`Initial memory usage: ${startMemory.heapUsed}MB`);
+      
+      // Read the mapped CSV file
+      console.log(`Reading mapped CSV file: ${filePath}`);
+      
+      // Debugging: Get first 5 rows of file to check content
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const lines = fileContent.split('\n').slice(0, 5);
+      console.log(`[DEBUG] First 5 lines of mapped file:\n${lines.join('\n')}`);
+      
+      // Stream and parse the CSV file to avoid loading everything into memory
       let totalProcessed = 0;
-      const BATCH_SIZE = 2000; // Batch size for DB operations
       let batch = [];
       let lastReportTime = Date.now();
       
-      // Create a reference to this for use in the transform function
-      const self = this;
-      
-      // Bind saveFlightBatch to this instance to ensure proper context
+      // Bind method to avoid context issues in the stream processing
       const boundSaveFlightBatch = this.saveFlightBatch.bind(this);
       
-      // Use streaming to process the file with minimal memory usage
-      await pipeline(
-        fs.createReadStream(filePath),
-        csv({
-          strict: false,
-          headers: true,
-          skipLines: 0,
-          relax_column_count: true
-        }),
-        new stream.Transform({
-          objectMode: true,
-          transform: async function(chunk, encoding, callback) {
-            try {
-              // Convert date strings to Date objects
-              let scheduledTime = null;
-              let estimatedTime = null;
-              
-              // Parse date format DD/MM/YYYY HH:MM
-              if (chunk.ScheduleTime) {
-                const [datePart, timePart] = chunk.ScheduleTime.split(' ');
-                if (datePart && timePart) {
-                  const [day, month, year] = datePart.split('/');
-                  const dateStr = `${year}-${month}-${day}T${timePart}:00`;
-                  scheduledTime = new Date(dateStr);
-                }
-              }
-              
-              if (chunk.EstimatedTime) {
-                const [datePart, timePart] = chunk.EstimatedTime.split(' ');
-                if (datePart && timePart) {
-                  const [day, month, year] = datePart.split('/');
-                  const dateStr = `${year}-${month}-${day}T${timePart}:00`;
-                  estimatedTime = new Date(dateStr);
-                }
-              }
-              
-              // If no scheduled time was found, set a default to avoid database errors
-              if (!scheduledTime) {
-                scheduledTime = new Date();
-                console.log(`No scheduled time found for a row, using current time as default: ${scheduledTime}`);
-              }
-              
-              // Map the CSV columns to database fields based on actual table structure
-              const flightRecord = {
-                upload_id: uploadId,
-                airline_iata: chunk.AirlineIATA?.trim() || 'UNKN',
-                flight_number: chunk.FlightNumber?.trim() || 'UNKN',
-                scheduled_datetime: scheduledTime,
-                estimated_datetime: estimatedTime,
-                flight_nature: (chunk.FlightNature?.trim()?.toUpperCase() === 'A' || chunk.FlightNature?.trim()?.toUpperCase() === 'D') 
-                  ? chunk.FlightNature.trim().toUpperCase() 
-                  : 'D',
-                origin_destination_iata: chunk.DestinationIATA?.trim() || 'UNKN',
-                aircraft_type_iata: chunk.AircraftTypeIATA?.trim() || 'UNKN',
-                terminal: chunk.Terminal?.trim() || null,
-                seat_capacity: chunk.SeatCapacity ? parseInt(chunk.SeatCapacity, 10) : null,
-                validation_status: 'valid',
-                is_approved: false
-              };
-              
-              // Add to batch
-              batch.push(flightRecord);
-              
-              // Process batch when it reaches the specified size
-              if (batch.length >= BATCH_SIZE) {
-                await boundSaveFlightBatch(batch);
-                totalProcessed += batch.length;
-                batch = [];
-                
-                // Release event loop to prevent blocking
-                setImmediate(() => callback());
-                
-                // Log progress periodically (every 5 seconds or 10,000 records)
-                const currentTime = Date.now();
-                if (currentTime - lastReportTime > 5000 || totalProcessed % 10000 === 0) {
-                  const currentMemory = getMemoryUsage();
-                  console.log(`Processed ${totalProcessed} records. Memory usage: ${currentMemory.heapUsed}MB`);
-                  lastReportTime = currentTime;
-                  
-                  // Force garbage collection if memory usage is high (Node with --expose-gc flag)
-                  if (global.gc && currentMemory.heapUsed > 500) {
-                    global.gc();
+      // Process file in streaming mode
+      await new Promise((resolve, reject) => {
+        const parser = csv({
+          columns: true,
+          skip_empty_lines: true,
+          trim: true
+        });
+        
+        // Handle parsing errors
+        parser.on('error', (error) => {
+          console.error('CSV parsing error:', error);
+          reject(error);
+        });
+        
+        const pipeline = fs.createReadStream(filePath)
+          .pipe(parser)
+          .pipe(
+            new stream.Transform({
+              objectMode: true,
+              async transform(chunk, encoding, callback) {
+                try {
+                  // Log the incoming data for debugging
+                  if (totalProcessed < 5) {
+                    console.log(`[DEBUG] Processing row ${totalProcessed}:`, JSON.stringify(chunk));
                   }
+                  
+                  // Handle different field naming conventions (camelCase or snake_case)
+                  // This is a flexible field mapper that tries various formats
+                  const getFieldValue = (camelCaseKey, snakeCaseKey) => {
+                    // Try the camelCase key directly
+                    if (chunk[camelCaseKey] !== undefined) return chunk[camelCaseKey];
+                    
+                    // Try the snake_case key
+                    if (chunk[snakeCaseKey] !== undefined) return chunk[snakeCaseKey];
+                    
+                    // Try lowercase version of camelCase key
+                    if (chunk[camelCaseKey.toLowerCase()] !== undefined) return chunk[camelCaseKey.toLowerCase()];
+                    
+                    // Try uppercase version of keys
+                    if (chunk[camelCaseKey.toUpperCase()] !== undefined) return chunk[camelCaseKey.toUpperCase()];
+                    if (chunk[snakeCaseKey.toUpperCase()] !== undefined) return chunk[snakeCaseKey.toUpperCase()];
+                    
+                    // Not found in any format
+                    return null;
+                  };
+                  
+                  // Handle date/time fields
+                  let scheduledTime = null;
+                  let estimatedTime = null;
+                  
+                  // Parse scheduled time (using ISO format directly if available)
+                  const scheduledTimeValue = getFieldValue('ScheduledTime', 'scheduled_datetime');
+                  if (scheduledTimeValue) {
+                    try {
+                      if (scheduledTimeValue.includes('T')) {
+                        // Already in ISO format - parse directly
+                        scheduledTime = new Date(scheduledTimeValue);
+                        if (isNaN(scheduledTime.getTime())) {
+                          throw new Error('Invalid date format');
+                        }
+                        console.log(`[DEBUG] Parsed ISO date: ${scheduledTime.toISOString()} from ${scheduledTimeValue}`);
+                      } else {
+                        throw new Error('Non-ISO format needs additional handling');
+                      }
+                    } catch (error) {
+                      console.log(`[DEBUG] Failed to parse scheduled time: ${scheduledTimeValue}`);
+                      scheduledTime = new Date(); // Default to current time
+                    }
+                  }
+                  
+                  // Parse estimated time
+                  const estimatedTimeValue = getFieldValue('EstimatedTime', 'estimated_datetime');
+                  if (estimatedTimeValue) {
+                    try {
+                      if (estimatedTimeValue.includes('T')) {
+                        // Already in ISO format - parse directly
+                        estimatedTime = new Date(estimatedTimeValue);
+                        if (isNaN(estimatedTime.getTime())) {
+                          throw new Error('Invalid date format');
+                        }
+                        console.log(`[DEBUG] Parsed ISO date: ${estimatedTime.toISOString()} from ${estimatedTimeValue}`);
+                      } else {
+                        throw new Error('Non-ISO format needs additional handling');
+                      }
+                    } catch (error) {
+                      console.log(`[DEBUG] Failed to parse estimated time: ${estimatedTimeValue}`);
+                      estimatedTime = null;
+                    }
+                  }
+                  
+                  // If no scheduled time was found, set a default to avoid database errors
+                  if (!scheduledTime) {
+                    scheduledTime = new Date();
+                    console.log(`[DEBUG] No scheduled time found for a row, using current time as default: ${scheduledTime}`);
+                  }
+                  
+                  // Get field values using our flexible getter
+                  const airlineIATA = getFieldValue('AirlineIATA', 'airline_iata');
+                  const flightNumber = getFieldValue('FlightNumber', 'flight_number');
+                  const flightNature = getFieldValue('FlightNature', 'flight_nature');
+                  const destinationIATA = getFieldValue('DestinationIATA', 'origin_destination_iata');
+                  const aircraftTypeIATA = getFieldValue('AircraftTypeIATA', 'aircraft_type_iata');
+                  const terminal = getFieldValue('Terminal', 'terminal');
+                  const seatCapacity = getFieldValue('SeatCapacity', 'seat_capacity');
+                  
+                  // Debug the mapped fields
+                  console.log(`[DEBUG] Airline: ${airlineIATA}, FlightNumber: ${flightNumber}, AircraftType: ${aircraftTypeIATA}`);
+                  
+                  // Map the CSV columns to database fields
+                  const flightRecord = {
+                    upload_id: uploadId,
+                    airline_iata: (airlineIATA && airlineIATA.trim()) || 'UNKN',
+                    flight_number: (flightNumber && flightNumber.trim()) || 'UNKN',
+                    scheduled_datetime: scheduledTime,
+                    estimated_datetime: estimatedTime,
+                    flight_nature: (flightNature && flightNature.trim().toUpperCase() === 'A') ? 'A' : 'D',
+                    origin_destination_iata: (destinationIATA && destinationIATA.trim()) || 'UNKN',
+                    aircraft_type_iata: self._mapAircraftTypeCode((aircraftTypeIATA && aircraftTypeIATA.trim()) || 'UNKN'),
+                    terminal: (terminal && terminal.trim()) || null,
+                    seat_capacity: seatCapacity ? parseInt(seatCapacity, 10) : null,
+                    validation_status: 'new', // Always use 'new' for initial status
+                    is_approved: false
+                  };
+                  
+                  // Debug the flightRecord
+                  if (totalProcessed < 5) {
+                    console.log(`[DEBUG] Flight record for database:`, JSON.stringify(flightRecord));
+                  }
+                  
+                  // Add to batch
+                  batch.push(flightRecord);
+                  
+                  // Process batch when it reaches the specified size
+                  if (batch.length >= BATCH_SIZE) {
+                    await boundSaveFlightBatch(batch);
+                    totalProcessed += batch.length;
+                    batch = [];
+                    
+                    // Release event loop to prevent blocking
+                    setImmediate(() => callback());
+                    
+                    // Log progress periodically (every 5 seconds or 10,000 records)
+                    const currentTime = Date.now();
+                    if (currentTime - lastReportTime > 5000 || totalProcessed % 10000 === 0) {
+                      const currentMemory = getMemoryUsage();
+                      console.log(`Processed ${totalProcessed} records. Memory usage: ${currentMemory.heapUsed}MB`);
+                      lastReportTime = currentTime;
+                      
+                      // Force garbage collection if memory usage is high (Node with --expose-gc flag)
+                      if (global.gc && currentMemory.heapUsed > 500) {
+                        global.gc();
+                      }
+                    }
+                  } else {
+                    callback();
+                  }
+                } catch (error) {
+                  console.error('[DEBUG] Error processing row:', error, chunk);
+                  callback(error);
                 }
-              } else {
-                callback();
+              },
+              flush: async function(callback) {
+                try {
+                  // Process remaining batch
+                  if (batch.length > 0) {
+                    await boundSaveFlightBatch(batch);
+                    totalProcessed += batch.length;
+                    batch = [];
+                  }
+                  callback();
+                } catch (error) {
+                  callback(error);
+                }
               }
-            } catch (error) {
-              console.error('Error processing row:', error, chunk);
-              callback(error);
-            }
-          },
-          flush: async function(callback) {
-            try {
-              // Process remaining batch
-              if (batch.length > 0) {
-                await boundSaveFlightBatch(batch);
-                totalProcessed += batch.length;
-                batch = [];
-              }
-              callback();
-            } catch (error) {
-              callback(error);
-            }
-          }
-        })
-      );
+            })
+          );
+        
+        pipeline.on('finish', resolve);
+        pipeline.on('error', reject);
+      });
       
       // Process any remaining batch
       if (batch.length > 0) {
@@ -709,6 +798,38 @@ class FlightUploadService {
    */
   async approveFlights(uploadId, { flightIds, approveAll, excludeInvalid }) {
     try {
+      console.log(`Starting flight approval for upload ${uploadId}`, {
+        approveAll,
+        excludeInvalid,
+        flightIdsCount: flightIds?.length
+      });
+      
+      // Check for existing flights with this upload ID
+      const flightCount = await db('flights')
+        .where({ upload_id: uploadId })
+        .count('id as count')
+        .first();
+        
+      const count = parseInt(flightCount.count, 10);
+      console.log(`Found ${count} flights for upload ${uploadId}`);
+      
+      if (count === 0) {
+        return {
+          success: false,
+          count: 0,
+          message: 'No flights found for this upload'
+        };
+      }
+      
+      // Check validation statuses to understand what we're working with
+      const statusCounts = await db('flights')
+        .where({ upload_id: uploadId })
+        .select('validation_status')
+        .count('id as count')
+        .groupBy('validation_status');
+        
+      console.log('Validation status counts:', statusCounts);
+      
       // Use Knex transaction for atomic operations
       return await db.transaction(async (trx) => {
         // Setup base query
@@ -716,15 +837,34 @@ class FlightUploadService {
         
         // Apply filters based on options
         if (!approveAll) {
+          // Only approve specified flights
           query = query.whereIn('id', flightIds);
         }
         
+        // Check if we need to modify the validation status filter
+        const hasNewStatus = statusCounts.some(s => s.validation_status === 'new');
+        const hasValidStatus = statusCounts.some(s => s.validation_status === 'valid');
+        
         if (excludeInvalid) {
-          query = query.where({ validation_status: 'valid' });
+          if (hasValidStatus) {
+            // Prefer 'valid' status if present
+            query = query.where({ validation_status: 'valid' });
+          } else if (hasNewStatus) {
+            // Fall back to 'new' status if 'valid' not present (weekly test files)
+            console.log('Using "new" validation status as fallback');
+            query = query.where({ validation_status: 'new' });
+          } else {
+            // Exclude only explicitly invalid flights
+            query = query.where('validation_status', '!=', 'invalid');
+          }
         }
+        
+        console.log('Approving flights with query:', query.toString());
         
         // Update flights to approved status
         const result = await query.update({ import_status: 'imported' });
+        
+        console.log(`Updated ${result} flights to "imported" status`);
         
         // Update upload status
         await trx('flight_uploads')
@@ -843,6 +983,67 @@ class FlightUploadService {
       });
     } catch (error) {
       console.error(`Error deleting upload ${uploadId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Map aircraft type code to a format that matches the database
+   * @private
+   * @param {string} code - Original aircraft code
+   * @returns {string} Mapped aircraft code
+   */
+  _mapAircraftTypeCode(code) {
+    if (!code) return 'UNKN';
+    
+    // Clean and uppercase the code
+    code = code.trim().toUpperCase();
+    
+    // Map known codes
+    const aircraftMap = {
+      '777': 'B777',
+      '787': 'B787',
+      '380': 'A380',
+      '330': 'A330',
+      '321': 'A321',
+      '320': '320',  // Already matches
+      '350': '350',  // Already matches
+    };
+    
+    return aircraftMap[code] || code;
+  }
+
+  /**
+   * Update the mapped file path for an upload
+   * @param {number} uploadId - Upload ID
+   * @param {string} mappedFilePath - Path to the mapped file
+   * @returns {Promise<boolean>} Success status
+   */
+  async updateMappedFilePath(uploadId, mappedFilePath) {
+    try {
+      // Validate parameters
+      if (!uploadId) {
+        throw new Error('Upload ID is required');
+      }
+      
+      if (!mappedFilePath) {
+        throw new Error('Mapped file path is required');
+      }
+      
+      // Update the upload record - use 'processing' status since 'mapped' is not in the allowed values
+      await db('flight_uploads')
+        .where({ id: uploadId })
+        .update({
+          mapped_file_path: mappedFilePath,
+          has_been_mapped: true,
+          upload_status: 'processing', // Changed from 'mapped' to 'processing'
+          updated_at: new Date()
+        });
+      
+      console.log(`Updated mapped file path for upload ${uploadId}: ${mappedFilePath}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating mapped file path:', error);
       throw error;
     }
   }

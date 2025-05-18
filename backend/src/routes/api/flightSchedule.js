@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const FlightScheduleController = require('../../controllers/FlightScheduleController');
+const scenarioRoutes = require('./scenarioRoutes');
 const { authenticateUser } = require('../../middleware/auth');
 
 // Apply authentication middleware to all routes
 router.use(authenticateUser);
+
+// Mount scenario routes
+router.use('/scenarios', scenarioRoutes);
 
 /**
  * @route   GET /api/flight-schedules/debug/tables
@@ -41,6 +45,10 @@ router.get('/debug/tables', async (req, res) => {
       standAllocationsColumns = columns.rows.map(row => row.column_name);
     }
     
+    // Check if the allocation_scenarios table exists
+    const allocationScenariosExists = await db.raw("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'allocation_scenarios')");
+    const hasAllocationScenarios = allocationScenariosExists.rows[0].exists;
+    
     res.status(200).json({
       success: true,
       tables: {
@@ -48,6 +56,7 @@ router.get('/debug/tables', async (req, res) => {
         unallocated_flights: hasUnallocatedFlights,
         stand_utilization_metrics: hasStandUtilizationMetrics,
         allocation_issues: hasAllocationIssues,
+        allocation_scenarios: hasAllocationScenarios,
         stand_allocations: {
           exists: hasStandAllocations,
           columns: standAllocationsColumns

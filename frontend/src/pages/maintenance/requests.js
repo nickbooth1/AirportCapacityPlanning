@@ -1,10 +1,12 @@
 import React from 'react';
 import MaintenanceRequestList from '../../components/maintenance/MaintenanceRequestList';
-import Layout from '../../components/Layout/Layout';
+import CapacityImpactAnalysis from '../../components/maintenance/CapacityImpactAnalysis';
+import Layout from '../../../components/Layout';
 
 const MaintenanceRequestsPage = () => {
   return (
     <Layout title="Stand Maintenance Requests">
+      <CapacityImpactAnalysis />
       <MaintenanceRequestList />
     </Layout>
   );

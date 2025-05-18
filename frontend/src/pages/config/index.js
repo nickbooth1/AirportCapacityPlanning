@@ -9,7 +9,7 @@ import {
   CardActions, 
   Button,
   Breadcrumbs,
-  Link 
+  Link as MuiLink
 } from '@mui/material';
 import { 
   Settings as SettingsIcon, 
@@ -17,15 +17,16 @@ import {
   LocationCity as LocationCityIcon,
   AccessTime as TimeIcon
 } from '@mui/icons-material';
+import Link from 'next/link';
 
 const ConfigIndexPage = () => {
   return (
     <Container maxWidth="lg">
       <Box my={4}>
         <Breadcrumbs aria-label="breadcrumb" mb={2}>
-          <Link color="inherit" href="/">
+          <MuiLink color="inherit" component={Link} href="/">
             Home
-          </Link>
+          </MuiLink>
           <Typography color="textPrimary">Configuration</Typography>
         </Breadcrumbs>
         
@@ -53,7 +54,12 @@ const ConfigIndexPage = () => {
                 </Typography>
               </CardContent>
               <CardActions>
-                <Button size="small" color="primary" href="/config/airport-configuration">
+                <Button 
+                  size="small" 
+                  color="primary" 
+                  component={Link} 
+                  href="/config/airport-configuration"
+                >
                   Configure Airport
                 </Button>
               </CardActions>
@@ -75,7 +81,12 @@ const ConfigIndexPage = () => {
                 </Typography>
               </CardContent>
               <CardActions>
-                <Button size="small" color="primary" href="/config/settings">
+                <Button 
+                  size="small" 
+                  color="primary" 
+                  component={Link} 
+                  href="/config/settings"
+                >
                   Manage Settings
                 </Button>
               </CardActions>
@@ -97,7 +108,12 @@ const ConfigIndexPage = () => {
                 </Typography>
               </CardContent>
               <CardActions>
-                <Button size="small" color="primary" href="/config/turnaround-rules">
+                <Button 
+                  size="small" 
+                  color="primary" 
+                  component={Link} 
+                  href="/config/turnaround-rules"
+                >
                   Manage Rules
                 </Button>
               </CardActions>
@@ -119,7 +135,12 @@ const ConfigIndexPage = () => {
                 </Typography>
               </CardContent>
               <CardActions>
-                <Button size="small" color="primary" href="/config/time-slots">
+                <Button 
+                  size="small" 
+                  color="primary" 
+                  component={Link} 
+                  href="/config/time-slots"
+                >
                   Manage Time Slots
                 </Button>
               </CardActions>

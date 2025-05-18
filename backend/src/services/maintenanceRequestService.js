@@ -13,14 +13,29 @@ class MaintenanceRequestService {
       query = query.where('stand_id', filters.standId);
     }
     if (filters.status) {
-      query = query.where('status_id', filters.status);
+      // Handle status as a single value or array
+      if (Array.isArray(filters.status)) {
+        query = query.whereIn('status_id', filters.status);
+      } else {
+        query = query.where('status_id', filters.status);
+      }
     }
-    if (filters.startDate) {
-      query = query.where('start_datetime', '>=', filters.startDate);
+    
+    // Date filtering - find any maintenance that overlaps with the date range
+    if (filters.startDate && filters.endDate) {
+      // Request starts before range end AND ends after range start
+      query = query.where('start_datetime', '<=', filters.endDate)
+                  .where('end_datetime', '>=', filters.startDate);
+    } else {
+      // Legacy filtering if only one date is provided
+      if (filters.startDate) {
+        query = query.where('start_datetime', '>=', filters.startDate);
+      }
+      if (filters.endDate) {
+        query = query.where('end_datetime', '<=', filters.endDate);
+      }
     }
-    if (filters.endDate) {
-      query = query.where('end_datetime', '<=', filters.endDate);
-    }
+    
     if (filters.priority) {
       query = query.where('priority', filters.priority);
     }

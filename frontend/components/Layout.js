@@ -34,7 +34,8 @@ import {
   Engineering as EngineeringIcon,
   Handyman as HandymanIcon,
   CloudUpload as CloudUploadIcon,
-  ViewList as ViewListIcon
+  ViewList as ViewListIcon,
+  Lightbulb as LightbulbIcon
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -75,18 +76,6 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
           </ListItemIcon>
           <ListItemText primary="Flights" />
         </ListItem>
-        <ListItem button component={Link} href="/flights/upload">
-          <ListItemIcon>
-            <CloudUploadIcon />
-          </ListItemIcon>
-          <ListItemText primary="Upload Flight Schedule" />
-        </ListItem>
-        <ListItem button component={Link} href="/flights/schedules">
-          <ListItemIcon>
-            <ViewListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Flight Schedules" />
-        </ListItem>
         <ListItem button component={Link} href="/stands">
           <ListItemIcon>
             <FlightTakeoffIcon />
@@ -107,6 +96,18 @@ export default function Layout({ children, title = 'Airport Capacity Planner' })
             <AssessmentIcon />
           </ListItemIcon>
           <ListItemText primary="Stand Capacity Tool" />
+        </ListItem>
+        <ListItem button component={Link} href="/agent">
+          <ListItemIcon>
+            <LocalAirportIcon />
+          </ListItemIcon>
+          <ListItemText primary="AirportAI Agent" />
+        </ListItem>
+        <ListItem button component={Link} href="/agent/insights">
+          <ListItemIcon>
+            <LightbulbIcon />
+          </ListItemIcon>
+          <ListItemText primary="Proactive Insights" />
         </ListItem>
         <Divider sx={{ my: 1 }} />
         <ListItem button component={Link} href="/config">

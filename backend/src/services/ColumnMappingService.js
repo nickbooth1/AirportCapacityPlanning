@@ -95,24 +95,41 @@ const TRANSFORMATIONS = {
     if (!value) return value;
     
     try {
-      // Handle DD/MM/YYYY HH:MM format
+      // Handle DD/MM/YYYY HH:MM format (like 12/05/2025 08:30)
       if (typeof value === 'string' && value.includes('/')) {
         const [datePart, timePart] = value.split(' ');
         if (datePart && timePart) {
           const [day, month, year] = datePart.split('/');
-          const dateStr = `${year}-${month}-${day}T${timePart}:00`;
-          return new Date(dateStr).toISOString();
+          const [hours, minutes] = timePart.split(':');
+          
+          // Create a proper ISO date string
+          const dateObj = new Date(
+            parseInt(year), 
+            parseInt(month) - 1, // JS months are 0-indexed
+            parseInt(day),
+            parseInt(hours),
+            parseInt(minutes)
+          );
+          
+          if (!isNaN(dateObj.getTime())) {
+            return dateObj.toISOString();
+          }
+          console.log(`Parsed date from ${value} to ${dateObj.toISOString()}`);
         }
       }
       
       // Try to parse as date if it's not already ISO format
       if (typeof value === 'string' && !value.includes('T')) {
-        return new Date(value).toISOString();
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString();
+        }
       }
       
+      console.warn('Failed to parse date:', value);
       return value;
     } catch (error) {
-      console.error('Error formatting date:', error);
+      console.error('Error formatting date:', error, 'for value:', value);
       return value;
     }
   },
@@ -499,29 +516,50 @@ class ColumnMappingService {
   }
   
   /**
-   * List all mapping profiles for a user
-   * @param {number|null} userId - User ID, or null for all profiles
+   * List all mapping profiles
+   * @param {number|null} userId - Optional user ID filter
    * @returns {Promise<Object[]>} - List of mapping profiles
    */
   async listMappingProfiles(userId = null) {
     try {
-      let query = db('column_mapping_profiles')
-        .select('*')
-        .orderBy('name');
+      let query = db('column_mapping_profiles');
       
       if (userId) {
-        query = query.where(function() {
-          this.where({ user_id: userId }).orWhere({ user_id: null });
-        });
+        query = query.where('user_id', userId).orWhere('is_default', true);
       }
       
-      const profiles = await query;
+      const profiles = await query.orderBy('is_default', 'desc').orderBy('updated_at', 'desc');
       
-      return profiles.map(profile => ({
-        ...profile,
-        mappings: JSON.parse(profile.mappings),
-        transformations: profile.transformations ? JSON.parse(profile.transformations) : null
-      }));
+      return profiles.map(profile => {
+        try {
+          // Ensure mappings and transformations are properly parsed
+          let mappings = profile.mappings;
+          let transformations = profile.transformations;
+          
+          // Parse JSON strings
+          if (typeof mappings === 'string') {
+            mappings = JSON.parse(mappings);
+          }
+          
+          if (transformations && typeof transformations === 'string') {
+            transformations = JSON.parse(transformations);
+          }
+          
+          return {
+            ...profile,
+            mappings,
+            transformations
+          };
+        } catch (error) {
+          console.error(`Error parsing profile ${profile.id}: ${error.message}`);
+          // Return with original values if parsing fails
+          return {
+            ...profile,
+            mappings: {},
+            transformations: {}
+          };
+        }
+      });
     } catch (error) {
       console.error('Error listing mapping profiles:', error);
       throw new Error(`Failed to list mapping profiles: ${error.message}`);

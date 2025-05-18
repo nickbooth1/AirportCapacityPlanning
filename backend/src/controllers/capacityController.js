@@ -5,6 +5,7 @@
 const standCapacityService = require('../services/standCapacityService');
 const CapacityCalculator = require('../services/adapted/calculator/capacityCalculator');
 const TimeSlot = require('../services/adapted/models/timeSlot');
+const aggregatedCapacityImpactService = require('../services/AggregatedCapacityImpactService');
 
 /**
  * Calculate airport stand capacity
@@ -161,7 +162,69 @@ async function getCapacitySettings(req, res) {
   }
 }
 
+/**
+ * Get capacity impact analysis
+ * Shows the impact of maintenance requests on daily capacity
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Object} next - Express next middleware function
+ */
+async function getCapacityImpactAnalysis(req, res, next) {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        message: 'startDate and endDate query parameters are required.' 
+      });
+    }
+    
+    // Validate date formats
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+      return res.status(400).json({ 
+        message: 'Dates must be in YYYY-MM-DD format' 
+      });
+    }
+    
+    // Validate date range
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ 
+        message: 'Invalid date format' 
+      });
+    }
+    if (start > end) {
+      return res.status(400).json({ 
+        message: 'startDate must be before or equal to endDate' 
+      });
+    }
+    
+    // Get capacity impact analysis
+    const result = await aggregatedCapacityImpactService.getDailyImpactedCapacity({ 
+      startDate, 
+      endDate 
+    });
+    
+    // Return the result
+    return res.status(200).json({
+      analysisDate: new Date().toISOString(),
+      dateRange: {
+        startDate,
+        endDate
+      },
+      dailyImpacts: result
+    });
+  } catch (error) {
+    console.error('Error in capacityController.getCapacityImpactAnalysis:', error);
+    next(error);
+  }
+}
+
 module.exports = {
   calculateCapacity,
-  getCapacitySettings
+  getCapacitySettings,
+  getCapacityImpactAnalysis
 }; 

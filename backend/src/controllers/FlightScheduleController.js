@@ -463,10 +463,32 @@ const FlightScheduleController = {
       const issues = await query;
       
       // Parse JSON fields
-      const parsedIssues = issues.map(issue => ({
-        ...issue,
-        affected_entities: JSON.parse(issue.affected_entities)
-      }));
+      const parsedIssues = issues.map(issue => {
+        try {
+          // Check if affected_entities is already an object
+          const affectedEntities = 
+            typeof issue.affected_entities === 'object' && issue.affected_entities !== null
+              ? issue.affected_entities
+              : (
+                  // Try to parse JSON string
+                  typeof issue.affected_entities === 'string' && issue.affected_entities !== "[object Object]"
+                    ? JSON.parse(issue.affected_entities)
+                    : {} // Default to empty object if parsing fails or if value is "[object Object]"
+                );
+          
+          return {
+            ...issue,
+            affected_entities: affectedEntities
+          };
+        } catch (parseError) {
+          console.warn(`Error parsing affected_entities for issue ${issue.id}: ${parseError.message}`);
+          // Return the issue with an empty object for affected_entities
+          return {
+            ...issue,
+            affected_entities: {}
+          };
+        }
+      });
       
       res.status(200).json({
         success: true,

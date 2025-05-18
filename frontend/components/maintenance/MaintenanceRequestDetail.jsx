@@ -121,10 +121,25 @@ const MaintenanceRequestDetail = ({ requestId }) => {
     try {
       setSaving(true);
       
+      // Create a filtered copy of formData that only includes maintenance request fields
+      const maintenanceRequestFields = {
+        title: formData.title,
+        description: formData.description,
+        stand_id: formData.stand_id,
+        requestor_name: formData.requestor_name,
+        requestor_email: formData.requestor_email,
+        requestor_department: formData.requestor_department,
+        start_datetime: formData.start_datetime,
+        end_datetime: formData.end_datetime,
+        status_id: formData.status_id,
+        priority: formData.priority,
+        impact_description: formData.impact_description || null
+      };
+      
       if (isNew) {
-        await api.post('/maintenance/requests', formData);
+        await api.post('/maintenance/requests', maintenanceRequestFields);
       } else {
-        await api.put(`/maintenance/requests/${requestId}`, formData);
+        await api.put(`/maintenance/requests/${requestId}`, maintenanceRequestFields);
       }
       
       setSuccess(true);

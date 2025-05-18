@@ -234,6 +234,56 @@ router.get('/results/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/capacity/impact-analysis:
+ *   get:
+ *     summary: Get capacity impact analysis
+ *     description: Returns the impact of maintenance requests on daily capacity
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for analysis (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for analysis (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Capacity impact analysis results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 analysisDate:
+ *                   type: string
+ *                   format: date-time
+ *                 dateRange:
+ *                   type: object
+ *                   properties:
+ *                     startDate:
+ *                       type: string
+ *                       format: date
+ *                     endDate:
+ *                       type: string
+ *                       format: date
+ *                 dailyImpacts:
+ *                   type: array
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Server error
+ */
+router.get('/impact-analysis', capacityController.getCapacityImpactAnalysis);
+
 // Export calculation results (optional future enhancement)
 router.get('/export/:id', async (req, res, next) => {
   try {

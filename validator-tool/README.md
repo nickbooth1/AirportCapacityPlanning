@@ -1,166 +1,126 @@
-# Flight Schedule Validator
+# Flight Schedule Validator Tool
 
-A command-line tool for validating flight schedule data against Stand Allocation Algorithm requirements.
+An enhanced validation tool for flight schedules used in the Airport Capacity Planner system.
 
-## Features
+## Overview
 
-- Validates flight schedule data in various formats (CSV, JSON, Excel)
-- Maps column names from source data to required fields
-- Checks for data integrity and business rule violations
-- Saves and reuses mapping profiles
-- Generates detailed validation reports
-- Exports validated data to Stand Allocation JSON format
-- Links arrival and departure flights automatically
+The Flight Schedule Validator provides robust validation capabilities for flight data, including:
 
-## Installation
+- Schema validation (required fields, data types)
+- Reference data validation (aircraft types, airlines, terminals)
+- Business rule validation (turnaround times, gate compatibility)
+- Comprehensive reporting in multiple formats (JSON, CSV, HTML)
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd flight-schedule-validator
+## Enhanced Features
 
-# Install dependencies
-npm install
+### Aircraft Type Repository
+- Comprehensive database of aircraft types with detailed metadata
+- Includes IATA/ICAO codes, wingspan, length, capacity, turnaround times
+- Aircraft categorization (narrow/wide-body)
+- Support for multiple reference data sources
 
-# Make the CLI executable
-npm link
-```
+### Advanced Date/Time Handling
+- Multi-format date/time parsing with automatic detection
+- Support for regional formats (US, European)
+- Detailed validation results with format suggestions
+- ISO-8601 standardization
 
-## Usage
+### Enhanced Error Reporting
+- Detailed validation reports with severity levels (ERROR, WARNING, INFO)
+- Precise error location (row/column) in data files
+- Suggested corrections based on reference data
+- Field-level error aggregation and analysis
+- Multiple output formats (terminal display, JSON, CSV, HTML)
+
+### Report Generator
+- Flexible reporting with configurable details
+- Rich HTML reports with visualizations
+- Machine-readable JSON for APIs
+- CSV exports for data analysis
+- Interactive terminal output with color-coding
+
+## Usage Examples
 
 ### Basic Validation
 
-```bash
-# Validate a flight schedule file with interactive column mapping
-validator-cli validate flights.csv
+```javascript
+const validator = require('./src/lib/validator');
+const referenceData = require('./src/lib/referenceData');
 
-# Use a saved mapping profile
-validator-cli validate flights.csv -m airline-format
+// Load reference data
+const refData = await referenceData.loadAllReferenceData('./data/reference');
 
-# Export validation results to a file
-validator-cli validate flights.csv -o validation-report.json
-```
+// Validate flight data
+const validationResults = validator.validateFlightData(flightData, refData);
 
-### Column Mapping
-
-```bash
-# Create a mapping profile interactively
-validator-cli map flights.csv -o my-mapping.json
-
-# List available mapping profiles
-validator-cli map --list
-```
-
-### Reference Data
-
-```bash
-# Validate with reference data
-validator-cli validate flights.csv --reference-data ./references
-
-# Create sample reference data
-validator-cli reference --create airlines --output ./reference-data
-validator-cli reference --create aircraftTypes --output ./reference-data
-validator-cli reference --create terminals --output ./reference-data
-```
-
-### Stand Allocation JSON Export
-
-```bash
-# Validate and export to Stand Allocation format
-validator-cli validate-export flights.csv --output ./allocation-input
-
-# Convert existing validated data to Stand Allocation format
-validator-cli export-json validated-data.json --output ./allocation-input
-
-# Validate with a mapping profile and export
-validator-cli validate-export flights.csv -m airline-format --output ./allocation-input
-
-# Batch process multiple files
-validator-cli batch-process ./flight-schedules --output ./allocation-inputs
-```
-
-## File Format Requirements
-
-### Flight Data
-Required fields:
-- `FlightID`: Unique identifier for the flight
-- `FlightNumber`: Commercial flight number
-- `AirlineCode`: Operating airline code
-- `AircraftType`: Type of aircraft
-- `Origin`: Origin airport for the flight
-- `Destination`: Destination airport for the flight
-- `ScheduledTime`: Arrival or departure time
-- `Terminal`: Assigned terminal
-- `IsArrival`: Boolean flag (true for arrivals, false for departures)
-
-## Validation Rules
-
-The validator checks for:
-1. Missing required fields
-2. Invalid data types and formats
-3. Reference data integrity (airlines, aircraft types, terminals)
-4. Business rule violations (turnaround times, connections, etc.)
-
-## Stand Allocation JSON Format
-
-The validator exports data in the following format required by the Stand Allocation Algorithm:
-
-### flights.json
-```json
-[
-  {
-    "FlightID": "FL001",
-    "FlightNumber": "BA123",
-    "AirlineCode": "BA",
-    "AircraftType": "B737",
-    "Origin": "JFK",
-    "Destination": "LHR",
-    "ScheduledTime": "10:00",
-    "Terminal": "T1",
-    "IsArrival": true,
-    "LinkID": "LINK001"
-  }
-]
-```
-
-### stands.json
-```json
-[
-  {
-    "StandName": "S1",
-    "Terminal": "T1",
-    "IsContactStand": true,
-    "SizeLimit": "Narrow",
-    "AdjacencyRules": {}
-  }
-]
-```
-
-### airlines.json
-```json
-[
-  {
-    "AirlineCode": "BA",
-    "AirlineName": "British Airways",
-    "BaseTerminal": "T1",
-    "RequiresContactStand": true
-  }
-]
-```
-
-### settings.json
-```json
-{
-  "GapBetweenFlights": 15,
-  "TurnaroundTimeSettings": {
-    "Default": 45,
-    "Narrow": 30,
-    "Wide": 45,
-    "Super": 60
-  }
+// Check results
+if (validationResults.isValid) {
+  console.log('Flight data is valid!');
+} else {
+  console.log(`Found ${validationResults.errors.length} errors`);
 }
 ```
 
-## License
+### Generate Reports
 
-MIT 
+```javascript
+const reportGenerator = require('./src/lib/reportGenerator');
+
+// Generate a validation report
+const report = reportGenerator.generateValidationReport(validationResults, {
+  filename: 'flights.csv',
+  recordCount: flightData.length,
+  includeDetailedErrors: true
+});
+
+// Export to different formats
+reportGenerator.exportToJson(report, 'output/validation-report.json');
+reportGenerator.exportToCsv(report, 'output/validation-report.csv');
+reportGenerator.exportToHtml(report, 'output/validation-report.html', {
+  includeCharts: true,
+  title: 'Flight Schedule Validation Report'
+});
+
+// Display in terminal
+console.log(reportGenerator.formatReportForDisplay(report, {
+  colorize: true,
+  detailedErrors: 10
+}));
+```
+
+## CLI Usage
+
+```
+node src/cli/index.js validate flights.csv --reference=./data/reference --format=html
+```
+
+## Directory Structure
+
+```
+validator-tool/
+  ├── src/
+  │   ├── cli/           # Command-line interface
+  │   │   └── index.js           # Main CLI entry point
+  │   ├── lib/           # Core libraries
+  │   │   ├── validator.js           # Main validation engine
+  │   │   ├── reportGenerator.js     # Report generation module
+  │   │   └── referenceData.js       # Reference data management
+  │   ├── utils/         # Utility functions
+  │   │   └── dateParser.js          # Advanced date parsing
+  │   └── scripts/       # Example scripts
+  ├── test/
+  │   ├── fixtures/      # Test data
+  │   │   └── reference-data-enhanced/  # Enhanced reference data
+  │   └── unit/          # Unit tests
+  ├── data/
+  │   └── reference/     # Reference data files
+  └── output/
+      └── reports/       # Generated reports
+```
+
+## Future Enhancements
+
+- Real-time validation with WebSocket support
+- Integration with external reference data APIs
+- Machine learning for intelligent error correction suggestions
+- Interactive validation dashboard 

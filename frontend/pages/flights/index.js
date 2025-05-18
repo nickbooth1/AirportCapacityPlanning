@@ -38,11 +38,10 @@ import Layout from '../../components/Layout';
 import FlightsTable from '../../components/flights/FlightsTable';
 import FlightsFilter from '../../components/flights/FlightsFilter';
 import FlightStatistics from '../../components/flights/FlightStatistics';
-import UploadTool from '../../components/flights/UploadTool';
 import flightDataApi from '../../api/flightDataApi';
 import { addDays } from 'date-fns';
 import { format } from 'date-fns';
-import { FlightUploadProvider } from '../../src/contexts/FlightUploadContext';
+import { useRouter } from 'next/router';
 
 // Modal styles
 const modalStyle = {
@@ -65,6 +64,7 @@ const modalStyle = {
  * Main page for viewing, managing, and analyzing flight data.
  */
 const FlightsPage = () => {
+  const router = useRouter();
   // State for flights data
   const [flights, setFlights] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -91,7 +91,6 @@ const FlightsPage = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   
   // State for modals
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [flightToDelete, setFlightToDelete] = useState(null);
   
@@ -249,71 +248,67 @@ const FlightsPage = () => {
     setSelectedFlights(selected);
   };
   
-  // Handle select all flights
   const handleSelectAllFlights = (selected) => {
-    setSelectedFlights(selected);
+    setSelectedFlights(selected ? flights.map(f => f.id) : []);
   };
   
-  // Handle flight deletion
   const handleDeleteClick = (id) => {
-    setFlightToDelete(id);
+    setFlightToDelete([id]);
     setDeleteDialogOpen(true);
   };
   
-  // Handle bulk deletion
   const handleBulkDeleteClick = () => {
-    if (selectedFlights.length === 0) return;
     setFlightToDelete(selectedFlights);
     setDeleteDialogOpen(true);
   };
   
-  // Confirm deletion
   const confirmDelete = async () => {
     try {
-      setLoading(true);
-      
       if (Array.isArray(flightToDelete)) {
         // Bulk delete
-        await flightDataApi.deleteFlights(flightToDelete);
-        showNotification(`${flightToDelete.length} flights deleted successfully`, 'success');
+        const results = await Promise.all(
+          flightToDelete.map(id => flightDataApi.deleteFlight(id))
+        );
+        
+        // Count successful deletions
+        const successCount = results.filter(Boolean).length;
+        
+        if (successCount === flightToDelete.length) {
+          showNotification(`Successfully deleted ${successCount} flights`, 'success');
+        } else {
+          showNotification(`Deleted ${successCount} of ${flightToDelete.length} flights`, 'warning');
+        }
       } else {
         // Single delete
         await flightDataApi.deleteFlight(flightToDelete);
         showNotification('Flight deleted successfully', 'success');
       }
       
-      // Refresh data
+      // Refresh flights and stats
       fetchFlights();
       fetchStats();
-      
-      // Clear selected flights
       setSelectedFlights([]);
     } catch (error) {
+      console.error('Error deleting flights:', error);
       showNotification('Failed to delete flights', 'error');
     } finally {
-      setLoading(false);
       setDeleteDialogOpen(false);
       setFlightToDelete(null);
     }
   };
   
-  // Handle upload success
   const handleUploadSuccess = () => {
-    showNotification('Flights uploaded successfully', 'success');
-    setUploadModalOpen(false);
-    
-    // Refresh data
-    fetchUploadedSchedules(); // Also fetch the new uploaded schedule
+    showNotification('Flight data uploaded successfully', 'success');
+    // Refresh flights and stats after successful upload
     fetchFlights();
     fetchStats();
+    fetchUploadedSchedules();
   };
   
-  // Handle upload error
   const handleUploadError = (error) => {
     showNotification(`Upload failed: ${error}`, 'error');
   };
   
-  // Show notification
   const showNotification = (message, severity = 'info') => {
     setNotification({
       open: true,
@@ -322,7 +317,6 @@ const FlightsPage = () => {
     });
   };
   
-  // Handle notification close
   const handleNotificationClose = () => {
     setNotification({
       ...notification,
@@ -330,73 +324,71 @@ const FlightsPage = () => {
     });
   };
   
-  // Handle tab change
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
   
-  // Handle schedule change
   const handleScheduleChange = (event) => {
     setSelectedSchedule(event.target.value);
-    setPage(0); // Reset to first page
+    setPage(0); // Reset to first page when changing schedule
   };
   
-  // Format date range for display
   const formatDateRange = () => {
-    if (!filters.startDate || !filters.endDate) {
+    if (filters.startDate && filters.endDate) {
+      return `${format(filters.startDate, 'MMM d, yyyy')} - ${format(filters.endDate, 'MMM d, yyyy')}`;
+    } else if (filters.startDate) {
+      return `From ${format(filters.startDate, 'MMM d, yyyy')}`;
+    } else if (filters.endDate) {
+      return `Until ${format(filters.endDate, 'MMM d, yyyy')}`;
+    } else {
       return 'All dates';
     }
-    const start = format(filters.startDate, 'MMM dd, yyyy');
-    const end = format(filters.endDate, 'MMM dd, yyyy');
-    return `${start} - ${end}`;
   };
   
-  // Clear filters
   const clearFilters = () => {
-    const defaultFilters = {
+    const resetFilters = {
       searchTerm: '',
-      startDate: null,  // Remove default date filter
-      endDate: null,    // Remove default date filter
+      startDate: null,
+      endDate: null,
       flightType: 'all',
       airline: 'all',
       terminal: 'all',
       status: 'all'
     };
     
-    setFilters(defaultFilters);
-    setPage(0); // Reset to first page
+    setFilters(resetFilters);
+    setSelectedSchedule('all');
     
-    // Reload data with default filters
+    // Reload data with reset filters
     fetchFlights();
     fetchStats();
   };
   
-  // Handle schedule deletion
   const handleDeleteSchedule = (id, name) => {
     setScheduleToDelete(id);
     setScheduleDeleteName(name);
     setScheduleDeleteDialogOpen(true);
   };
   
-  // Confirm schedule deletion
   const confirmScheduleDelete = async () => {
     try {
-      setLoading(true);
-      await flightDataApi.deleteFlightUpload(scheduleToDelete);
+      await flightDataApi.deleteUpload(scheduleToDelete);
+      showNotification(`Schedule "${scheduleDeleteName}" deleted successfully`, 'success');
       
-      // If the currently selected schedule is being deleted, reset to "all"
+      // Refresh uploaded schedules list
+      fetchUploadedSchedules();
+      
+      // If the deleted schedule was selected, reset to 'all'
       if (selectedSchedule === scheduleToDelete) {
         setSelectedSchedule('all');
       }
       
-      // Refresh data
-      fetchUploadedSchedules();
+      // Refresh flights and stats
       fetchFlights();
       fetchStats();
-      
-      showNotification(`Schedule "${scheduleDeleteName}" deleted successfully`, 'success');
     } catch (error) {
-      showNotification(`Failed to delete schedule: ${error.message}`, 'error');
+      console.error('Error deleting schedule:', error);
+      showNotification(`Failed to delete schedule: ${error.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
       setScheduleDeleteDialogOpen(false);
@@ -508,7 +500,7 @@ const FlightsPage = () => {
                 variant="contained"
                 color="primary"
                 startIcon={<UploadIcon />}
-                onClick={() => setUploadModalOpen(true)}
+                onClick={() => router.push('/flights/upload')}
               >
                 Upload Flights
               </Button>
@@ -566,28 +558,6 @@ const FlightsPage = () => {
           loading={loadingStats}
         />
       )}
-      
-      {/* Upload Modal */}
-      <Modal
-        open={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
-        aria-labelledby="upload-flights-modal"
-        aria-describedby="upload-flights-from-csv"
-      >
-        <Box sx={modalStyle}>
-          <FlightUploadProvider>
-            <UploadTool
-              title="Upload Flight Data"
-              description="Upload a CSV file containing flight data"
-              acceptedFileTypes={['.csv']}
-              maxFileSize={50}
-              onUploadSuccess={handleUploadSuccess}
-              onUploadError={handleUploadError}
-              showProgressDetails={true}
-            />
-          </FlightUploadProvider>
-        </Box>
-      </Modal>
       
       {/* Delete Confirmation Dialog */}
       <Dialog

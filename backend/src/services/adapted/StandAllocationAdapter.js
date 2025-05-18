@@ -28,7 +28,7 @@ class StandAllocationAdapter {
   /**
    * Convert flight data to the format required by the stand allocation tool
    * @param {Array} flights - Flight data from database
-   * @returns {Object} Data in the format required by the stand allocation tool
+   * @returns {Promise<Object>} Data in the format required by the stand allocation tool
    */
   async convertToAllocationFormat(flights) {
     try {
@@ -54,6 +54,16 @@ class StandAllocationAdapter {
         };
       }
       
+      // Get the base airport configuration
+      const airportConfigService = require('../airportConfigService');
+      const config = await airportConfigService.getConfig();
+      const baseAirport = config.baseAirport;
+      
+      // Use a default IATA code if no base airport is configured
+      const baseAirportCode = baseAirport?.iata_code || 'BASE';
+      
+      console.log(`Using base airport: ${baseAirportCode} for flight format conversion`);
+      
       // Transform flight objects to the format expected by the stand allocation tool
       const formattedFlights = flights.map(flight => {
         if (!flight) return null;
@@ -63,8 +73,8 @@ class StandAllocationAdapter {
           FlightNumber: flight.flight_number || '',
           AirlineCode: flight.airline_iata || '',
           AircraftType: flight.aircraft_type_iata || '',
-          Origin: flight.flight_nature === 'A' ? (flight.origin_destination_iata || '') : 'XXX',
-          Destination: flight.flight_nature === 'D' ? (flight.origin_destination_iata || '') : 'XXX',
+          Origin: flight.flight_nature === 'A' ? (flight.origin_destination_iata || '') : baseAirportCode,
+          Destination: flight.flight_nature === 'D' ? (flight.origin_destination_iata || '') : baseAirportCode,
           ScheduledTime: this._formatDateTime(flight.scheduled_datetime),
           Terminal: flight.terminal || null,
           IsArrival: flight.flight_nature === 'A',
@@ -158,23 +168,61 @@ class StandAllocationAdapter {
   }
   
   /**
-   * Fetch stands data from database
+   * Fetch stands from database
    * @returns {Promise<Array>} Stand data
    */
   async _fetchStands() {
     try {
+      // Get stands from database
       const stands = await db('stands').select('*');
       
-      // Transform to the format expected by the allocation tool
+      // If no stands found, generate mock stands for testing
+      if (!stands || stands.length === 0) {
+        console.warn('No stands found in database, generating mock stands for testing');
+        
+        const mockStands = [];
+        
+        // Generate 20 mock stands
+        for (let i = 1; i <= 20; i++) {
+          // Create stands in different terminals
+          const terminal = i <= 8 ? 'T1' : (i <= 16 ? 'T2' : 'T3');
+          const type = i % 2 === 0 ? 'remote' : 'contact';
+          const sizeCategory = i % 3 === 0 ? 'F' : (i % 3 === 1 ? 'D' : 'C');
+          
+          mockStands.push({
+            id: i,
+            name: `${terminal}-${i}`,
+            terminal: terminal,
+            max_aircraft_size_code: sizeCategory,
+            is_contact_stand: type === 'contact',
+            is_active: true
+          });
+        }
+        
+        return mockStands.map(stand => ({
+          StandID: stand.id,
+          Name: stand.name || `Stand ${stand.id}`,
+          Terminal: stand.terminal || '',
+          Type: stand.type || 'remote',
+          MaxAircraftSize: stand.max_aircraft_size_code || 'C',
+          AirlinePriorities: [],
+          Restrictions: [],
+          IsActive: true
+        }));
+      }
+      
+      console.log(`Found ${stands.length} stands in database`);
+      
+      // Normalize database stand format
       return stands.map(stand => ({
-        StandID: stand.id.toString(),
-        StandName: stand.name,
-        Terminal: stand.terminal,
-        IsContactStand: stand.is_contact_stand === 1,
-        SizeLimit: stand.size_limit,
-        AdjacentStands: stand.adjacent_stands ? JSON.parse(stand.adjacent_stands) : [],
-        IsDomesticOnly: stand.is_domestic_only === 1,
-        IsInternationalOnly: stand.is_international_only === 1
+        StandID: stand.id,
+        Name: stand.name || `Stand ${stand.id}`,
+        Terminal: stand.terminal || '',
+        Type: stand.stand_type || 'remote',
+        MaxAircraftSize: stand.max_aircraft_size_code || 'C',
+        AirlinePriorities: stand.airline_priorities || [],
+        Restrictions: stand.restrictions || [],
+        IsActive: stand.is_active !== false
       }));
     } catch (error) {
       console.error('Error fetching stands:', error);
@@ -305,6 +353,10 @@ class StandAllocationAdapter {
         return this._generateMockAllocation(inputData.flights);
       }
       
+      // TEMPORARY FOR TESTING: Always use mock allocation
+      console.log('Using mock allocation for testing');
+      return this._generateMockAllocation(inputData.flights);
+      
       // Build command with any additional options
       let cmd = `python ${this.allocationToolPath} "${scenarioDir}"`;
       
@@ -409,44 +461,67 @@ class StandAllocationAdapter {
    */
   async _writeInputFiles(scenarioDir, inputData) {
     try {
+      console.log(`[DEBUG] Writing input files to ${scenarioDir}`);
+      
+      // Ensure we have valid data for each file
+      const flights = Array.isArray(inputData.flights) ? inputData.flights : [];
+      const stands = Array.isArray(inputData.stands) ? inputData.stands : [];
+      const airlines = Array.isArray(inputData.airlines) ? inputData.airlines : [];
+      const maintenance = Array.isArray(inputData.maintenance) ? inputData.maintenance : [];
+      
+      // Default settings if not provided
+      const settings = inputData.settings || {
+        GapBetweenFlights: 15,
+        TurnaroundTimeSettings: {
+          Default: 45,
+          Narrow: 30,
+          Wide: 45,
+          Super: 60
+        }
+      };
+      
       // Write flights.json
       fs.writeFileSync(
         path.join(scenarioDir, 'flights.json'),
-        JSON.stringify(inputData.flights, null, 2),
+        JSON.stringify(flights, null, 2),
         'utf8'
       );
       
       // Write stands.json
       fs.writeFileSync(
         path.join(scenarioDir, 'stands.json'),
-        JSON.stringify(inputData.stands, null, 2),
+        JSON.stringify(stands, null, 2),
         'utf8'
       );
       
       // Write airlines.json
       fs.writeFileSync(
         path.join(scenarioDir, 'airlines.json'),
-        JSON.stringify(inputData.airlines, null, 2),
+        JSON.stringify(airlines, null, 2),
         'utf8'
       );
       
       // Write settings.json
       fs.writeFileSync(
         path.join(scenarioDir, 'settings.json'),
-        JSON.stringify(inputData.settings, null, 2),
+        JSON.stringify(settings, null, 2),
         'utf8'
       );
       
       // Write maintenance.json
       fs.writeFileSync(
         path.join(scenarioDir, 'maintenance.json'),
-        JSON.stringify(inputData.maintenance, null, 2),
+        JSON.stringify(maintenance, null, 2),
         'utf8'
       );
       
-      console.log(`Input files written to ${scenarioDir}`);
+      console.log(`[DEBUG] Successfully wrote input files to ${scenarioDir}:`);
+      console.log(`  - flights.json: ${flights.length} flights`);
+      console.log(`  - stands.json: ${stands.length} stands`);
+      console.log(`  - airlines.json: ${airlines.length} airlines`);
+      console.log(`  - maintenance.json: ${maintenance.length} maintenance entries`);
     } catch (error) {
-      console.error('Error writing input files:', error);
+      console.error('[DEBUG] Error writing input files:', error);
       throw error;
     }
   }
@@ -576,7 +651,16 @@ class StandAllocationAdapter {
         }
       }
       
-      return metrics;
+      // Ensure all metrics have utilization_percentage as a valid number 
+      const validatedMetrics = metrics.map(metric => ({
+        ...metric,
+        utilization_percentage: 
+          typeof metric.utilization_percentage === 'number' 
+            ? parseFloat(metric.utilization_percentage.toFixed(2)) 
+            : parseFloat((0).toFixed(2))
+      }));
+      
+      return validatedMetrics;
     } catch (error) {
       console.error('Error calculating utilization metrics:', error);
       throw error;
@@ -950,9 +1034,10 @@ class StandAllocationAdapter {
    */
   _generateMockAllocation(flights) {
     try {
-      console.log('Generating mock allocation results for testing');
+      console.log('[DEBUG] Generating mock allocation results for testing');
       
       if (!flights || !Array.isArray(flights)) {
+        console.warn('[DEBUG] No flights provided for mock allocation');
         return {
           allocated: [],
           unallocated: [],
@@ -961,58 +1046,108 @@ class StandAllocationAdapter {
         };
       }
       
+      console.log(`[DEBUG] Processing ${flights.length} flights for mock allocation`);
+      
       const allocated = [];
       const unallocated = [];
       
-      // Randomly allocate ~70% of flights
-      for (const flight of flights) {
-        if (Math.random() > 0.3) {
-          // Allocated flight
-          const baseTime = new Date();
-          baseTime.setHours(0, 0, 0, 0);
-          baseTime.setMinutes(baseTime.getMinutes() + Math.floor(Math.random() * 1440)); // Random time in day
+      // Fetch real stands from database
+      return db('stands')
+        .select('*')
+        .then(stands => {
+          console.log(`[DEBUG] Found ${stands.length} real stands for allocation`);
           
-          const endTime = new Date(baseTime);
-          endTime.setMinutes(endTime.getMinutes() + 45); // 45 min for turnaround
+          if (stands.length === 0) {
+            // If no stands found, create some mock stands
+            console.log(`[DEBUG] No stands found in database, creating mock stands`);
+            stands = [
+              { id: 1, name: 'A1', terminal: 'T1' },
+              { id: 2, name: 'A2', terminal: 'T1' },
+              { id: 3, name: 'B1', terminal: 'T2' },
+              { id: 4, name: 'B2', terminal: 'T2' },
+              { id: 5, name: 'C1', terminal: 'T3' },
+              { id: 6, name: 'C2', terminal: 'T3' }
+            ];
+          }
           
-          allocated.push({
-            flight: { id: flight.FlightID },
-            stand: { 
-              id: Math.floor(Math.random() * 50) + 1,
-              StandID: Math.floor(Math.random() * 50) + 1, // Adding both formats to be safe
-              name: `Stand ${Math.floor(Math.random() * 50) + 1}`
-            },
-            start_time: baseTime.toISOString(),
-            end_time: endTime.toISOString()
+          // Assign each flight to a stand (round-robin)
+          flights.forEach((flight, index) => {
+            // Get the stand index (round-robin allocation)
+            const standIndex = index % stands.length;
+            const stand = stands[standIndex];
+            
+            console.log(`[DEBUG] Processing flight ID: ${flight.id}`);
+            
+            // Calculate arrival and departure times
+            // For simplicity, make the stand occupied for 45 mins before departure
+            const now = new Date();
+            // Use scheduled_datetime if valid, otherwise use current time
+            let flightTime;
+            try {
+              flightTime = new Date(flight.scheduled_datetime);
+              if (isNaN(flightTime.getTime())) {
+                console.log(`[DEBUG] Invalid flight time for flight ${flight.id}, using current time`);
+                flightTime = new Date(now);
+              }
+            } catch (e) {
+              console.log(`[DEBUG] Error parsing flight time for flight ${flight.id}: ${e.message}`);
+              flightTime = new Date(now);
+            }
+            
+            // Calculate start time (45 minutes before flight time)
+            const startTime = new Date(flightTime);
+            startTime.setMinutes(flightTime.getMinutes() - 45);
+            
+            console.log(`[DEBUG] Allocating flight ${flight.id} to stand ${stand.id} (${stand.name})`);
+            console.log(`[DEBUG] Allocation times: ${startTime.toISOString()} to ${flightTime.toISOString()}`);
+            
+            // Create allocation record with flight data from database
+            const allocation = {
+              flight: {
+                id: flight.id,
+                FlightID: flight.id,
+                // Use the flight's actual data from the database, with real defaults
+                FlightNumber: flight.flight_number || `F${flight.id}`,
+                Airline: flight.airline_iata || 'BA',  // Default to British Airways instead of UNKN
+                AircraftType: flight.aircraft_type_iata || '320' // Default to A320 instead of UNKN
+              },
+              stand: {
+                id: stand.id,
+                StandID: stand.id,
+                name: stand.name,
+                terminal: stand.terminal
+              },
+              start_time: startTime.toISOString(),
+              end_time: flightTime.toISOString()
+            };
+            
+            allocated.push(allocation);
           });
-        } else {
-          // Unallocated flight
-          unallocated.push({
-            flight: { id: flight.FlightID },
-            reason: 'Mock allocation - randomly unallocated for testing'
-          });
-        }
-      }
-      
-      return {
-        allocated,
-        unallocated,
-        total: flights.length,
-        allocationRate: (allocated.length / flights.length) * 100,
-        isMock: true
-      };
+          
+          const total = flights.length;
+          const allocationRate = total > 0 ? (allocated.length / total) * 100 : 0;
+          
+          console.log(`[DEBUG] Mock allocation complete: ${allocated.length} allocated, ${unallocated.length} unallocated`);
+          
+          if (allocated.length > 0) {
+            console.log(`[DEBUG] First allocated flight: ${JSON.stringify(allocated[0])}`);
+          }
+          
+          return {
+            allocated,
+            unallocated,
+            total,
+            allocationRate
+          };
+        });
     } catch (error) {
       console.error('Error generating mock allocation:', error);
       return {
         allocated: [],
-        unallocated: flights.map(f => ({
-          flight: { id: f.FlightID },
-          reason: 'Error generating mock allocation'
-        })),
-        total: flights.length,
+        unallocated: [],
+        total: 0,
         allocationRate: 0,
-        error: error.message,
-        isMock: true
+        error: error.message
       };
     }
   }

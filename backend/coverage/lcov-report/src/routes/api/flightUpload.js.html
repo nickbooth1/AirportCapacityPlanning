@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>0/24</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>0/24</span>
             </div>
         
             
@@ -177,11 +177,39 @@
 <a name='L112'></a><a href='#L112'>112</a>
 <a name='L113'></a><a href='#L113'>113</a>
 <a name='L114'></a><a href='#L114'>114</a>
-<a name='L115'></a><a href='#L115'>115</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -301,109 +329,123 @@ const { authenticateUser } = <span class="cstat-no" title="statement not covered
 <span class="cstat-no" title="statement not covered" >router.use(authenticateUser);</span>
 &nbsp;
 /**
+ * @route   GET /api/flights/upload
+ * @desc    Get list of all uploaded flight schedules
+ * @access  Private
+ */
+<span class="cstat-no" title="statement not covered" >router.get('/', FlightUploadController.getUploadsList);</span>
+&nbsp;
+/**
  * @route   POST /api/flights/upload
  * @desc    Upload a flight data file
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload', FlightUploadController.uploadFile);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/', FlightUploadController.uploadFile);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/initialize
  * @desc    Initialize a chunked upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/initialize', FlightUploadController.initializeChunkedUpload);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/initialize', FlightUploadController.initializeChunkedUpload);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/chunk
  * @desc    Upload a chunk of a file
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/chunk', FlightUploadController.uploadChunk);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/chunk', FlightUploadController.uploadChunk);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/finalize
  * @desc    Finalize a chunked upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/finalize', FlightUploadController.finalizeChunkedUpload);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/finalize', FlightUploadController.finalizeChunkedUpload);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/abort
  * @desc    Abort a chunked upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/abort', FlightUploadController.abortChunkedUpload);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/abort', FlightUploadController.abortChunkedUpload);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/status/:id
  * @desc    Get status of a chunked upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/status/:id', FlightUploadController.getChunkedUploadStatus);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/status/:id', FlightUploadController.getChunkedUploadStatus);</span>
 &nbsp;
 /**
- * @route   GET /api/flights/upload/status/:id
+ * @route   GET /api/flights/upload/:id/status
  * @desc    Check the status of an upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/status/:id', FlightUploadController.getUploadStatus);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/status', FlightUploadController.getUploadStatus);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/validation
  * @desc    Get validation results for an upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/validation', FlightUploadController.getValidationResults);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/validation', FlightUploadController.getValidationResults);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/validation/arrivals
  * @desc    Get validated arrival flights
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/validation/arrivals', FlightValidationController.getArrivalFlights);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/validation/arrivals', FlightValidationController.getArrivalFlights);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/validation/departures
  * @desc    Get validated departure flights
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/validation/departures', FlightValidationController.getDepartureFlights);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/validation/departures', FlightValidationController.getDepartureFlights);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/:id/validate
  * @desc    Validate flights in an upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/:id/validate', FlightValidationController.validateFlights);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/:id/validate', FlightValidationController.validateFlights);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/validation/stats
  * @desc    Get validation statistics for an upload
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/validation/stats', FlightValidationController.getValidationStats);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/validation/stats', FlightValidationController.getValidationStats);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/validation/export
  * @desc    Export validation report
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/validation/export', FlightValidationController.exportValidationReport);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/validation/export', FlightValidationController.exportValidationReport);</span>
 &nbsp;
 /**
  * @route   POST /api/flights/upload/:id/approve
  * @desc    Approve flights for import
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.post('/upload/:id/approve', FlightUploadController.approveFlights);</span>
+<span class="cstat-no" title="statement not covered" >router.post('/:id/approve', FlightUploadController.approveFlights);</span>
 &nbsp;
 /**
  * @route   GET /api/flights/upload/:id/export
  * @desc    Export validation report
  * @access  Private
  */
-<span class="cstat-no" title="statement not covered" >router.get('/upload/:id/export', FlightValidationController.exportValidationReport);</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/export', FlightValidationController.exportValidationReport);</span>
+&nbsp;
+/**
+ * @route   DELETE /api/flights/upload/:id
+ * @desc    Delete a flight upload and all associated flights
+ * @access  Private
+ */
+<span class="cstat-no" title="statement not covered" >router.delete('/:id', FlightUploadController.deleteFlightUpload);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >module.exports = router; </span></pre></td></tr></table></pre>
 
@@ -412,7 +454,7 @@ const { authenticateUser } = <span class="cstat-no" title="statement not covered
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-05T12:39:21.182Z
+                at 2025-05-18T18:14:58.550Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

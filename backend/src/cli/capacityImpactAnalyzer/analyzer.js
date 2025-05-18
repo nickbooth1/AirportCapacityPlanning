@@ -115,6 +115,8 @@ function calculateDailyImpacts(options, mockData) {
   
   // Process each day
   for (const currentDate of dates) {
+    console.log(`Processing date: ${currentDate}`);
+    
     // Calculate Original Daily Totals from template
     const originalDailyCapacity = {
       narrowBody: 0,
@@ -161,6 +163,20 @@ function calculateDailyImpacts(options, mockData) {
       isMaintenanceActiveOnDate(req, currentDate)
     );
     
+    console.log(`Found ${activeMaintenanceOnDate.length} maintenance requests active on ${currentDate}`);
+    if (activeMaintenanceOnDate.length > 0) {
+      console.log(`Maintenance request example: ${JSON.stringify(activeMaintenanceOnDate[0])}`);
+      
+      // Log the full object
+      console.log('Full maintenance request object:', activeMaintenanceOnDate[0]);
+      
+      // Check all properties
+      console.log('Properties of maintenance request:');
+      for (const [key, value] of Object.entries(activeMaintenanceOnDate[0])) {
+        console.log(`  ${key}: ${value} (${typeof value})`);
+      }
+    }
+    
     // Iterate through each time slot in the template
     for (const timeSlot of dailyGrossCapacityTemplate.timeSlots) {
       const slotStartDateTime = combineDateAndTime(currentDate, timeSlot.startTime);
@@ -174,11 +190,19 @@ function calculateDailyImpacts(options, mockData) {
       // Process each active maintenance
       for (const maintenance of activeMaintenanceInSlot) {
         const standCode = maintenance.stand_id_or_code;
+        console.log(`Processing maintenance ${maintenance.id} for stand ${standCode}`);
+        
+        // Try to get stand data from the map
         const standData = standsMap.get(standCode);
         
-        if (!standData) continue; // Skip if stand not found
+        if (!standData) {
+          console.log(`  No stand found with code "${standCode}". Available stands:`, 
+            Array.from(standsMap.keys()).join(', '));
+          continue; // Skip if stand not found
+        }
         
         const { compatibleAircraftICAOs } = standData;
+        console.log(`  Stand has ${compatibleAircraftICAOs.length} compatible aircraft types`);
         
         // Apply impact for each compatible aircraft type
         for (const aircraftTypeICAO of compatibleAircraftICAOs) {
@@ -196,11 +220,15 @@ function calculateDailyImpacts(options, mockData) {
           const isDefiniteImpact = options.maintenanceStatusIdsToInclude.definite.includes(maintenance.status_id);
           const isPotentialImpact = options.maintenanceStatusIdsToInclude.potential.includes(maintenance.status_id);
           
+          console.log(`Processing maintenance request ${maintenance.id} (status: ${maintenance.status_id}) - Definite: ${isDefiniteImpact}, Potential: ${isPotentialImpact}`);
+          
           if (!isDefiniteImpact && !isPotentialImpact) continue;
           
           // Apply reduction
           const currentCapacity = currentDayNetSlotCapacities[timeSlot.label][aircraftTypeICAO] || 0;
           const actualReduction = Math.min(currentCapacity, singleStandSlotContribution);
+          
+          console.log(`  Impact on ${timeSlot.label} for ${aircraftTypeICAO}: ${actualReduction} (from capacity ${currentCapacity})`);
           
           if (actualReduction <= 0) continue;
           

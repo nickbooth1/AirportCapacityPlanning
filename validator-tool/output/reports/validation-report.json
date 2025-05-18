@@ -1,0 +1,98 @@
+{
+  "isValid": false,
+  "timestamp": "2025-05-14T13:42:50.732Z",
+  "filename": "sample_flights.csv",
+  "entityType": "flights",
+  "recordCount": 6,
+  "errorCount": 3,
+  "warningCount": 2,
+  "infoCount": 2,
+  "categoryCounts": {
+    "schemaErrors": 1,
+    "referenceErrors": 1,
+    "businessRuleViolations": 0,
+    "formatErrors": 1,
+    "dateFormatErrors": 1
+  },
+  "errors": [
+    {
+      "severity": "error",
+      "code": "E001",
+      "field": "AircraftType",
+      "recordId": "FL002",
+      "message": "Missing required field: AircraftType",
+      "row": 2,
+      "column": "AircraftType"
+    },
+    {
+      "severity": "error",
+      "code": "E002",
+      "field": "ScheduledTime",
+      "recordId": "FL003",
+      "message": "Invalid date format for ScheduledTime. Expected datetime",
+      "value": "15/05/2023 14:30:00",
+      "row": 3,
+      "column": "ScheduledTime",
+      "suggestion": "Use format: YYYY-MM-DDTHH:mm:ss"
+    },
+    {
+      "severity": "error",
+      "code": "E004",
+      "field": "AircraftType",
+      "recordId": "FL002",
+      "message": "Aircraft type 'B736' not found in reference data",
+      "value": "B736",
+      "row": 2,
+      "column": "AircraftType",
+      "suggestions": [
+        "B738",
+        "B737",
+        "B788"
+      ]
+    }
+  ],
+  "warnings": [
+    {
+      "severity": "warning",
+      "code": "W001",
+      "field": "LinkID",
+      "recordId": "FL005-FL006",
+      "message": "Turnaround time of 15 minutes is less than minimum required 45 minutes for LinkID 'FL005'",
+      "value": 15
+    },
+    {
+      "severity": "warning",
+      "code": "W004",
+      "field": "Terminal",
+      "recordId": "FL004",
+      "message": "Terminal change for linked flights may require additional time",
+      "details": "Arrival at T2, departure from T2 for flight pair"
+    }
+  ],
+  "info": [
+    {
+      "severity": "info",
+      "code": "I001",
+      "field": "ScheduledTime",
+      "recordId": "FL003",
+      "message": "Date format identified as: DD/MM/YYYY HH:mm:ss",
+      "details": "Original: 15/05/2023 14:30:00, Parsed to ISO: 2023-05-15T14:30:00.000Z",
+      "row": 3,
+      "column": "ScheduledTime"
+    },
+    {
+      "severity": "info",
+      "code": "I002",
+      "field": "AircraftType",
+      "recordId": "FL001",
+      "message": "Aircraft type 'B738' matches Boeing 737-800",
+      "details": "Notes: Most common 737 variant"
+    }
+  ],
+  "additionalInfo": {
+    "truncated": false,
+    "totalErrorCount": 3,
+    "totalWarningCount": 2,
+    "totalInfoCount": 2
+  }
+}
