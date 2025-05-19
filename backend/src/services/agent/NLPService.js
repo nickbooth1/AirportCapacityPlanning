@@ -939,7 +939,9 @@ class NLPService {
           /^help( me)?$/,
           /^(what can you|what do you|how do you) do/,
           /^show me (what you can|how to|commands)/,
-          /^(list|show) (commands|functions|capabilities)/
+          /^(list|show) (commands|functions|capabilities)/,
+          /^i need help( with)?/,
+          /^guide me/
         ],
         confidence: 0.95
       },
@@ -949,7 +951,10 @@ class NLPService {
           /^(show|display|get|what is) (the )?capacity( of| for)?/,
           /^capacity (of|for|at|in)/,
           /^how (many|much) capacity/,
-          /^what is the (current|available) capacity/
+          /^what is the (current|available) capacity/,
+          /^how many (aircraft|planes|flights) can/,
+          /^(tell|show) me (about )?(stand|terminal|airport) capacity/,
+          /^what's the (maximum|total|peak) capacity/
         ],
         confidence: 0.85
       },
@@ -958,7 +963,10 @@ class NLPService {
         patterns: [
           /^(show|display|get|list|what) (is |are )?(the )?(current |ongoing |scheduled |planned )?(maintenance|work|repairs)/,
           /^maintenance (status|schedule|plan|overview|report)/,
-          /^when is (the )?(next|upcoming) maintenance/
+          /^when is (the )?(next|upcoming) maintenance/,
+          /^(are|is) (there|any) (maintenance|repairs|work) (scheduled|planned|happening|ongoing)/,
+          /^(which|what) (stands|gates|terminals) (are|have) (closed|under|scheduled) (for )?(maintenance|repair|work)/,
+          /^maintenance (impact|effect) on (capacity|operations)/
         ],
         confidence: 0.85
       },
@@ -967,7 +975,41 @@ class NLPService {
         patterns: [
           /^(show|display|get|what is) (the )?(status|availability)( of| for)? (stand|gate)/,
           /^(is|are) (stand|gate) [a-z0-9\-]+ (available|occupied|open|closed)/,
-          /^which stands are (available|occupied|open|closed)/
+          /^which stands are (available|occupied|open|closed)/,
+          /^(tell|show) me (about|which) (stands|gates) (are|can) (available|occupied|open|closed)/,
+          /^can (aircraft|plane|flight) [a-z0-9\-]+ (use|park at|be allocated to) (stand|gate)/,
+          /^(stands|gates) (status|availability) (now|today|this week|this month)/,
+          /^(list|show) all (stands|gates) (for|at) (terminal|pier) [a-z0-9\-]+/
+        ],
+        confidence: 0.85
+      },
+      {
+        intent: this.intents.INFRASTRUCTURE_QUERY,
+        patterns: [
+          /^(show|tell|list) (me )?(about |information )?(the |our )?(airport|terminal|pier) (infrastructure|layout|setup)/,
+          /^how many (stands|gates|terminals|piers) (do we have|are there|exist)/,
+          /^what (stands|gates) are (in|at) (terminal|pier) [a-z0-9\-]+/,
+          /^(information|details|data) (about|on|for) (terminal|pier|stand|gate) [a-z0-9\-]+/,
+          /^(show|list|what are) (the |all )?(terminal|pier|stand|gate) (details|specifications|specs)/
+        ],
+        confidence: 0.85
+      },
+      {
+        intent: this.intents.SCENARIO_CREATE,
+        patterns: [
+          /^(create|make|build|start) (a |new )?(scenario|what-if|simulation)/,
+          /^(let's|i want to|can you) (create|make|build|start) (a |new )?(scenario|what-if|simulation)/,
+          /^simulate (what|how) (would happen|it would be) if/,
+          /^what if (we|i) (change|modify|adjust|increase|decrease|add|remove)/
+        ],
+        confidence: 0.85
+      },
+      {
+        intent: this.intents.SCENARIO_QUERY,
+        patterns: [
+          /^(show|list|get|what are) (my|the|all|saved) scenarios/,
+          /^(show|display|get|what is) (details|information|data) (of|for|about) scenario [a-z0-9\-]+/,
+          /^(tell|show) me (about|what's in) (scenario|simulation) [a-z0-9\-]+/
         ],
         confidence: 0.85
       },
@@ -975,9 +1017,22 @@ class NLPService {
         intent: this.intents.VISUALIZATION_COMMAND,
         patterns: [
           /^(show|display|visualize|draw|plot|graph|chart)/,
-          /^(create|generate|make) a (chart|graph|visualization|plot|dashboard)/
+          /^(create|generate|make) a (chart|graph|visualization|plot|dashboard)/,
+          /^(visualize|plot|graph) (the |all |)(capacity|stands|gates|maintenance|flights|aircraft)/,
+          /^(can you |please |)(show|give) me a (visual|chart|graph|plot|map) of/
         ],
         confidence: 0.8
+      },
+      {
+        intent: this.intents.WHAT_IF_ANALYSIS,
+        patterns: [
+          /^what (would happen|if) (we|i) (close|open|add|remove|change)/,
+          /^how would (capacity|operations|flights) be affected if/,
+          /^analyze (the |)impact of/,
+          /^compare (capacity|operations) (with|without|before|after)/,
+          /^simulate (closing|opening|adding|removing)/
+        ],
+        confidence: 0.85
       }
     ];
     
@@ -1014,24 +1069,74 @@ class NLPService {
     // Make sure entity cache is loaded
     await this._loadEntityCacheData();
     
+    // Prepare domain-specific vocabulary for entity extraction
+    // This helps the model recognize domain-specific terms
+    const domainVocabulary = { ...this.vocabulary };
+    
+    // Create a combined list of terminals from both cache and vocabulary
+    const terminalList = [
+      ...(this.entityCache.terminals || []).map(t => t.code),
+      ...(domainVocabulary.terminals || []),
+      ...(domainVocabulary.terminalsFromDb || []),
+      ...(domainVocabulary.terminalNames || [])
+    ];
+    
+    // Create a combined list of stands from both cache and vocabulary
+    const standList = [
+      ...(this.entityCache.stands || []).map(s => s.name),
+      ...(domainVocabulary.standExamples || [])
+    ];
+    
+    // Create a combined list of aircraft types
+    const aircraftTypeList = [
+      ...(this.entityCache.aircraftTypes || []).map(a => a.iataCode),
+      ...(this.entityCache.aircraftTypes || []).map(a => a.icaoCode),
+      ...(this.entityCache.aircraftTypes || []).map(a => a.name),
+      ...(domainVocabulary.aircraftTypes || [])
+    ];
+    
+    // Create a combined list of airlines
+    const airlineList = [
+      ...(this.entityCache.airlines || []).map(a => a.iataCode),
+      ...(this.entityCache.airlines || []).map(a => a.name),
+      ...(domainVocabulary.airlines || []),
+      ...(domainVocabulary.airlineCodesFromDb || []),
+      ...(domainVocabulary.airlineNamesFromDb || [])
+    ];
+    
+    // Pre-process query to try to detect entities using pattern matching
+    // This helps with common entity formats before using the LLM
+    const detectedEntities = this._detectEntitiesWithPatterns(query);
+    
     // Extract entities using OpenAI
     const result = await openaiService.extractEntities(query, {
       intent,
       context: {
         ...context,
+        detectedEntities, // Pass any entities we already detected
         entityLists: {
-          terminals: this.entityCache.terminals || [],
-          stands: this.entityCache.stands || [],
-          aircraftTypes: this.entityCache.aircraftTypes || [],
-          airlines: this.entityCache.airlines || []
-        }
+          terminals: terminalList,
+          stands: standList,
+          aircraftTypes: aircraftTypeList,
+          airlines: airlineList,
+          timeExpressions: domainVocabulary.timeExpressions || [],
+          capacityMetrics: domainVocabulary.capacityMetrics || [],
+          maintenanceTerms: domainVocabulary.maintenanceTerms || [],
+          operationalTerms: domainVocabulary.operationalTerms || []
+        },
+        domain: 'airport_capacity_planning'
       }
     });
     
     // Post-process entities
     const processedEntities = {};
     
-    // Validate and normalize each entity
+    // Start with any entities detected by pattern matching
+    for (const [key, value] of Object.entries(detectedEntities)) {
+      processedEntities[key] = value;
+    }
+    
+    // Add and normalize each entity from the LLM
     for (const [key, value] of Object.entries(result.entities || {})) {
       const normalizedValue = this._normalizeEntity(key, value);
       if (normalizedValue !== null) {
@@ -1039,7 +1144,140 @@ class NLPService {
       }
     }
     
+    // Enhance entities with additional context where possible
+    await this._enhanceEntitiesWithContext(processedEntities, query, intent, context);
+    
     return processedEntities;
+  }
+  
+  /**
+   * Detect common entity patterns before using the LLM
+   * @private
+   * @param {string} query - The preprocessed query
+   * @returns {Object} - Detected entities
+   */
+  _detectEntitiesWithPatterns(query) {
+    const entities = {};
+    
+    // Terminal patterns (e.g., T1, Terminal 2)
+    const terminalPattern = /\b(?:terminal|term)[.\s-]*(\d+|[a-z]|one|two|three|four|five)\b|\bT(\d+|[a-z])\b/gi;
+    const terminalMatches = [...query.matchAll(terminalPattern)];
+    
+    if (terminalMatches.length > 0) {
+      const terminals = terminalMatches.map(match => {
+        const identifier = match[1] || match[2];
+        // Normalize terminal identifier
+        let terminalId = identifier.toUpperCase();
+        // Convert word numbers to digits
+        const wordToDigit = { 'ONE': '1', 'TWO': '2', 'THREE': '3', 'FOUR': '4', 'FIVE': '5' };
+        if (wordToDigit[terminalId]) {
+          terminalId = wordToDigit[terminalId];
+        }
+        return `T${terminalId}`;
+      });
+      
+      entities[this.entityTypes.TERMINAL] = terminals.length === 1 ? terminals[0] : terminals;
+    }
+    
+    // Stand patterns (e.g., stand 12A, gate 23B)
+    const standPattern = /\b(?:stand|gate|s)[.\s-]*([a-z]?\d+[a-z]?)\b|\b([a-z]?\d+[a-z]?)\s+(?:stand|gate)\b/gi;
+    const standMatches = [...query.matchAll(standPattern)];
+    
+    if (standMatches.length > 0) {
+      const stands = standMatches.map(match => {
+        const identifier = match[1] || match[2];
+        return identifier.toUpperCase();
+      });
+      
+      entities[this.entityTypes.STAND] = stands.length === 1 ? stands[0] : stands;
+    }
+    
+    // Aircraft type patterns (e.g., B737, A320, Boeing 737)
+    const aircraftPattern = /\b(?:boeing|b)[.\s-]*(\d{3}(?:-\d+)?)\b|\b(?:airbus|a)[.\s-]*(\d{3}(?:-\d+)?)\b/gi;
+    const aircraftMatches = [...query.matchAll(aircraftPattern)];
+    
+    if (aircraftMatches.length > 0) {
+      const aircraft = aircraftMatches.map(match => {
+        const isBoeing = !!match[1];
+        const identifier = match[1] || match[2];
+        return isBoeing ? `B${identifier}` : `A${identifier}`;
+      });
+      
+      entities[this.entityTypes.AIRCRAFT_TYPE] = aircraft.length === 1 ? aircraft[0] : aircraft;
+    }
+    
+    // Airline patterns (e.g., BA, British Airways)
+    const airlinePattern = /\b([A-Z]{2,3})\b|\b(British Airways|Lufthansa|Air France|KLM|Ryanair|EasyJet)\b/gi;
+    const airlineMatches = [...query.matchAll(airlinePattern)];
+    
+    if (airlineMatches.length > 0) {
+      const airlines = airlineMatches.map(match => match[1] || match[2]);
+      entities[this.entityTypes.AIRLINE] = airlines.length === 1 ? airlines[0] : airlines;
+    }
+    
+    // Date patterns (e.g., 2023-05-15, May 15)
+    const datePattern = /\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/gi;
+    const dateMatches = [...query.matchAll(datePattern)];
+    
+    if (dateMatches.length > 0) {
+      const dates = dateMatches.map(match => match[0]);
+      entities[this.entityTypes.DATE] = dates.length === 1 ? dates[0] : dates;
+    }
+    
+    return entities;
+  }
+  
+  /**
+   * Enhance entities with additional context
+   * @private
+   * @param {Object} entities - Detected entities
+   * @param {string} query - Original query
+   * @param {string} intent - Detected intent
+   * @param {Object} context - Processing context
+   * @returns {Promise<void>}
+   */
+  async _enhanceEntitiesWithContext(entities, query, intent, context) {
+    // Add time context if not present
+    if (!entities[this.entityTypes.TIME_PERIOD] && !entities[this.entityTypes.DATE]) {
+      // Check for common time references in the query
+      if (query.includes('today') || query.includes('now') || query.includes('current')) {
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'day',
+          start: new Date(),
+          end: new Date(),
+          expression: 'today',
+          iso: {
+            start: new Date().toISOString(),
+            end: new Date().toISOString()
+          }
+        };
+      }
+    }
+    
+    // For maintenance queries, add status if not present
+    if (intent === this.intents.MAINTENANCE_QUERY && !entities['status']) {
+      if (query.includes('ongoing') || query.includes('current')) {
+        entities['status'] = 'in_progress';
+      } else if (query.includes('planned') || query.includes('scheduled')) {
+        entities['status'] = 'scheduled';
+      } else if (query.includes('completed') || query.includes('finished')) {
+        entities['status'] = 'completed';
+      }
+    }
+    
+    // For capacity queries, add metrics if not present
+    if (intent === this.intents.CAPACITY_QUERY && !entities['metric']) {
+      if (query.includes('utilization')) {
+        entities['metric'] = 'utilization';
+      } else if (query.includes('availability')) {
+        entities['metric'] = 'availability';
+      } else if (query.includes('occupancy')) {
+        entities['metric'] = 'occupancy';
+      } else {
+        // Default metric for capacity queries
+        entities['metric'] = 'capacity';
+      }
+    }
   }
   
   /**
@@ -1056,9 +1294,25 @@ class NLPService {
       case this.entityTypes.TERMINAL:
         // Normalize terminal references
         if (typeof value === 'string') {
-          const terminalMatch = value.match(/(?:terminal|term)[.\s-]*(\d+|[a-z])/i);
+          // Match different ways of specifying terminals
+          // Examples: "terminal 1", "terminal T1", "term 1", "T1", "Terminal One"
+          const terminalMatch = value.match(/(?:terminal|term)[.\s-]*(\d+|[a-z]|one|two|three|four|five)/i);
           if (terminalMatch) {
-            return `T${terminalMatch[1].toUpperCase()}`;
+            let terminalId = terminalMatch[1].toUpperCase();
+            
+            // Convert word numbers to digits
+            const wordToDigit = { 'ONE': '1', 'TWO': '2', 'THREE': '3', 'FOUR': '4', 'FIVE': '5' };
+            if (wordToDigit[terminalId]) {
+              terminalId = wordToDigit[terminalId];
+            }
+            
+            return `T${terminalId}`;
+          }
+          
+          // Match just a T followed by a number/letter
+          const directMatch = value.match(/^T(\d+|[a-z])$/i);
+          if (directMatch) {
+            return `T${directMatch[1].toUpperCase()}`;
           }
         }
         return value;
@@ -1066,10 +1320,59 @@ class NLPService {
       case this.entityTypes.STAND:
         // Normalize stand references
         if (typeof value === 'string') {
-          const standMatch = value.match(/(?:stand|gate)[.\s-]*([a-z]?\d+[a-z]?)/i);
+          // Match different ways of specifying stands
+          // Examples: "stand 12A", "gate 12A", "stand-12A", "s12A", "12A"
+          const standMatch = value.match(/(?:stand|gate|s)[.\s-]*([a-z]?\d+[a-z]?)/i);
           if (standMatch) {
             return standMatch[1].toUpperCase();
           }
+          
+          // Match just a stand number/code without prefix
+          const directStandMatch = value.match(/^([a-z]?\d+[a-z]?)$/i);
+          if (directStandMatch) {
+            return directStandMatch[1].toUpperCase();
+          }
+        }
+        return value;
+        
+      case this.entityTypes.AIRCRAFT_TYPE:
+        // Normalize aircraft type references
+        if (typeof value === 'string') {
+          // Extract IATA or ICAO aircraft codes
+          // Examples: "B737", "A320", "Boeing 737", "Airbus A320"
+          const aircraftMatch = value.match(/(?:boeing|airbus|bombardier|embraer)?\s*([a-z])?(\d{3}(?:-\d+)?)/i);
+          if (aircraftMatch) {
+            const prefix = aircraftMatch[1] ? aircraftMatch[1].toUpperCase() : '';
+            return `${prefix}${aircraftMatch[2]}`;
+          }
+          
+          // Match common aircraft type references
+          // Examples: "B737", "A320"
+          const codeMatch = value.match(/^([a-z])(\d{3}(?:-\d+)?)$/i);
+          if (codeMatch) {
+            return `${codeMatch[1].toUpperCase()}${codeMatch[2]}`;
+          }
+        }
+        return value;
+        
+      case this.entityTypes.AIRLINE:
+        // Normalize airline references
+        if (typeof value === 'string') {
+          // Extract airline codes
+          // Examples: "BA", "British Airways", "American Airlines (AA)"
+          const airlineCodeMatch = value.match(/\(([A-Z]{2,3})\)$/);
+          if (airlineCodeMatch) {
+            return airlineCodeMatch[1];
+          }
+          
+          // Match just a 2-3 letter code
+          const codeOnlyMatch = value.match(/^([A-Z]{2,3})$/);
+          if (codeOnlyMatch) {
+            return codeOnlyMatch[1];
+          }
+          
+          // Use original value for full airline names
+          // These will be matched against the database in later processing
         }
         return value;
         
@@ -1093,6 +1396,21 @@ class NLPService {
           }
         } else if (typeof value === 'number') {
           return value > 1 ? value / 100 : value;
+        }
+        return value;
+        
+      case this.entityTypes.LOCATION:
+        // Normalize location references
+        if (typeof value === 'string') {
+          // Handle comma-separated coordinates
+          const coordsMatch = value.match(/(\d+\.\d+),\s*(\d+\.\d+)/);
+          if (coordsMatch) {
+            return {
+              type: 'coordinates',
+              latitude: parseFloat(coordsMatch[1]),
+              longitude: parseFloat(coordsMatch[2])
+            };
+          }
         }
         return value;
         
@@ -1227,7 +1545,103 @@ class NLPService {
    */
   async loadDomainVocabulary() {
     try {
-      // This would be more sophisticated in production, loading from a database or dictionary files
+      // Start with static vocabulary
+      this.vocabulary = {
+        airports: ['LHR', 'LGW', 'MAN', 'EDI', 'GLA', 'BHX', 'AMS', 'CDG', 'FRA', 'MAD', 'BCN'],
+        terminals: ['T1', 'T2', 'T3', 'T4', 'T5', 'Terminal 1', 'Terminal 2', 'Terminal 3', 'Terminal 4', 'Terminal 5'],
+        standTypes: [
+          'contact', 'remote', 'cargo', 'widebody', 'narrowbody', 
+          'domestic', 'international', 'regional', 'apron', 'hardstand',
+          'MARS', 'multi-aircraft', 'flexible', 'fixed'
+        ],
+        airlines: [
+          'BA', 'EZY', 'RYR', 'LH', 'AF', 'KLM', 'DL', 'AA', 'UA', 'QR',
+          'British Airways', 'EasyJet', 'Ryanair', 'Lufthansa', 'Air France',
+          'KLM Royal Dutch Airlines', 'Delta Air Lines', 'American Airlines',
+          'United Airlines', 'Qatar Airways', 'Emirates', 'EK', 'Singapore Airlines', 'SQ'
+        ],
+        aircraftTypes: [
+          'A320', 'A321', 'A330', 'A350', 'A380', 
+          'B737', 'B747', 'B777', 'B787', 'E190',
+          'Airbus A320', 'Airbus A321', 'Airbus A330', 'Airbus A350', 'Airbus A380',
+          'Boeing 737', 'Boeing 747', 'Boeing 777', 'Boeing 787', 'Embraer 190'
+        ],
+        aircraftCategories: [
+          'A', 'B', 'C', 'D', 'E', 'F',
+          'Category A', 'Category B', 'Category C', 'Category D', 'Category E', 'Category F',
+          'small', 'medium', 'large', 'heavy', 'super', 'regional', 'narrowbody', 'widebody'
+        ],
+        timeUnits: ['minute', 'hour', 'day', 'week', 'month', 'year'],
+        timeExpressions: [
+          'today', 'tomorrow', 'yesterday', 
+          'this week', 'next week', 'last week',
+          'this month', 'next month', 'last month',
+          'morning peak', 'evening peak', 'off-peak',
+          'busy period', 'quiet period'
+        ],
+        capacityMetrics: [
+          'utilization', 'availability', 'occupancy', 'efficiency',
+          'capacity', 'throughput', 'saturation', 'load factor',
+          'peak capacity', 'effective capacity', 'theoretical capacity',
+          'stand hours', 'turnaround time', 'buffer time'
+        ],
+        visualizationTypes: [
+          'chart', 'graph', 'map', 'table', 'gantt', 'dashboard',
+          'bar chart', 'line chart', 'pie chart', 'heatmap', 'timeline',
+          'scatter plot', 'bubble chart', 'waterfall chart', '3D visualization',
+          'comparison chart', 'trend analysis', 'forecast visualization'
+        ],
+        maintenanceTerms: [
+          'scheduled', 'unscheduled', 'emergency', 'preventive', 'routine',
+          'maintenance', 'repair', 'closure', 'refurbishment', 'upgrade',
+          'construction', 'renovation', 'inspection', 'downtime', 'outage',
+          'service', 'work', 'overhaul', 'restoration'
+        ],
+        operationalTerms: [
+          'on-time performance', 'delay', 'cancellation', 'diversion',
+          'turnaround', 'buffer', 'block time', 'taxi time', 'handling time',
+          'arrival', 'departure', 'landing', 'takeoff', 'pushback',
+          'boarding', 'deboarding', 'loading', 'unloading', 'fueling'
+        ],
+        scenarioTerms: [
+          'scenario', 'simulation', 'model', 'what-if', 'forecast',
+          'projection', 'prediction', 'analysis', 'comparison', 'baseline',
+          'variant', 'alternative', 'option', 'strategy', 'plan',
+          'historical', 'current', 'future', 'target', 'objective'
+        ]
+      };
+      
+      // Try to load additional vocabulary from database
+      try {
+        // Get terminal names from database
+        const terminals = await db('terminals').select('code', 'name');
+        this.vocabulary.terminalsFromDb = terminals.map(t => t.code);
+        this.vocabulary.terminalNames = terminals.map(t => t.name);
+        
+        // Get pier names from database
+        const piers = await db('piers').select('code', 'name');
+        this.vocabulary.piersFromDb = piers.map(p => p.code);
+        this.vocabulary.pierNames = piers.map(p => p.name);
+        
+        // Get some common stand codes
+        const stands = await db('stands').select('code').limit(100);
+        this.vocabulary.standExamples = stands.map(s => s.code);
+        
+        // Get airline codes and names
+        const airlines = await db('airlines').select('iata_code', 'name').limit(50);
+        this.vocabulary.airlineCodesFromDb = airlines.map(a => a.iata_code);
+        this.vocabulary.airlineNamesFromDb = airlines.map(a => a.name);
+        
+        logger.debug('Database vocabulary loaded');
+      } catch (dbError) {
+        logger.warn(`Could not load vocabulary from database: ${dbError.message}`);
+        // Continue with static vocabulary
+      }
+      
+      logger.debug('Domain vocabulary loaded');
+    } catch (error) {
+      logger.error(`Error loading domain vocabulary: ${error.message}`);
+      // Initialize with basic vocabulary
       this.vocabulary = {
         airports: ['LHR', 'LGW', 'MAN', 'EDI', 'GLA', 'BHX'],
         terminals: ['T1', 'T2', 'T3', 'T4', 'T5'],
@@ -1237,12 +1651,6 @@ class NLPService {
         capacityMetrics: ['utilization', 'availability', 'occupancy', 'efficiency'],
         visualizationTypes: ['chart', 'graph', 'map', 'table', 'gantt', 'dashboard']
       };
-      
-      logger.debug('Domain vocabulary loaded');
-    } catch (error) {
-      logger.error(`Error loading domain vocabulary: ${error.message}`);
-      // Initialize with empty vocabulary
-      this.vocabulary = {};
     }
   }
   
