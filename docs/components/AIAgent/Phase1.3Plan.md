@@ -40,9 +40,9 @@ Phase 1.3 focuses on implementing Knowledge Retrieval Components for the Airport
 - [x] KnowledgeRetrievalService
 - [x] WorkingMemoryService (Enhanced for context management)
 - [x] RetrievalAugmentedGeneration (RAG) Service
-- [x] FactVerifier - **JUST COMPLETED**
-- [ ] ProactiveInsightsService - **NEXT TASK**
-- [ ] MultiStepReasoningService
+- [x] FactVerifier
+- [x] ProactiveInsightsService - **JUST COMPLETED**
+- [ ] MultiStepReasoningService - **NEXT TASK**
 - [ ] ResponseGeneratorService
 - [ ] Integration Tests
 
@@ -77,12 +77,20 @@ We have implemented several key components for the knowledge retrieval system:
    - Automatic correction of inaccurate responses
    - Response comparison for consistency checking
 
+4. **ProactiveInsightsService**:
+   - Scheduled and event-triggered insight generation
+   - Pattern and anomaly detection in airport data
+   - Prioritization of insights by impact and relevance
+   - Context-aware recommendations
+   - Feedback incorporation mechanisms
+   - Insight tracking and organization
+
 ## Next Steps
-The next task is to implement the ProactiveInsightsService, which will analyze data patterns and generate proactive insights without explicit user queries.
+The next task is to implement the MultiStepReasoningService, which will handle complex problems requiring multiple steps of analysis and reasoning.
 
 This service will:
-1. Monitor system data and user interactions
-2. Identify noteworthy patterns, anomalies, and opportunities
-3. Generate insights with appropriate priority levels
-4. Provide context-aware recommendations 
-5. Support both scheduled and event-triggered insight generation
+1. Break down complex questions into logical reasoning steps
+2. Maintain intermediate reasoning state between steps
+3. Combine results from multiple reasoning paths
+4. Provide explanations for the reasoning process
+5. Handle uncertainty and evaluate alternative approaches
