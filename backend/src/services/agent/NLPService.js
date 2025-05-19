@@ -43,35 +43,87 @@ class NLPService {
     
     // Define common entity types
     this.entityTypes = {
+      // Airport infrastructure entities
       TERMINAL: 'terminal',
       STAND: 'stand',
+      GATE: 'gate',
+      PIER: 'pier',
+      APRON: 'apron',
+      TAXIWAY: 'taxiway',
+      RUNWAY: 'runway',
+      
+      // Aircraft and flight entities
       AIRCRAFT_TYPE: 'aircraft_type',
-      TIME_PERIOD: 'time_period',
-      AIRLINE: 'airline',
+      AIRCRAFT_CATEGORY: 'aircraft_category', 
+      AIRCRAFT_SIZE: 'aircraft_size',
+      AIRCRAFT_BODY_TYPE: 'aircraft_body_type',
       FLIGHT_NUMBER: 'flight_number',
-      STAND_TYPE: 'stand_type',
-      SCENARIO_PARAMETER: 'scenario_parameter',
-      SCENARIO_NAME: 'scenario_name',
-      COMPARISON_METRIC: 'comparison_metric',
+      FLIGHT_TYPE: 'flight_type',
+      FLIGHT_DIRECTION: 'flight_direction',
+      
+      // Time and scheduling entities
+      TIME_PERIOD: 'time_period',
       DATE: 'date',
       TIME: 'time',
       DURATION: 'duration',
+      SCHEDULE_DAYS: 'schedule_days',
+      PEAK_PERIOD: 'peak_period',
+      
+      // Airline and operation entities
+      AIRLINE: 'airline',
+      AIRLINE_ALLIANCE: 'airline_alliance',
+      GROUND_HANDLING_AGENT: 'ground_handling_agent',
+      HANDLER: 'handler',
+      HANDLER_CATEGORY: 'handler_category',
+      
+      // Capacity and utilization entities
+      CAPACITY_METRIC: 'capacity_metric',
+      UTILIZATION_METRIC: 'utilization_metric',
+      TURNAROUND_TIME: 'turnaround_time',
+      BUFFER_TIME: 'buffer_time',
+      OCCUPANCY_RATE: 'occupancy_rate',
+      
+      // Maintenance entities
+      MAINTENANCE_TYPE: 'maintenance_type',
+      MAINTENANCE_STATUS: 'maintenance_status',
+      MAINTENANCE_DURATION: 'maintenance_duration',
+      MAINTENANCE_PRIORITY: 'maintenance_priority',
+      
+      // Scenario and planning entities
+      SCENARIO_PARAMETER: 'scenario_parameter',
+      SCENARIO_NAME: 'scenario_name',
+      COMPARISON_METRIC: 'comparison_metric',
+      
+      // Quantity and measurement entities
       QUANTITY: 'quantity',
       PERCENTAGE: 'percentage',
       LOCATION: 'location',
+      
+      // Stakeholder entities
       PERSON: 'person',
       ORGANIZATION: 'organization',
+      ROLE: 'role',
+      TEAM: 'team',
+      
+      // Visualization and data entities
       VISUALIZATION_TYPE: 'visualization_type',
+      DATA_FORMAT: 'data_format',
+      REPORT_TYPE: 'report_type',
+      CHART_TYPE: 'chart_type',
+      
+      // Autonomous operations entities
       AUTONOMOUS_LEVEL: 'autonomous_level',
-      DATA_FORMAT: 'data_format'
+      OPERATING_MODE: 'operating_mode'
     };
 
     // Initialize entity cache
     this.entityCache = {
       terminals: null,
       stands: null,
+      piers: null,
       aircraftTypes: null,
       airlines: null,
+      groundHandlingAgents: null,
       lastUpdated: null,
       ttl: 15 * 60 * 1000 // 15 minutes
     };
@@ -882,8 +934,10 @@ class NLPService {
     this.entityCache = {
       terminals: null,
       stands: null,
+      piers: null,
       aircraftTypes: null,
       airlines: null,
+      groundHandlingAgents: null,
       lastUpdated: null,
       ttl: this.entityCache.ttl
     };
@@ -1076,16 +1130,17 @@ class NLPService {
     // Create a combined list of terminals from both cache and vocabulary
     const terminalList = [
       ...(this.entityCache.terminals || []).map(t => t.code),
+      ...(this.entityCache.terminals || []).map(t => t.name),
       ...(domainVocabulary.terminals || []),
       ...(domainVocabulary.terminalsFromDb || []),
       ...(domainVocabulary.terminalNames || [])
-    ];
+    ].filter(Boolean);
     
     // Create a combined list of stands from both cache and vocabulary
     const standList = [
       ...(this.entityCache.stands || []).map(s => s.name),
       ...(domainVocabulary.standExamples || [])
-    ];
+    ].filter(Boolean);
     
     // Create a combined list of aircraft types
     const aircraftTypeList = [
@@ -1093,7 +1148,7 @@ class NLPService {
       ...(this.entityCache.aircraftTypes || []).map(a => a.icaoCode),
       ...(this.entityCache.aircraftTypes || []).map(a => a.name),
       ...(domainVocabulary.aircraftTypes || [])
-    ];
+    ].filter(Boolean);
     
     // Create a combined list of airlines
     const airlineList = [
@@ -1102,49 +1157,38 @@ class NLPService {
       ...(domainVocabulary.airlines || []),
       ...(domainVocabulary.airlineCodesFromDb || []),
       ...(domainVocabulary.airlineNamesFromDb || [])
-    ];
+    ].filter(Boolean);
+    
+    // Create a list of piers from the vocabulary and cache
+    const pierList = [
+      ...(this.entityCache.piers || []).map(p => p.name),
+      ...(domainVocabulary.piers || [])
+    ].filter(Boolean);
     
     // Pre-process query to try to detect entities using pattern matching
     // This helps with common entity formats before using the LLM
     const detectedEntities = this._detectEntitiesWithPatterns(query);
     
-    // Extract entities using OpenAI
+    // Create domain context to enhance entity extraction
+    const domainContext = {
+      terminals: terminalList,
+      stands: standList,
+      aircraftTypes: aircraftTypeList,
+      airlines: airlineList,
+      piers: pierList
+    };
+    
+    // Extract entities using our enhanced OpenAI service with domain knowledge
     const result = await openaiService.extractEntities(query, {
-      intent,
-      context: {
-        ...context,
-        detectedEntities, // Pass any entities we already detected
-        entityLists: {
-          terminals: terminalList,
-          stands: standList,
-          aircraftTypes: aircraftTypeList,
-          airlines: airlineList,
-          timeExpressions: domainVocabulary.timeExpressions || [],
-          capacityMetrics: domainVocabulary.capacityMetrics || [],
-          maintenanceTerms: domainVocabulary.maintenanceTerms || [],
-          operationalTerms: domainVocabulary.operationalTerms || []
-        },
-        domain: 'airport_capacity_planning'
-      }
+      preDetectedEntities: detectedEntities, // Pass any entities we already detected
+      domainContext, // Pass knowledge of domain entities
+      examples: domainVocabulary.entityExtractionExamples || [] // Optional few-shot learning examples
     });
     
-    // Post-process entities
-    const processedEntities = {};
+    // The enhanced OpenAI service now handles entity normalization and merging
+    let processedEntities = result.entities || {};
     
-    // Start with any entities detected by pattern matching
-    for (const [key, value] of Object.entries(detectedEntities)) {
-      processedEntities[key] = value;
-    }
-    
-    // Add and normalize each entity from the LLM
-    for (const [key, value] of Object.entries(result.entities || {})) {
-      const normalizedValue = this._normalizeEntity(key, value);
-      if (normalizedValue !== null) {
-        processedEntities[key] = normalizedValue;
-      }
-    }
-    
-    // Enhance entities with additional context where possible
+    // Enrich entities with database information and contextual defaults
     await this._enhanceEntitiesWithContext(processedEntities, query, intent, context);
     
     return processedEntities;
@@ -1159,12 +1203,19 @@ class NLPService {
   _detectEntitiesWithPatterns(query) {
     const entities = {};
     
-    // Terminal patterns (e.g., T1, Terminal 2)
-    const terminalPattern = /\b(?:terminal|term)[.\s-]*(\d+|[a-z]|one|two|three|four|five)\b|\bT(\d+|[a-z])\b/gi;
+    // Airport Infrastructure Entities
+    
+    // Terminal patterns (e.g., T1, Terminal 2, Term 3, International Terminal)
+    const terminalPattern = /\b(?:terminal|term)[.\s-]*(\d+|[a-z]|one|two|three|four|five)\b|\bT(\d+|[a-z])\b|\b(international|domestic|main|satellite|north|south|east|west)\s+terminal\b/gi;
     const terminalMatches = [...query.matchAll(terminalPattern)];
     
     if (terminalMatches.length > 0) {
       const terminals = terminalMatches.map(match => {
+        // Check for named terminals like "International Terminal"
+        if (match[3]) {
+          return `${match[3].charAt(0).toUpperCase() + match[3].slice(1)} Terminal`;
+        }
+        
         const identifier = match[1] || match[2];
         // Normalize terminal identifier
         let terminalId = identifier.toUpperCase();
@@ -1179,8 +1230,8 @@ class NLPService {
       entities[this.entityTypes.TERMINAL] = terminals.length === 1 ? terminals[0] : terminals;
     }
     
-    // Stand patterns (e.g., stand 12A, gate 23B)
-    const standPattern = /\b(?:stand|gate|s)[.\s-]*([a-z]?\d+[a-z]?)\b|\b([a-z]?\d+[a-z]?)\s+(?:stand|gate)\b/gi;
+    // Stand/Gate patterns (e.g., stand 12A, gate 23B, parking position A15)
+    const standPattern = /\b(?:stand|gate|s|parking\s+position|position|bay)[.\s-]*([a-z]?\d+[a-z]?)\b|\b([a-z]?\d+[a-z]?)\s+(?:stand|gate|position)\b/gi;
     const standMatches = [...query.matchAll(standPattern)];
     
     if (standMatches.length > 0) {
@@ -1192,22 +1243,175 @@ class NLPService {
       entities[this.entityTypes.STAND] = stands.length === 1 ? stands[0] : stands;
     }
     
-    // Aircraft type patterns (e.g., B737, A320, Boeing 737)
-    const aircraftPattern = /\b(?:boeing|b)[.\s-]*(\d{3}(?:-\d+)?)\b|\b(?:airbus|a)[.\s-]*(\d{3}(?:-\d+)?)\b/gi;
+    // Gate patterns (if different from stands in this context)
+    const gatePattern = /\b(?:gate)[.\s-]*([a-z]?\d+[a-z]?)\b|\b([a-z]?\d+[a-z]?)\s+(?:gate)\b/gi;
+    const gateMatches = [...query.matchAll(gatePattern)];
+    
+    if (gateMatches.length > 0 && !entities[this.entityTypes.STAND]) {
+      const gates = gateMatches.map(match => {
+        const identifier = match[1] || match[2];
+        return identifier.toUpperCase();
+      });
+      
+      entities[this.entityTypes.GATE] = gates.length === 1 ? gates[0] : gates;
+    }
+    
+    // Pier patterns (e.g., Pier A, North Pier)
+    const pierPattern = /\b(?:pier|concourse|wing)[.\s-]*([a-z]|\d+)\b|\b(north|south|east|west|international|domestic)\s+(?:pier|concourse|wing)\b/gi;
+    const pierMatches = [...query.matchAll(pierPattern)];
+    
+    if (pierMatches.length > 0) {
+      const piers = pierMatches.map(match => {
+        if (match[2]) {
+          return `${match[2].charAt(0).toUpperCase() + match[2].slice(1)} Pier`;
+        }
+        return `Pier ${match[1].toUpperCase()}`;
+      });
+      
+      entities[this.entityTypes.PIER] = piers.length === 1 ? piers[0] : piers;
+    }
+    
+    // Aircraft and Flight Entities
+    
+    // Aircraft type patterns (e.g., B737, A320, Boeing 737, Airbus A380)
+    const aircraftPattern = /\b(?:boeing|b)[.\s-]*(\d{3}(?:-\d+)?)\b|\b(?:airbus|a)[.\s-]*(\d{3}(?:-\d+)?)\b|\b(?:embraer|e)[.\s-]*(\d{1,3}(?:-\d+)?)\b|\b(?:bombardier|crj|cseries)[.\s-]*(\d{1,3}(?:-\d+)?)\b/gi;
     const aircraftMatches = [...query.matchAll(aircraftPattern)];
     
     if (aircraftMatches.length > 0) {
       const aircraft = aircraftMatches.map(match => {
-        const isBoeing = !!match[1];
-        const identifier = match[1] || match[2];
-        return isBoeing ? `B${identifier}` : `A${identifier}`;
+        if (match[1]) return `B${match[1]}`; // Boeing
+        if (match[2]) return `A${match[2]}`; // Airbus
+        if (match[3]) return `E${match[3]}`; // Embraer
+        if (match[4]) return `CRJ${match[4]}`; // Bombardier
+        return match[0]; // Fallback to original match
       });
       
       entities[this.entityTypes.AIRCRAFT_TYPE] = aircraft.length === 1 ? aircraft[0] : aircraft;
     }
     
-    // Airline patterns (e.g., BA, British Airways)
-    const airlinePattern = /\b([A-Z]{2,3})\b|\b(British Airways|Lufthansa|Air France|KLM|Ryanair|EasyJet)\b/gi;
+    // Aircraft category patterns (e.g., Category A, ICAO category C)
+    const categoryPattern = /\b(?:category|cat)[.\s-]*([a-f])\b|\b(light|medium|heavy|super|jumbo)\s+(?:aircraft|airplane|plane)\b/gi;
+    const categoryMatches = [...query.matchAll(categoryPattern)];
+    
+    if (categoryMatches.length > 0) {
+      const categories = categoryMatches.map(match => {
+        if (match[1]) return match[1].toUpperCase(); // Letter category
+        
+        // Map descriptive categories to standard categories
+        const categoryMap = {
+          'light': 'A',
+          'medium': 'C',
+          'heavy': 'E',
+          'super': 'F',
+          'jumbo': 'F'
+        };
+        
+        return categoryMap[match[2].toLowerCase()] || match[2];
+      });
+      
+      entities[this.entityTypes.AIRCRAFT_CATEGORY] = categories.length === 1 ? categories[0] : categories;
+    }
+    
+    // Aircraft body type (e.g., narrowbody, widebody)
+    const bodyTypePattern = /\b(narrowbody|widebody|regional|narrow\s+body|wide\s+body)\b/gi;
+    const bodyTypeMatches = [...query.matchAll(bodyTypePattern)];
+    
+    if (bodyTypeMatches.length > 0) {
+      const bodyTypes = bodyTypeMatches.map(match => {
+        const bodyType = match[1].replace(/\s+/g, '').toLowerCase();
+        return bodyType.charAt(0).toUpperCase() + bodyType.slice(1);
+      });
+      
+      entities[this.entityTypes.AIRCRAFT_BODY_TYPE] = bodyTypes.length === 1 ? bodyTypes[0] : bodyTypes;
+    }
+    
+    // Flight number patterns (e.g., BA123, LH 456, Flight AF789)
+    const flightPattern = /\b(?:flight\s+)?([a-z]{2})\s*(\d{1,4}[a-z]?)\b/gi;
+    const flightMatches = [...query.matchAll(flightPattern)];
+    
+    if (flightMatches.length > 0) {
+      const flights = flightMatches.map(match => {
+        return `${match[1].toUpperCase()}${match[2]}`;
+      });
+      
+      entities[this.entityTypes.FLIGHT_NUMBER] = flights.length === 1 ? flights[0] : flights;
+    }
+    
+    // Flight direction (e.g., arrival, departure, inbound, outbound)
+    const directionPattern = /\b(arrival|departure|arriving|departing|inbound|outbound)\b/gi;
+    const directionMatches = [...query.matchAll(directionPattern)];
+    
+    if (directionMatches.length > 0) {
+      const directions = directionMatches.map(match => {
+        const dir = match[1].toLowerCase();
+        if (dir === 'arriving') return 'arrival';
+        if (dir === 'departing') return 'departure';
+        return dir;
+      });
+      
+      entities[this.entityTypes.FLIGHT_DIRECTION] = directions.length === 1 ? directions[0] : directions;
+    }
+    
+    // Flight type (e.g., international, domestic, cargo, passenger)
+    const flightTypePattern = /\b(international|domestic|regional|cargo|passenger|charter|ferry|training)\s+(?:flight|service|operation)s?\b/gi;
+    const flightTypeMatches = [...query.matchAll(flightTypePattern)];
+    
+    if (flightTypeMatches.length > 0) {
+      const types = flightTypeMatches.map(match => match[1].toLowerCase());
+      entities[this.entityTypes.FLIGHT_TYPE] = types.length === 1 ? types[0] : types;
+    }
+    
+    // Time and Scheduling Entities
+    
+    // Date patterns (e.g., 2023-05-15, May 15, 15/05/2023)
+    const datePattern = /\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b|\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.\s-]*(\d{1,2})(?:[,\s-]+(\d{2,4}))?\b/gi;
+    const dateMatches = [...query.matchAll(datePattern)];
+    
+    if (dateMatches.length > 0) {
+      const dates = dateMatches.map(match => match[0]);
+      entities[this.entityTypes.DATE] = dates.length === 1 ? dates[0] : dates;
+    }
+    
+    // Time patterns (e.g., 9:30, 14:45, 2 PM)
+    const timePattern = /\b(\d{1,2})[:\.](\d{2})(?:\s*(am|pm))?\b|\b(\d{1,2})\s*(am|pm)\b/gi;
+    const timeMatches = [...query.matchAll(timePattern)];
+    
+    if (timeMatches.length > 0) {
+      const times = timeMatches.map(match => match[0]);
+      entities[this.entityTypes.TIME] = times.length === 1 ? times[0] : times;
+    }
+    
+    // Time period expressions (e.g., morning, afternoon, evening, night)
+    const periodPattern = /\b(morning|afternoon|evening|night|overnight|early morning|late night|peak hours?|off-peak|busy period)\b/gi;
+    const periodMatches = [...query.matchAll(periodPattern)];
+    
+    if (periodMatches.length > 0) {
+      const periods = periodMatches.map(match => match[1].toLowerCase());
+      entities[this.entityTypes.PEAK_PERIOD] = periods.length === 1 ? periods[0] : periods;
+    }
+    
+    // Duration patterns (e.g., 2 hours, 30 minutes, 3 days)
+    const durationPattern = /\b(\d+)\s+(minute|hour|day|week|month|year)s?\b/gi;
+    const durationMatches = [...query.matchAll(durationPattern)];
+    
+    if (durationMatches.length > 0) {
+      const durations = durationMatches.map(match => `${match[1]} ${match[2]}${parseInt(match[1]) > 1 ? 's' : ''}`);
+      entities[this.entityTypes.DURATION] = durations.length === 1 ? durations[0] : durations;
+    }
+    
+    // Schedule day patterns (e.g., Monday, weekends, weekdays)
+    const dayPattern = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|weekday|weekend|working day|holiday)\b/gi;
+    const dayMatches = [...query.matchAll(dayPattern)];
+    
+    if (dayMatches.length > 0) {
+      const days = dayMatches.map(match => match[1].toLowerCase());
+      entities[this.entityTypes.SCHEDULE_DAYS] = days.length === 1 ? days[0] : days;
+    }
+    
+    // Airline and Operation Entities
+    
+    // Airline patterns (e.g., BA, British Airways, Lufthansa)
+    const airlinePattern = /\b([A-Z]{2,3})\b|\b(British Airways|Lufthansa|Air France|KLM|Ryanair|EasyJet|Emirates|Qatar Airways|Delta Air Lines|United Airlines|American Airlines|Singapore Airlines)\b/gi;
     const airlineMatches = [...query.matchAll(airlinePattern)];
     
     if (airlineMatches.length > 0) {
@@ -1215,13 +1419,112 @@ class NLPService {
       entities[this.entityTypes.AIRLINE] = airlines.length === 1 ? airlines[0] : airlines;
     }
     
-    // Date patterns (e.g., 2023-05-15, May 15)
-    const datePattern = /\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/gi;
-    const dateMatches = [...query.matchAll(datePattern)];
+    // Airline alliance patterns (e.g., Star Alliance, OneWorld, SkyTeam)
+    const alliancePattern = /\b(Star Alliance|OneWorld|SkyTeam)\b/gi;
+    const allianceMatches = [...query.matchAll(alliancePattern)];
     
-    if (dateMatches.length > 0) {
-      const dates = dateMatches.map(match => match[0]);
-      entities[this.entityTypes.DATE] = dates.length === 1 ? dates[0] : dates;
+    if (allianceMatches.length > 0) {
+      const alliances = allianceMatches.map(match => match[1]);
+      entities[this.entityTypes.AIRLINE_ALLIANCE] = alliances.length === 1 ? alliances[0] : alliances;
+    }
+    
+    // Ground handling agent patterns (e.g., Swissport, Menzies, dnata)
+    const ghaPattern = /\b(Swissport|Menzies|dnata|Worldwide Flight Services|WFS|Aviapartner)\b/gi;
+    const ghaMatches = [...query.matchAll(ghaPattern)];
+    
+    if (ghaMatches.length > 0) {
+      const ghas = ghaMatches.map(match => match[1]);
+      entities[this.entityTypes.GROUND_HANDLING_AGENT] = ghas.length === 1 ? ghas[0] : ghas;
+    }
+    
+    // Maintenance Entities
+    
+    // Maintenance type patterns (e.g., scheduled, emergency, routine)
+    const maintTypePattern = /\b(scheduled|unscheduled|emergency|routine|preventive|corrective|periodic|annual|monthly)\s+(maintenance|repair|service|check|inspection)\b/gi;
+    const maintTypeMatches = [...query.matchAll(maintTypePattern)];
+    
+    if (maintTypeMatches.length > 0) {
+      const types = maintTypeMatches.map(match => `${match[1]} ${match[2]}`.toLowerCase());
+      entities[this.entityTypes.MAINTENANCE_TYPE] = types.length === 1 ? types[0] : types;
+    }
+    
+    // Maintenance status patterns (e.g., pending, in progress, completed)
+    const maintStatusPattern = /\b(pending|scheduled|in progress|ongoing|active|completed|finished|cancelled|delayed|paused)\s+(maintenance|repair|work)\b/gi;
+    const maintStatusMatches = [...query.matchAll(maintStatusPattern)];
+    
+    if (maintStatusMatches.length > 0) {
+      const statuses = maintStatusMatches.map(match => {
+        const status = match[1].toLowerCase();
+        if (status === 'ongoing' || status === 'active') return 'in_progress';
+        if (status === 'finished') return 'completed';
+        return status.replace(/\s+/g, '_');
+      });
+      
+      entities[this.entityTypes.MAINTENANCE_STATUS] = statuses.length === 1 ? statuses[0] : statuses;
+    }
+    
+    // Capacity Metrics
+    
+    // Capacity metric patterns (e.g., utilization, availability, occupancy rate)
+    const capacityMetricPattern = /\b(utilization|availability|occupancy|saturation|efficiency|throughput|capacity)\s+(rate|percentage|level|metrics?|statistics?|ratio|factor)?\b/gi;
+    const capacityMetricMatches = [...query.matchAll(capacityMetricPattern)];
+    
+    if (capacityMetricMatches.length > 0) {
+      const metrics = capacityMetricMatches.map(match => match[1].toLowerCase());
+      entities[this.entityTypes.CAPACITY_METRIC] = metrics.length === 1 ? metrics[0] : metrics;
+    }
+    
+    // Turnaround time patterns (e.g., turnaround time, handling time)
+    const turnaroundPattern = /\b(turnaround|turn-?around|handling|processing|ground)\s+(time|duration|period)\b/gi;
+    const turnaroundMatches = [...query.matchAll(turnaroundPattern)];
+    
+    if (turnaroundMatches.length > 0) {
+      const turnarounds = turnaroundMatches.map(match => 'turnaround_time');
+      entities[this.entityTypes.TURNAROUND_TIME] = turnarounds.length === 1 ? turnarounds[0] : turnarounds;
+    }
+    
+    // Quantity Entities
+    
+    // Percentage patterns (e.g., 75%, 30 percent)
+    const percentagePattern = /\b(\d+(?:\.\d+)?)(?:\s*%|\s+percent)\b/gi;
+    const percentageMatches = [...query.matchAll(percentagePattern)];
+    
+    if (percentageMatches.length > 0) {
+      const percentages = percentageMatches.map(match => parseFloat(match[1]) / 100);
+      entities[this.entityTypes.PERCENTAGE] = percentages.length === 1 ? percentages[0] : percentages;
+    }
+    
+    // Quantity patterns (e.g., 5 aircraft, 10 stands)
+    const quantityPattern = /\b(\d+)\s+(aircraft|planes?|stands?|gates?|flights?|arrivals?|departures?|terminals?|piers?|positions?)\b/gi;
+    const quantityMatches = [...query.matchAll(quantityPattern)];
+    
+    if (quantityMatches.length > 0) {
+      const quantities = quantityMatches.map(match => {
+        return {
+          value: parseInt(match[1]),
+          unit: match[2].toLowerCase().replace(/s$/, '') // Remove trailing 's' for singular form
+        };
+      });
+      
+      entities[this.entityTypes.QUANTITY] = quantities.length === 1 ? quantities[0] : quantities;
+    }
+    
+    // Visualization Entities
+    
+    // Visualization type patterns (e.g., bar chart, line graph, table)
+    const vizPattern = /\b(bar|line|pie|scatter|bubble|area|heat ?map|radar|gantt|table|chart|graph|plot|dashboard|report|visualization)\b/gi;
+    const vizMatches = [...query.matchAll(vizPattern)];
+    
+    if (vizMatches.length > 0) {
+      const vizTypes = vizMatches.map(match => {
+        const type = match[1].toLowerCase().replace(/\s+/g, '');
+        if (type === 'heatmap') return 'heatmap';
+        if (type === 'bar' || type === 'line' || type === 'pie') return `${type}_chart`;
+        if (type === 'chart' || type === 'graph' || type === 'plot') return 'chart';
+        return type;
+      });
+      
+      entities[this.entityTypes.VISUALIZATION_TYPE] = vizTypes.length === 1 ? vizTypes[0] : vizTypes;
     }
     
     return entities;
@@ -1236,47 +1539,409 @@ class NLPService {
    * @param {Object} context - Processing context
    * @returns {Promise<void>}
    */
+  /**
+   * Enhance the extracted entities with additional context and relationships
+   * @private
+   * @param {Object} entities - The extracted entities
+   * @param {string} query - The original query
+   * @param {string} intent - The identified intent
+   * @param {Object} context - Processing context
+   * @returns {Promise<void>}
+   */
   async _enhanceEntitiesWithContext(entities, query, intent, context) {
+    // Store the original query for reference
+    if (!entities.originalQuery && query) {
+      entities.originalQuery = query;
+    }
+    
     // Add time context if not present
-    if (!entities[this.entityTypes.TIME_PERIOD] && !entities[this.entityTypes.DATE]) {
+    if (!entities[this.entityTypes.TIME_PERIOD] && 
+        !entities[this.entityTypes.DATE] && 
+        !entities[this.entityTypes.PEAK_PERIOD]) {
+      
       // Check for common time references in the query
       if (query.includes('today') || query.includes('now') || query.includes('current')) {
+        const today = new Date();
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        
         entities[this.entityTypes.TIME_PERIOD] = {
           type: 'day',
-          start: new Date(),
-          end: new Date(),
+          start: today,
+          end: todayEnd,
           expression: 'today',
           iso: {
-            start: new Date().toISOString(),
-            end: new Date().toISOString()
+            start: today.toISOString(),
+            end: todayEnd.toISOString()
           }
+        };
+      } 
+      else if (query.includes('tomorrow')) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const tomorrowEnd = new Date(tomorrow);
+        tomorrowEnd.setHours(23, 59, 59, 999);
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'day',
+          start: tomorrow,
+          end: tomorrowEnd,
+          expression: 'tomorrow',
+          iso: {
+            start: tomorrow.toISOString(),
+            end: tomorrowEnd.toISOString()
+          }
+        };
+      }
+      else if (query.includes('yesterday')) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        
+        const yesterdayEnd = new Date(yesterday);
+        yesterdayEnd.setHours(23, 59, 59, 999);
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'day',
+          start: yesterday,
+          end: yesterdayEnd,
+          expression: 'yesterday',
+          iso: {
+            start: yesterday.toISOString(),
+            end: yesterdayEnd.toISOString()
+          }
+        };
+      }
+      else if (query.includes('this week') || query.includes('current week')) {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'week',
+          start: startOfWeek,
+          end: endOfWeek,
+          expression: 'this week',
+          iso: {
+            start: startOfWeek.toISOString(),
+            end: endOfWeek.toISOString()
+          }
+        };
+      }
+      else if (query.includes('this month') || query.includes('current month')) {
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'month',
+          start: startOfMonth,
+          end: endOfMonth,
+          expression: 'this month',
+          iso: {
+            start: startOfMonth.toISOString(),
+            end: endOfMonth.toISOString()
+          }
+        };
+      }
+      // If none of the above but we need a time frame, assume current day as default
+      else if (this._intentRequiresTimeframe(intent)) {
+        const today = new Date();
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'day',
+          start: today,
+          end: todayEnd,
+          expression: 'today (default)',
+          iso: {
+            start: today.toISOString(),
+            end: todayEnd.toISOString()
+          },
+          isDefault: true
         };
       }
     }
     
+    // Convert PEAK_PERIOD to TIME_PERIOD if needed
+    if (entities[this.entityTypes.PEAK_PERIOD] && !entities[this.entityTypes.TIME_PERIOD]) {
+      const peakPeriod = entities[this.entityTypes.PEAK_PERIOD];
+      const today = new Date();
+      
+      if (typeof peakPeriod === 'string') {
+        let startHour = 8; // Default
+        let endHour = 20; // Default
+        
+        // Map common peak periods to hours
+        if (peakPeriod.includes('morning')) {
+          startHour = 7;
+          endHour = 11;
+        } else if (peakPeriod.includes('afternoon')) {
+          startHour = 12;
+          endHour = 17;
+        } else if (peakPeriod.includes('evening')) {
+          startHour = 17;
+          endHour = 22;
+        } else if (peakPeriod.includes('night') || peakPeriod.includes('overnight')) {
+          startHour = 22;
+          endHour = 6;
+        } else if (peakPeriod.includes('peak')) {
+          startHour = 8;
+          endHour = 10;
+        } else if (peakPeriod.includes('off-peak')) {
+          startHour = 13;
+          endHour = 16;
+        }
+        
+        const start = new Date(today);
+        start.setHours(startHour, 0, 0, 0);
+        
+        const end = new Date(today);
+        end.setHours(endHour, 59, 59, 999);
+        
+        // Handle overnight periods
+        if (startHour > endHour) {
+          end.setDate(end.getDate() + 1);
+        }
+        
+        entities[this.entityTypes.TIME_PERIOD] = {
+          type: 'time_range',
+          start: start,
+          end: end,
+          expression: peakPeriod,
+          iso: {
+            start: start.toISOString(),
+            end: end.toISOString()
+          },
+          period_name: peakPeriod
+        };
+      }
+    }
+    
+    // Map aircraft body type to category if needed
+    if (entities[this.entityTypes.AIRCRAFT_BODY_TYPE] && !entities[this.entityTypes.AIRCRAFT_CATEGORY]) {
+      const bodyType = entities[this.entityTypes.AIRCRAFT_BODY_TYPE];
+      
+      if (typeof bodyType === 'string') {
+        // Map body types to categories
+        const categoryMap = {
+          'Narrowbody': 'C',
+          'Widebody': 'E',
+          'Regional': 'B'
+        };
+        
+        if (categoryMap[bodyType]) {
+          entities[this.entityTypes.AIRCRAFT_CATEGORY] = categoryMap[bodyType];
+        }
+      }
+    }
+    
+    // Determine stand status for stand status queries
+    if (intent === this.intents.STAND_STATUS_QUERY && !entities[this.entityTypes.MAINTENANCE_STATUS]) {
+      // Check query for status indicators
+      if (query.includes('available') || query.includes('free') || query.includes('open')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'available';
+      } else if (query.includes('occupied') || query.includes('in use') || query.includes('busy')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'occupied';
+      } else if (query.includes('maintenance') || query.includes('repair') || query.includes('closed')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'maintenance';
+      }
+    }
+    
     // For maintenance queries, add status if not present
-    if (intent === this.intents.MAINTENANCE_QUERY && !entities['status']) {
-      if (query.includes('ongoing') || query.includes('current')) {
-        entities['status'] = 'in_progress';
-      } else if (query.includes('planned') || query.includes('scheduled')) {
-        entities['status'] = 'scheduled';
-      } else if (query.includes('completed') || query.includes('finished')) {
-        entities['status'] = 'completed';
+    if (intent === this.intents.MAINTENANCE_QUERY && !entities[this.entityTypes.MAINTENANCE_STATUS]) {
+      if (query.includes('ongoing') || query.includes('current') || query.includes('active')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'in_progress';
+      } else if (query.includes('planned') || query.includes('scheduled') || query.includes('future')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'scheduled';
+      } else if (query.includes('completed') || query.includes('finished') || query.includes('past')) {
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'completed';
+      } else {
+        // Default to all maintenance if not specified
+        entities[this.entityTypes.MAINTENANCE_STATUS] = 'all';
       }
     }
     
     // For capacity queries, add metrics if not present
-    if (intent === this.intents.CAPACITY_QUERY && !entities['metric']) {
-      if (query.includes('utilization')) {
-        entities['metric'] = 'utilization';
+    if (intent === this.intents.CAPACITY_QUERY && !entities[this.entityTypes.CAPACITY_METRIC]) {
+      if (query.includes('utilization') || query.includes('utilisation')) {
+        entities[this.entityTypes.CAPACITY_METRIC] = 'utilization';
       } else if (query.includes('availability')) {
-        entities['metric'] = 'availability';
+        entities[this.entityTypes.CAPACITY_METRIC] = 'availability';
       } else if (query.includes('occupancy')) {
-        entities['metric'] = 'occupancy';
+        entities[this.entityTypes.CAPACITY_METRIC] = 'occupancy';
+      } else if (query.includes('efficiency')) {
+        entities[this.entityTypes.CAPACITY_METRIC] = 'efficiency';
       } else {
         // Default metric for capacity queries
-        entities['metric'] = 'capacity';
+        entities[this.entityTypes.CAPACITY_METRIC] = 'capacity';
       }
+    }
+    
+    // For infrastructure queries, add detail level if not present
+    if (intent === this.intents.INFRASTRUCTURE_QUERY) {
+      if (query.includes('detail') || query.includes('detailed') || query.includes('comprehensive')) {
+        entities.detail_level = 'detailed';
+      } else if (query.includes('summary') || query.includes('brief')) {
+        entities.detail_level = 'summary';
+      } else {
+        entities.detail_level = 'standard';
+      }
+    }
+    
+    // Add conversational context from previous queries if relevant
+    if (context && context.previousEntities) {
+      this._incorporatePreviousContext(entities, context.previousEntities, intent);
+    }
+    
+    // Try to enhance entities with database data if available
+    await this._enhanceEntitiesWithDatabaseInfo(entities);
+  }
+  
+  /**
+   * Checks if an intent typically requires a timeframe
+   * @private
+   * @param {string} intent - The intent to check
+   * @returns {boolean} - Whether the intent requires a timeframe
+   */
+  _intentRequiresTimeframe(intent) {
+    const timeframeIntents = [
+      this.intents.CAPACITY_QUERY,
+      this.intents.MAINTENANCE_QUERY,
+      this.intents.STAND_STATUS_QUERY
+    ];
+    
+    return timeframeIntents.includes(intent);
+  }
+  
+  /**
+   * Incorporate relevant entities from previous context
+   * @private
+   * @param {Object} entities - Current entities
+   * @param {Object} previousEntities - Entities from previous queries
+   * @param {string} intent - Current intent
+   */
+  _incorporatePreviousContext(entities, previousEntities, intent) {
+    // Only incorporate certain entity types to avoid confusion
+    const incorporableTypes = [
+      this.entityTypes.TERMINAL,
+      this.entityTypes.STAND,
+      this.entityTypes.AIRCRAFT_TYPE,
+      this.entityTypes.AIRLINE
+    ];
+    
+    // Add missing entities from previous context if relevant to current intent
+    for (const type of incorporableTypes) {
+      if (!entities[type] && previousEntities[type]) {
+        entities[type] = previousEntities[type];
+        entities[`${type}_from_context`] = true; // Mark as from context
+      }
+    }
+  }
+  
+  /**
+   * Enhance entities with information from the database
+   * @private
+   * @param {Object} entities - The entities to enhance
+   * @returns {Promise<void>}
+   */
+  async _enhanceEntitiesWithDatabaseInfo(entities) {
+    try {
+      // Make sure entity cache is loaded
+      await this._loadEntityCacheData();
+      
+      // Enhance terminal information
+      if (entities[this.entityTypes.TERMINAL] && this.entityCache.terminals) {
+        const terminalCode = entities[this.entityTypes.TERMINAL];
+        const matchedTerminal = this.entityCache.terminals.find(t => 
+          t.code === terminalCode || t.name === terminalCode
+        );
+        
+        if (matchedTerminal) {
+          entities[`${this.entityTypes.TERMINAL}_info`] = {
+            id: matchedTerminal.id,
+            code: matchedTerminal.code,
+            name: matchedTerminal.name
+          };
+        }
+      }
+      
+      // Enhance stand information
+      if (entities[this.entityTypes.STAND] && this.entityCache.stands) {
+        const standCode = entities[this.entityTypes.STAND];
+        const matchedStand = this.entityCache.stands.find(s => 
+          s.name === standCode
+        );
+        
+        if (matchedStand) {
+          entities[`${this.entityTypes.STAND}_info`] = {
+            id: matchedStand.id,
+            name: matchedStand.name,
+            terminalId: matchedStand.terminalId
+          };
+          
+          // Add terminal info if not already present
+          if (!entities[this.entityTypes.TERMINAL] && matchedStand.terminalId) {
+            const matchedTerminal = this.entityCache.terminals.find(t => 
+              t.id === matchedStand.terminalId
+            );
+            
+            if (matchedTerminal) {
+              entities[this.entityTypes.TERMINAL] = matchedTerminal.code;
+              entities[`${this.entityTypes.TERMINAL}_info`] = {
+                id: matchedTerminal.id,
+                code: matchedTerminal.code,
+                name: matchedTerminal.name
+              };
+              entities[`${this.entityTypes.TERMINAL}_inferred`] = true;
+            }
+          }
+        }
+      }
+      
+      // Enhance aircraft type information
+      if (entities[this.entityTypes.AIRCRAFT_TYPE] && this.entityCache.aircraftTypes) {
+        const aircraftCode = entities[this.entityTypes.AIRCRAFT_TYPE];
+        const matchedAircraft = this.entityCache.aircraftTypes.find(a => 
+          a.iataCode === aircraftCode || a.icaoCode === aircraftCode || a.name === aircraftCode
+        );
+        
+        if (matchedAircraft) {
+          entities[`${this.entityTypes.AIRCRAFT_TYPE}_info`] = {
+            id: matchedAircraft.id,
+            iataCode: matchedAircraft.iataCode,
+            icaoCode: matchedAircraft.icaoCode,
+            name: matchedAircraft.name
+          };
+        }
+      }
+      
+      // Enhance airline information
+      if (entities[this.entityTypes.AIRLINE] && this.entityCache.airlines) {
+        const airlineCode = entities[this.entityTypes.AIRLINE];
+        const matchedAirline = this.entityCache.airlines.find(a => 
+          a.iataCode === airlineCode || a.name === airlineCode
+        );
+        
+        if (matchedAirline) {
+          entities[`${this.entityTypes.AIRLINE}_info`] = {
+            id: matchedAirline.id,
+            iataCode: matchedAirline.iataCode,
+            name: matchedAirline.name
+          };
+        }
+      }
+    } catch (error) {
+      logger.warn(`Error enhancing entities with database info: ${error.message}`);
+      // Continue without database enhancement
     }
   }
   
@@ -1465,10 +2130,40 @@ class NLPService {
     context.processingTime = new Date().toISOString();
     context.userRole = options.userRole || 'user';
     
+    // Ensure entity cache is loaded for providing domain context
+    await this._loadEntityCacheData();
+    
+    // Add domain-specific context to help with entity extraction and intent classification
+    context.domain = {
+      name: 'airport_capacity_planning',
+      entityCounts: {
+        terminals: (this.entityCache.terminals || []).length,
+        stands: (this.entityCache.stands || []).length,
+        piers: (this.entityCache.piers || []).length,
+        aircraftTypes: (this.entityCache.aircraftTypes || []).length,
+        airlines: (this.entityCache.airlines || []).length
+      },
+      // Add a sample of entities to help with context (limited to avoid token bloat)
+      entitySamples: {
+        terminals: (this.entityCache.terminals || []).slice(0, 5).map(t => t.code || t.name),
+        stands: (this.entityCache.stands || []).slice(0, 5).map(s => s.name),
+        aircraftTypes: (this.entityCache.aircraftTypes || []).slice(0, 5).map(a => a.iataCode || a.name)
+      }
+    };
+    
     // Add conversation context if available
     if (options.conversationId) {
-      // Would retrieve conversation history in production
-      context.conversationId = options.conversationId;
+      try {
+        // In a real implementation, you would retrieve conversation history from a database
+        // For now, we'll just add the conversationId for reference
+        context.conversationId = options.conversationId;
+        // If conversation history is provided in options, add it to context
+        if (options.conversationHistory && Array.isArray(options.conversationHistory)) {
+          context.conversationHistory = options.conversationHistory;
+        }
+      } catch (error) {
+        logger.warn(`Error retrieving conversation history: ${error.message}`);
+      }
     }
     
     return context;
@@ -1669,11 +2364,15 @@ class NLPService {
         this.entityCache.terminals && 
         this.entityCache.stands && 
         this.entityCache.aircraftTypes && 
-        this.entityCache.airlines
+        this.entityCache.airlines &&
+        this.entityCache.piers // Added check for piers
       ) {
         // Cache is still valid
+        logger.debug('Using existing entity cache (not stale)');
         return;
       }
+      
+      logger.info('Loading entity cache data from database...');
       
       // Load terminals
       const terminals = await db('terminals').select('id', 'name', 'code');
@@ -1682,23 +2381,47 @@ class NLPService {
         name: t.name,
         code: t.code
       }));
+      logger.debug(`Loaded ${terminals.length} terminals into cache`);
       
-      // Load stands
-      const stands = await db('stands').select('id', 'name', 'terminal_id');
+      // Load stands with more information (including stand type and active status)
+      const stands = await db('stands').select('id', 'name', 'code', 'pier_id', 'terminal_id', 'stand_type', 'is_active', 'max_aircraft_size_code');
       this.entityCache.stands = stands.map(s => ({
         id: s.id,
         name: s.name,
-        terminalId: s.terminal_id
+        code: s.code,
+        pierId: s.pier_id,
+        terminalId: s.terminal_id,
+        standType: s.stand_type,
+        isActive: s.is_active,
+        maxAircraftSize: s.max_aircraft_size_code
       }));
+      logger.debug(`Loaded ${stands.length} stands into cache`);
       
-      // Load aircraft types
-      const aircraftTypes = await db('aircraft_types').select('id', 'iata_code', 'icao_code', 'name');
+      // Load piers
+      const piers = await db('piers').select('id', 'name', 'code', 'terminal_id');
+      this.entityCache.piers = piers.map(p => ({
+        id: p.id,
+        name: p.name,
+        code: p.code,
+        terminalId: p.terminal_id
+      }));
+      logger.debug(`Loaded ${piers.length} piers into cache`);
+      
+      // Load aircraft types with more information (including size categories and wingspan)
+      const aircraftTypes = await db('aircraft_types')
+        .select('id', 'iata_code', 'icao_code', 'name', 'manufacturer', 'model', 'wingspan_meters', 'length_meters', 'size_category_code');
       this.entityCache.aircraftTypes = aircraftTypes.map(a => ({
         id: a.id,
         iataCode: a.iata_code,
         icaoCode: a.icao_code,
-        name: a.name
+        name: a.name,
+        manufacturer: a.manufacturer,
+        model: a.model,
+        wingspan: a.wingspan_meters,
+        length: a.length_meters,
+        sizeCategory: a.size_category_code
       }));
+      logger.debug(`Loaded ${aircraftTypes.length} aircraft types into cache`);
       
       // Load airlines
       const airlines = await airlineService.getAllAirlines();
@@ -1708,11 +2431,26 @@ class NLPService {
         iataCode: a.iata_code,
         icaoCode: a.icao_code
       }));
+      logger.debug(`Loaded ${airlines.length} airlines into cache`);
+      
+      // Try to load ground handling agents if available
+      try {
+        const ghas = await db('ground_handling_agents').select('id', 'name', 'code');
+        this.entityCache.groundHandlingAgents = ghas.map(g => ({
+          id: g.id,
+          name: g.name,
+          code: g.code
+        }));
+        logger.debug(`Loaded ${ghas.length} ground handling agents into cache`);
+      } catch (e) {
+        logger.debug('Ground handling agents table not available or empty');
+        this.entityCache.groundHandlingAgents = [];
+      }
       
       // Update last updated timestamp
       this.entityCache.lastUpdated = now;
       
-      logger.debug('Entity cache data loaded successfully');
+      logger.info('Entity cache data loaded successfully');
     } catch (error) {
       logger.error(`Error loading entity cache data: ${error.message}`, { error: error.stack });
       // Keep using existing cache if available, even if stale

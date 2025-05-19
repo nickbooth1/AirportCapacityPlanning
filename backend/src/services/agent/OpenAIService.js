@@ -121,45 +121,148 @@ Your responses should be helpful and focused on airport operations.`
   /**
    * Extract entities and intent from a query
    * @param {string} query - The user's query
+   * @param {Object} options - Optional parameters including preDetectedEntities and domainContext
    * @returns {Promise<Object>} - Extracted entities and intent
    */
-  async extractEntities(query) {
+  async extractEntities(query, options = {}) {
     try {
+      // Create a comprehensive system prompt with domain knowledge
+      const systemPrompt = `You are an AI assistant for airport capacity planning with specialized knowledge of airport operations.
+Your task is to extract entities and intent from user queries with high precision.
+
+INTENT CLASSIFICATION:
+Identify the primary user intent from these categories:
+- capacity_query: Questions about stand capacity, utilization, or availability
+- maintenance_query: Questions about maintenance status, schedules, or impact
+- infrastructure_query: Questions about airport infrastructure like terminals, piers, stands
+- maintenance_create: Requests to create new maintenance requests
+- maintenance_update: Requests to update existing maintenance
+- stand_status_query: Questions about specific stand status
+- capacity_parameter_update: Requests to update capacity parameters or settings
+- scenario_create: Requests to create new capacity scenarios
+- scenario_modify: Requests to modify existing scenarios
+- scenario_compare: Requests to compare different scenarios
+- scenario_query: Questions about existing scenarios
+- what_if_analysis: Requests for hypothetical capacity analysis
+- help_request: Requests for help or information about the system
+- visualization_command: Requests to generate or modify visualizations
+- clarification_request: Requests for clarification about previous information
+- autonomous_setting: Requests to change autonomous operation settings
+- data_export: Requests to export data
+- unknown: Use when no other intent can be confidently determined
+
+ENTITY EXTRACTION:
+Extract all relevant entities from these categories:
+1. Airport Infrastructure:
+   - terminal: Terminal identifiers (e.g., T1, Terminal 2, International Terminal)
+   - stand: Stand identifiers (e.g., A1, 22R, remote stand 5)
+   - gate: Gate numbers/identifiers (e.g., Gate 25, B12)
+   - pier: Pier identifiers (e.g., Pier A, South Pier)
+   - apron: Apron identifiers (e.g., Main Apron, Cargo Apron)
+
+2. Aircraft Information:
+   - aircraft_type: Aircraft models or types (e.g., A320, 737, wide-body)
+   - aircraft_category: Aircraft categories (e.g., commercial, cargo, general aviation)
+   - aircraft_size: Size categories (e.g., small, medium, large, ultra-large)
+   - aircraft_body_type: Body types (e.g., narrow-body, wide-body)
+
+3. Time Elements:
+   - time_period: Time ranges (e.g., morning peak, afternoon, next week)
+   - date: Specific dates (e.g., January 15th, next Monday)
+   - time: Specific times (e.g., 2pm, 14:00)
+   - duration: Time durations (e.g., 2 hours, 30 minutes)
+   - peak_period: Named peak periods (e.g., summer peak, morning rush)
+
+4. Airline and Operations:
+   - airline: Airline names or codes (e.g., American Airlines, BA, SAS)
+   - airline_alliance: Airline alliances (e.g., Star Alliance, SkyTeam)
+   - ground_handling_agent: Ground handling companies (e.g., Swissport, Menzies)
+
+5. Capacity and Utilization:
+   - capacity_metric: Metrics related to capacity (e.g., utilization rate, stands per hour)
+   - turnaround_time: Aircraft turnaround times (e.g., 45-min turnaround)
+   - occupancy_rate: Stand occupancy rates (e.g., 85% occupancy)
+
+6. Maintenance Information:
+   - maintenance_type: Types of maintenance (e.g., scheduled, emergency, preventive)
+   - maintenance_status: Status of maintenance (e.g., pending, approved, completed)
+   - maintenance_priority: Priority levels (e.g., high, medium, low, critical)
+
+7. Scenario Elements:
+   - scenario_name: Names of scenarios (e.g., Summer 2025 Plan, High Growth Scenario)
+   - scenario_parameter: Parameters for scenarios (e.g., growth rate, aircraft mix)
+   - comparison_metric: Metrics for comparison (e.g., efficiency, utilization, cost)
+
+8. Visualization and Data:
+   - visualization_type: Types of visualizations (e.g., timeline, heatmap, bar chart)
+   - chart_type: Specific chart types (e.g., pie chart, line graph)
+   - data_format: Data formats (e.g., CSV, Excel, PDF)
+
+9. Quantities and Measurements:
+   - quantity: Numeric values with units (e.g., 5 stands, 10 flights)
+   - percentage: Percentage values (e.g., 75%, increased by 25%)
+
+FORMAT YOUR RESPONSE AS A JSON OBJECT WITH:
+- intent: The primary user intent
+- confidence: A number between 0 and 1 indicating your confidence in the intent classification
+- entities: An object containing all extracted entities organized by entity type
+- reasoning: Brief explanation of your classification and extraction choices
+
+Only extract entities explicitly mentioned or strongly implied in the query. If unclear, omit rather than guess.`;
+
+      // Prepare messages array starting with the system prompt
       const messages = [
-        {
-          role: 'system',
-          content: `You are an AI assistant for airport capacity planning.
-Your task is to extract entities and intent from user queries.
-Respond with a JSON object containing:
-- intent: The primary user intent (capacity_query, maintenance_query, infrastructure_query, etc.)
-- confidence: A number between 0 and 1 indicating confidence in the intent classification
-- entities: An object containing extracted entities such as:
-  * terminal: Terminal name/number
-  * stand: Stand identifier
-  * aircraft_type: Type of aircraft (e.g., wide-body, narrow-body, A320, etc.)
-  * time_period: Time expression (e.g., today, next week, October 5th, etc.)
-  * Any other relevant entities
-
-Also check for scenario-related intents such as:
-- scenario_create: User wants to create a new scenario
-- scenario_modify: User wants to modify a scenario
-- scenario_compare: User wants to compare scenarios
-- scenario_query: User wants information about a scenario
-- what_if_analysis: User wants to analyze a what-if scenario
-
-Only extract what is explicitly mentioned in the query.`
-        },
-        {
-          role: 'user',
-          content: query
-        }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: query }
       ];
       
+      // Add domain context if provided
+      if (options.domainContext) {
+        // Add examples of known entity values to improve extraction accuracy
+        const contextPrompt = `Here are some known values from the database to help with entity extraction:
+${options.domainContext.terminals ? 'Terminals: ' + options.domainContext.terminals.join(', ') : ''}
+${options.domainContext.stands ? 'Stands: ' + options.domainContext.stands.join(', ') : ''}
+${options.domainContext.airlines ? 'Airlines: ' + options.domainContext.airlines.join(', ') : ''}
+${options.domainContext.aircraftTypes ? 'Aircraft Types: ' + options.domainContext.aircraftTypes.join(', ') : ''}
+${options.domainContext.piers ? 'Piers: ' + options.domainContext.piers.join(', ') : ''}
+
+If you see an entity in the query that closely matches but doesn't exactly match one of these known values, use the known value in your response.`;
+        
+        messages.splice(1, 0, { role: 'system', content: contextPrompt });
+      }
+      
+      // If entities were already detected using pattern matching, add them to the prompt
+      if (options.preDetectedEntities && Object.keys(options.preDetectedEntities).length > 0) {
+        const entitiesPrompt = `The following entities have already been detected using pattern matching:
+${JSON.stringify(options.preDetectedEntities, null, 2)}
+
+Validate these entities and extract any additional entities from the query. For already detected entities, only change them if you have high confidence they are incorrect.`;
+        
+        messages.splice(messages.length - 1, 0, { role: 'system', content: entitiesPrompt });
+      }
+      
+      // Add examples for few-shot learning if provided
+      if (options.examples && Array.isArray(options.examples) && options.examples.length > 0) {
+        for (const example of options.examples) {
+          if (example.query && example.result) {
+            messages.splice(messages.length - 1, 0, { 
+              role: 'user', 
+              content: example.query 
+            });
+            messages.splice(messages.length - 1, 0, { 
+              role: 'assistant', 
+              content: JSON.stringify(example.result, null, 2) 
+            });
+          }
+        }
+      }
+      
+      // Make the API call with adjustments for entity extraction
       const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: messages,
-        temperature: 0.2,
-        max_tokens: 500,
+        temperature: 0.1, // Lower temperature for more precise entity extraction
+        max_tokens: 800, // Allow more tokens for comprehensive extraction
         response_format: { type: 'json_object' }
       });
       
@@ -168,12 +271,33 @@ Only extract what is explicitly mentioned in the query.`
       
       // Parse the JSON response
       const responseText = completion.choices[0]?.message?.content || '{}';
-      const parsedResponse = JSON.parse(responseText);
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(responseText);
+      } catch (parseError) {
+        logger.error(`JSON parsing error in entity extraction: ${parseError.message}`);
+        logger.debug(`Response text: ${responseText}`);
+        return {
+          intent: null,
+          confidence: 0,
+          entities: {},
+          error: `Failed to parse response: ${parseError.message}`
+        };
+      }
+      
+      // Post-process extracted entities (normalization, validation)
+      const processedEntities = this._normalizeEntities(parsedResponse.entities || {});
+      
+      // Merge with pre-detected entities if they weren't overridden
+      const mergedEntities = options.preDetectedEntities 
+        ? this._mergeEntities(options.preDetectedEntities, processedEntities)
+        : processedEntities;
       
       return {
         intent: parsedResponse.intent || null,
         confidence: parsedResponse.confidence || 0,
-        entities: parsedResponse.entities || {},
+        entities: mergedEntities,
+        reasoning: parsedResponse.reasoning || null,
         usage: completion.usage
       };
     } catch (error) {
@@ -182,10 +306,131 @@ Only extract what is explicitly mentioned in the query.`
       return {
         intent: null,
         confidence: 0,
-        entities: {},
+        entities: options.preDetectedEntities || {},
         error: error.message
       };
     }
+  }
+  
+  /**
+   * Normalize extracted entities to standard formats
+   * @private
+   * @param {Object} entities - Raw extracted entities
+   * @returns {Object} - Normalized entities
+   */
+  _normalizeEntities(entities) {
+    if (!entities || typeof entities !== 'object') {
+      return {};
+    }
+    
+    const normalized = { ...entities };
+    
+    // Normalize terminal formats (e.g., "Terminal 1", "T1" -> "T1")
+    if (normalized.terminal) {
+      const terminalStr = String(normalized.terminal).trim();
+      if (/^terminal\s*(\d+|[a-z])$/i.test(terminalStr)) {
+        const match = terminalStr.match(/^terminal\s*(\d+|[a-z])$/i);
+        normalized.terminal = `T${match[1]}`;
+      } else if (/^term\s*(\d+|[a-z])$/i.test(terminalStr)) {
+        const match = terminalStr.match(/^term\s*(\d+|[a-z])$/i);
+        normalized.terminal = `T${match[1]}`;
+      }
+    }
+    
+    // Normalize aircraft types
+    if (normalized.aircraft_type) {
+      // Convert common variations to standard forms
+      const acTypeStr = String(normalized.aircraft_type).trim().toUpperCase();
+      
+      // Handle Boeing types (e.g., "Boeing 737", "B737", "737" -> "B737")
+      if (/^(?:boeing\s+)?(\d{3}(?:-\d+)?)$/i.test(acTypeStr)) {
+        const match = acTypeStr.match(/^(?:boeing\s+)?(\d{3}(?:-\d+)?)$/i);
+        normalized.aircraft_type = `B${match[1]}`;
+      }
+      
+      // Handle Airbus types (e.g., "Airbus A320", "A320", "320" -> "A320")
+      if (/^(?:airbus\s+)?(?:A)?(\d{3}(?:-\d+)?)$/i.test(acTypeStr)) {
+        const match = acTypeStr.match(/^(?:airbus\s+)?(?:A)?(\d{3}(?:-\d+)?)$/i);
+        normalized.aircraft_type = `A${match[1]}`;
+      }
+    }
+    
+    // Ensure date/time fields are in consistent format
+    if (normalized.date && typeof normalized.date === 'string') {
+      try {
+        // Attempt to parse and standardize to ISO format
+        const parsedDate = new Date(normalized.date);
+        if (!isNaN(parsedDate.getTime())) {
+          normalized.date = parsedDate.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        // Keep original if parsing fails
+      }
+    }
+    
+    // Normalize airline codes/names
+    if (normalized.airline && typeof normalized.airline === 'string') {
+      const airlineStr = normalized.airline.trim();
+      
+      // Convert full airline names to codes if recognizable
+      const commonAirlines = {
+        'british airways': 'BA',
+        'lufthansa': 'LH',
+        'american airlines': 'AA',
+        'delta': 'DL',
+        'united': 'UA',
+        'emirates': 'EK',
+        'air france': 'AF',
+        'klm': 'KL',
+        'singapore airlines': 'SQ',
+        'qatar airways': 'QR'
+      };
+      
+      const lowercaseAirline = airlineStr.toLowerCase();
+      if (commonAirlines[lowercaseAirline]) {
+        normalized.airline = commonAirlines[lowercaseAirline];
+      } else if (airlineStr.length > 2 && !/^[A-Z0-9]{2,3}$/.test(airlineStr)) {
+        // Keep the original - we don't want to convert unknown names to codes
+      } else {
+        // Ensure airline codes are uppercase
+        normalized.airline = airlineStr.toUpperCase();
+      }
+    }
+    
+    return normalized;
+  }
+  
+  /**
+   * Merge pre-detected entities with newly extracted entities
+   * @private
+   * @param {Object} preDetected - Entities detected in preprocessing
+   * @param {Object} newEntities - Entities extracted by this method
+   * @returns {Object} - Merged entities
+   */
+  _mergeEntities(preDetected, newEntities) {
+    const merged = { ...preDetected };
+    
+    // For each new entity
+    for (const [key, value] of Object.entries(newEntities)) {
+      // If key doesn't exist in preDetected, add it
+      if (!merged[key]) {
+        merged[key] = value;
+      } 
+      // If OpenAI extracted a different value with high confidence, override the preDetected
+      else if (merged[key] !== value && key !== 'originalQuery') {
+        // For complex entity types that might be arrays
+        if (Array.isArray(value) && Array.isArray(merged[key])) {
+          // Combine arrays without duplicates
+          const combinedArray = [...new Set([...merged[key], ...value])];
+          merged[key] = combinedArray;
+        } else {
+          // Override with OpenAI's extraction as it might be more accurate
+          merged[key] = value;
+        }
+      }
+    }
+    
+    return merged;
   }
 
   /**
