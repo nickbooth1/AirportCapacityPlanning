@@ -1,17 +1,45 @@
 /**
  * MultiStepReasoningService.js
  * 
- * Service for handling complex queries that require multiple reasoning steps
+ * Service for handling complex queries that require multiple reasoning steps.
+ * Enhanced with integration to knowledge retrieval components for more robust reasoning.
  */
 
 const OpenAIService = require('./OpenAIService');
 const ContextService = require('./ContextService');
 const ReasoningExplainer = require('./ReasoningExplainer');
+const WorkingMemoryService = require('./WorkingMemoryService');
+const RetrievalAugmentedGenerationService = require('./knowledge/RetrievalAugmentedGenerationService');
+const FactVerifierService = require('./knowledge/FactVerifierService');
 const logger = require('../../utils/logger');
 
 class MultiStepReasoningService {
-  constructor() {
-    this.contextService = new ContextService();
+  /**
+   * Initialize the multi-step reasoning service
+   * 
+   * @param {Object} services - Service dependencies
+   * @param {Object} options - Configuration options
+   */
+  constructor(services = {}, options = {}) {
+    // Initialize dependencies
+    this.contextService = services.contextService || new ContextService();
+    this.workingMemoryService = services.workingMemoryService || new WorkingMemoryService();
+    this.ragService = services.ragService || new RetrievalAugmentedGenerationService({ workingMemoryService: this.workingMemoryService });
+    this.factVerifier = services.factVerifier || new FactVerifierService();
+    this.openAIService = services.openAIService || OpenAIService;
+    
+    // Configure options
+    this.options = {
+      defaultTTL: options.defaultTTL || 30 * 60 * 1000, // 30 minutes
+      factCheckingEnabled: options.factCheckingEnabled !== undefined ? options.factCheckingEnabled : true,
+      includeKnowledgeSteps: options.includeKnowledgeSteps !== undefined ? options.includeKnowledgeSteps : true,
+      ...options
+    };
+    
+    // Initialize logger
+    this.logger = services.logger || logger;
+    
+    this.logger.info('Enhanced MultiStepReasoningService initialized');
   }
 
   /**
@@ -22,19 +50,38 @@ class MultiStepReasoningService {
    */
   async planQuerySteps(query, context = {}) {
     try {
-      logger.info(`Planning steps for query: ${query}`);
+      this.logger.info(`Planning steps for query: ${query}`);
+      
+      const sessionId = context.sessionId || `session-${Date.now()}`;
+      const queryId = this.generateUniqueId();
+      
+      // Store the original query in working memory
+      if (context.sessionId) {
+        await this.workingMemoryService.storeSessionContext(sessionId, {
+          ...await this.workingMemoryService.getSessionContext(sessionId) || {},
+          lastQuery: query,
+          lastQueryId: queryId,
+          lastQueryTimestamp: Date.now()
+        });
+      }
       
       // Use OpenAI to generate a reasoning plan
-      const planResult = await OpenAIService.performMultiStepReasoning(query, context);
+      const planResult = await this.openAIService.performMultiStepReasoning(query, context);
       
       // Extract and validate the steps
       const steps = planResult.steps || [];
       
+      // Check if knowledge retrieval steps should be added
+      let enhancedSteps = steps;
+      if (this.options.includeKnowledgeSteps) {
+        enhancedSteps = this.addKnowledgeRetrievalSteps(steps, query);
+      }
+      
       // Validate the plan feasibility
-      const feasibilityCheck = await this.validatePlanFeasibility(steps, context);
+      const feasibilityCheck = await this.validatePlanFeasibility(enhancedSteps, context);
       
       if (!feasibilityCheck.isValid) {
-        logger.warn(`Plan feasibility check failed: ${feasibilityCheck.reason}`);
+        this.logger.warn(`Plan feasibility check failed: ${feasibilityCheck.reason}`);
         return {
           status: 'invalid_plan',
           reason: feasibilityCheck.reason,
@@ -44,9 +91,9 @@ class MultiStepReasoningService {
       
       // Create a structured plan
       const plan = {
-        queryId: this.generateUniqueId(),
+        queryId,
         originalQuery: query,
-        steps: steps.map((step, index) => ({
+        steps: enhancedSteps.map((step, index) => ({
           stepId: `step-${index + 1}`,
           stepNumber: index + 1,
           description: step.description,
@@ -55,19 +102,75 @@ class MultiStepReasoningService {
           parameters: step.parameters || {},
           estimatedExecutionTime: this.estimateExecutionTime(step)
         })),
-        totalSteps: steps.length,
-        estimatedTotalTime: this.calculateTotalTime(steps),
+        totalSteps: enhancedSteps.length,
+        estimatedTotalTime: this.calculateTotalTime(enhancedSteps),
         confidence: planResult.confidence || 0.7
       };
       
       // Store the plan in context service
       await this.contextService.set(`plan:${plan.queryId}`, plan);
       
+      // Store in working memory if session ID is provided
+      if (context.sessionId) {
+        await this.workingMemoryService.storeQueryPlan(sessionId, queryId, plan, this.options.defaultTTL);
+      }
+      
       return plan;
     } catch (error) {
-      logger.error(`Error generating reasoning plan: ${error.message}`);
+      this.logger.error(`Error generating reasoning plan: ${error.message}`);
       throw new Error(`Failed to plan query steps: ${error.message}`);
     }
+  }
+  
+  /**
+   * Add knowledge retrieval steps to the reasoning plan
+   * @param {Array} steps - Original steps from the plan
+   * @param {string} query - The original query
+   * @returns {Array} - Enhanced steps with knowledge retrieval
+   */
+  addKnowledgeRetrievalSteps(steps, query) {
+    // Don't modify plan if already contains knowledge retrieval steps
+    if (steps.some(step => step.type === 'knowledge_retrieval')) {
+      return steps;
+    }
+    
+    // Create a knowledge retrieval step to add at the beginning
+    const knowledgeStep = {
+      description: `Retrieve relevant knowledge for query: "${query}"`,
+      type: 'knowledge_retrieval',
+      parameters: {
+        query,
+        retrievalType: 'semantic',
+        maxResults: 5
+      }
+    };
+    
+    // Update dependencies for the first step to depend on knowledge retrieval
+    const enhancedSteps = [knowledgeStep];
+    
+    for (const step of steps) {
+      // Clone the step to avoid modifying the original
+      const enhancedStep = { ...step };
+      
+      // For the first step in the original plan, add dependency on knowledge retrieval
+      if (!enhancedStep.dependsOn || enhancedStep.dependsOn.length === 0) {
+        enhancedStep.dependsOn = ['step-1']; // Knowledge retrieval is now step-1
+      } else {
+        // Adjust step numbers for dependencies to account for the inserted knowledge step
+        enhancedStep.dependsOn = enhancedStep.dependsOn.map(depId => {
+          const match = depId.match(/step-(\d+)/);
+          if (match) {
+            const stepNum = parseInt(match[1]);
+            return `step-${stepNum + 1}`;
+          }
+          return depId;
+        });
+      }
+      
+      enhancedSteps.push(enhancedStep);
+    }
+    
+    return enhancedSteps;
   }
   
   /**
@@ -78,7 +181,10 @@ class MultiStepReasoningService {
    */
   async executeStepSequence(plan, context = {}) {
     try {
-      logger.info(`Executing reasoning plan for query: ${plan.originalQuery}`);
+      this.logger.info(`Executing reasoning plan for query: ${plan.originalQuery}`);
+      
+      const sessionId = context.sessionId || `session-${Date.now()}`;
+      const queryId = plan.queryId;
       
       const results = {
         queryId: plan.queryId,
@@ -98,28 +204,37 @@ class MultiStepReasoningService {
           plan.originalQuery
         );
       } catch (explainError) {
-        logger.warn(`Failed to generate reasoning explanation: ${explainError.message}`);
+        this.logger.warn(`Failed to generate reasoning explanation: ${explainError.message}`);
       }
       
       const startTime = Date.now();
       
       // Execute each step in sequence, respecting dependencies
       for (const step of plan.steps) {
-        logger.info(`Executing step ${step.stepNumber}: ${step.description}`);
+        this.logger.info(`Executing step ${step.stepNumber}: ${step.description}`);
         
         // Check if dependencies are fulfilled
         if (step.dependsOn.length > 0) {
           const dependenciesFulfilled = this.checkDependencies(step.dependsOn, results.stepResults);
           if (!dependenciesFulfilled) {
-            logger.error(`Dependencies not fulfilled for step ${step.stepNumber}`);
+            this.logger.error(`Dependencies not fulfilled for step ${step.stepNumber}`);
             results.success = false;
             results.error = `Dependencies not fulfilled for step ${step.stepNumber}`;
             break;
           }
         }
         
-        // Execute the specific step type
-        const stepResult = await this.executeStep(step, context, results.stepResults);
+        // Execute the specific step type with enhanced context
+        const enhancedContext = {
+          ...context,
+          sessionId,
+          queryId,
+          stepId: step.stepId,
+          originalQuery: plan.originalQuery,
+          previousResults: results.stepResults
+        };
+        
+        const stepResult = await this.executeStep(step, enhancedContext, results.stepResults);
         
         // Generate explanation for this step
         let explanation = null;
@@ -132,7 +247,7 @@ class MultiStepReasoningService {
             }).filter(Boolean)
           );
         } catch (explainError) {
-          logger.warn(`Failed to generate step explanation: ${explainError.message}`);
+          this.logger.warn(`Failed to generate step explanation: ${explainError.message}`);
           explanation = step.description;
         }
         
@@ -157,9 +272,23 @@ class MultiStepReasoningService {
         // Update context service with intermediate results
         await this.contextService.set(`stepResult:${plan.queryId}:${step.stepId}`, stepResult);
         
+        // Store in working memory if session ID is provided
+        if (context.sessionId) {
+          await this.workingMemoryService.storeStepResult(
+            sessionId, 
+            queryId, 
+            step.stepId, 
+            {
+              ...stepResult,
+              explanation
+            },
+            this.options.defaultTTL
+          );
+        }
+        
         // If step failed, stop execution
         if (!stepResult.success) {
-          logger.error(`Step ${step.stepNumber} failed: ${stepResult.error}`);
+          this.logger.error(`Step ${step.stepNumber} failed: ${stepResult.error}`);
           results.success = false;
           results.error = `Step ${step.stepNumber} failed: ${stepResult.error}`;
           break;
@@ -173,6 +302,16 @@ class MultiStepReasoningService {
         
         // Store final result in context service
         await this.contextService.set(`finalResult:${plan.queryId}`, finalAnswer);
+        
+        // Store in working memory if session ID is provided
+        if (context.sessionId) {
+          await this.workingMemoryService.storeFinalResult(
+            sessionId, 
+            queryId, 
+            finalAnswer,
+            this.options.defaultTTL
+          );
+        }
       }
       
       const endTime = Date.now();
@@ -180,7 +319,7 @@ class MultiStepReasoningService {
       
       return results;
     } catch (error) {
-      logger.error(`Error executing reasoning steps: ${error.message}`);
+      this.logger.error(`Error executing reasoning steps: ${error.message}`);
       throw new Error(`Failed to execute reasoning steps: ${error.message}`);
     }
   }
@@ -206,6 +345,9 @@ class MultiStepReasoningService {
         case 'data_retrieval':
           return await this.executeDataRetrievalStep(step, context, previousResults);
           
+        case 'knowledge_retrieval':
+          return await this.executeKnowledgeRetrievalStep(step, context, previousResults);
+          
         case 'validation':
           return await this.executeValidationStep(step, context, previousResults);
         
@@ -215,6 +357,9 @@ class MultiStepReasoningService {
         case 'recommendation':
           return await this.executeRecommendationStep(step, context, previousResults);
           
+        case 'fact_checking':
+          return await this.executeFactCheckingStep(step, context, previousResults);
+          
         default:
           throw new Error(`Unsupported step type: ${step.type}`);
       }
@@ -223,6 +368,153 @@ class MultiStepReasoningService {
       return {
         success: false,
         error: error.message,
+        executionTime: (endTime - startTime) / 1000
+      };
+    }
+  }
+  
+  /**
+   * Execute a knowledge retrieval step
+   * @param {Object} step - Step definition
+   * @param {Object} context - Global context
+   * @param {Array} previousResults - Results from previous steps
+   * @returns {Promise<Object>} - Retrieved knowledge
+   */
+  async executeKnowledgeRetrievalStep(step, context, previousResults) {
+    const startTime = Date.now();
+    
+    try {
+      const sessionId = context.sessionId;
+      const queryId = context.queryId;
+      
+      // Extract parameters
+      const query = step.parameters.query || context.originalQuery;
+      const retrievalType = step.parameters.retrievalType || 'semantic';
+      const maxResults = step.parameters.maxResults || 5;
+      
+      // Prepare query object for KnowledgeRetrievalService
+      const queryObj = {
+        text: query,
+        queryId: queryId,
+        parsedQuery: {
+          intent: 'knowledge_query',
+          entities: {}
+        }
+      };
+      
+      // Use the RetrievalAugmentedGenerationService for knowledge retrieval
+      // Note: We're just using the knowledge retrieval part, not the generation
+      const knowledgeResult = await this.ragService.knowledgeRetrievalService.retrieveKnowledge(
+        queryObj,
+        { sessionId, ...context },
+        { 
+          maxResults,
+          retrievalType,
+          includeMetadata: true
+        }
+      );
+      
+      // Store retrieved knowledge in working memory
+      if (sessionId && queryId) {
+        await this.workingMemoryService.storeRetrievedKnowledge(
+          sessionId,
+          queryId,
+          knowledgeResult.facts.concat(knowledgeResult.contextual),
+          {
+            strategy: retrievalType,
+            sources: knowledgeResult.sources,
+            itemCount: knowledgeResult.facts.length + knowledgeResult.contextual.length
+          },
+          this.options.defaultTTL
+        );
+      }
+      
+      const endTime = Date.now();
+      return {
+        success: true,
+        result: knowledgeResult,
+        executionTime: (endTime - startTime) / 1000
+      };
+    } catch (error) {
+      const endTime = Date.now();
+      return {
+        success: false,
+        error: `Knowledge retrieval error: ${error.message}`,
+        executionTime: (endTime - startTime) / 1000
+      };
+    }
+  }
+  
+  /**
+   * Execute a fact-checking step
+   * @param {Object} step - Step definition
+   * @param {Object} context - Global context
+   * @param {Array} previousResults - Results from previous steps
+   * @returns {Promise<Object>} - Fact checking result
+   */
+  async executeFactCheckingStep(step, context, previousResults) {
+    const startTime = Date.now();
+    
+    try {
+      // Get the text to fact-check from a previous step
+      const textToCheck = step.parameters.dataSource === 'previous_step'
+        ? previousResults.find(r => r.stepId === step.parameters.stepId)?.result?.text || 
+          previousResults.find(r => r.stepId === step.parameters.stepId)?.result?.answer ||
+          JSON.stringify(previousResults.find(r => r.stepId === step.parameters.stepId)?.result)
+        : step.parameters.text;
+      
+      if (!textToCheck) {
+        throw new Error('No text available for fact checking');
+      }
+      
+      // Get knowledge items for verification
+      let knowledgeItems = [];
+      
+      // Try to get from knowledge retrieval step if available
+      const knowledgeStep = previousResults.find(r => r.stepId.includes('knowledge_retrieval'));
+      if (knowledgeStep && knowledgeStep.result) {
+        const knowledgeResult = knowledgeStep.result;
+        knowledgeItems = [
+          ...(knowledgeResult.facts || []),
+          ...(knowledgeResult.contextual || [])
+        ];
+      }
+      
+      // Fall back to working memory if necessary
+      if (knowledgeItems.length === 0 && context.sessionId && context.queryId) {
+        const retrievedKnowledge = await this.workingMemoryService.getRetrievedKnowledge(
+          context.sessionId,
+          context.queryId
+        );
+        
+        if (retrievedKnowledge && retrievedKnowledge.items) {
+          knowledgeItems = retrievedKnowledge.items;
+        }
+      }
+      
+      if (knowledgeItems.length === 0) {
+        throw new Error('No knowledge items available for fact checking');
+      }
+      
+      // Use FactVerifierService to verify the text
+      const verificationResult = await this.factVerifier.verifyResponse(
+        textToCheck,
+        knowledgeItems,
+        step.parameters
+      );
+      
+      const endTime = Date.now();
+      
+      return {
+        success: true,
+        result: verificationResult,
+        executionTime: (endTime - startTime) / 1000
+      };
+    } catch (error) {
+      const endTime = Date.now();
+      return {
+        success: false,
+        error: `Fact checking error: ${error.message}`,
         executionTime: (endTime - startTime) / 1000
       };
     }
@@ -291,7 +583,7 @@ class MultiStepReasoningService {
       
       return { isValid: true };
     } catch (error) {
-      logger.error(`Error validating plan feasibility: ${error.message}`);
+      this.logger.error(`Error validating plan feasibility: ${error.message}`);
       return {
         isValid: false,
         reason: `Validation error: ${error.message}`,
@@ -318,7 +610,17 @@ class MultiStepReasoningService {
         };
       });
       
-      // Use OpenAI to synthesize a final answer
+      // Check if knowledge retrieval results are available
+      const knowledgeStep = stepResults.find(r => 
+        plan.steps.find(s => s.stepId === r.stepId)?.type === 'knowledge_retrieval'
+      );
+      
+      // If knowledge results are available, use RAG service for synthesis
+      if (knowledgeStep && this.options.useRAGForSynthesis !== false) {
+        return await this.generateKnowledgeGroundedAnswer(plan, stepResults, knowledgeStep, context);
+      }
+      
+      // Otherwise use standard approach
       const synthesisPrompt = `
       Based on the following reasoning steps and results, provide a comprehensive answer to the original query:
       
@@ -335,7 +637,13 @@ class MultiStepReasoningService {
       Include a section at the end that explains your reasoning process in simple terms.
       `;
       
-      const synthesisResult = await OpenAIService.processQuery(synthesisPrompt);
+      const synthesisResult = await this.openAIService.processQuery(synthesisPrompt);
+      
+      // Apply fact checking if enabled and knowledge is available
+      if (this.options.factCheckingEnabled && knowledgeStep) {
+        const knowledgeItems = this._extractKnowledgeItems(knowledgeStep.result);
+        return await this._factCheckFinalAnswer(synthesisResult.text, knowledgeItems, plan.originalQuery);
+      }
       
       return {
         answer: synthesisResult.text,
@@ -351,8 +659,156 @@ class MultiStepReasoningService {
         }))
       };
     } catch (error) {
-      logger.error(`Error generating final answer: ${error.message}`);
+      this.logger.error(`Error generating final answer: ${error.message}`);
       throw new Error(`Failed to generate final answer: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Generate a knowledge-grounded answer using RAG
+   * @param {Object} plan - The reasoning plan
+   * @param {Array} stepResults - Results from step execution
+   * @param {Object} knowledgeStep - Knowledge retrieval step result
+   * @param {Object} context - Global context
+   * @returns {Promise<Object>} - Knowledge-grounded answer
+   */
+  async generateKnowledgeGroundedAnswer(plan, stepResults, knowledgeStep, context) {
+    try {
+      // Extract knowledge items
+      const knowledgeItems = this._extractKnowledgeItems(knowledgeStep.result);
+      
+      // Prepare reasoning results as context
+      const reasoningContext = stepResults.map(result => {
+        const step = plan.steps.find(s => s.stepId === result.stepId);
+        return {
+          stepId: result.stepId,
+          stepType: step?.type,
+          description: step?.description,
+          result: result.result
+        };
+      });
+      
+      // Create query for RAG
+      const queryObj = {
+        text: `Based on the multi-step reasoning process and retrieved knowledge, answer this question: ${plan.originalQuery}`,
+        queryId: plan.queryId,
+        parsedQuery: {
+          intent: 'complex_reasoning_answer',
+          entities: {}
+        }
+      };
+      
+      // Use RAG to generate response
+      const ragResult = await this.ragService.generateResponse(
+        queryObj,
+        {
+          sessionId: context.sessionId,
+          reasoningResults: reasoningContext,
+          originalQuery: plan.originalQuery
+        },
+        {
+          preRetrievedKnowledge: {
+            facts: knowledgeItems,
+            contextual: []
+          },
+          factCheck: true
+        }
+      );
+      
+      return {
+        answer: ragResult.text,
+        confidence: ragResult.confidence || plan.confidence,
+        knowledgeSources: ragResult.sources || [],
+        factChecked: ragResult.isFactChecked,
+        reasoningProcess: reasoningContext.map(step => ({
+          description: step.description,
+          summary: this.summarizeResult(step.result)
+        }))
+      };
+    } catch (error) {
+      this.logger.error(`Error generating knowledge-grounded answer: ${error.message}`);
+      
+      // Fall back to standard approach
+      return this.generateFinalAnswer(plan, stepResults, context);
+    }
+  }
+  
+  /**
+   * Extract knowledge items from knowledge retrieval result
+   * @private
+   * @param {Object} knowledgeResult - Result from knowledge retrieval step
+   * @returns {Array} - Knowledge items for fact checking
+   */
+  _extractKnowledgeItems(knowledgeResult) {
+    if (!knowledgeResult) return [];
+    
+    return [
+      ...(knowledgeResult.facts || []),
+      ...(knowledgeResult.contextual || [])
+    ];
+  }
+  
+  /**
+   * Fact check the final answer
+   * @private
+   * @param {string} answerText - The generated answer text
+   * @param {Array} knowledgeItems - Knowledge items to check against
+   * @param {string} originalQuery - The original query
+   * @returns {Promise<Object>} - Fact-checked answer
+   */
+  async _factCheckFinalAnswer(answerText, knowledgeItems, originalQuery) {
+    try {
+      // If no knowledge items, return the original answer
+      if (!knowledgeItems || knowledgeItems.length === 0) {
+        return {
+          answer: answerText,
+          confidence: 0.5,
+          factChecked: false
+        };
+      }
+      
+      // Use FactVerifierService to check the answer
+      const verificationResult = await this.factVerifier.verifyResponse(
+        answerText,
+        knowledgeItems,
+        { strictMode: false }
+      );
+      
+      // If verification succeeded, return the corrected answer
+      if (verificationResult && verificationResult.correctedResponse) {
+        return {
+          answer: verificationResult.correctedResponse,
+          confidence: verificationResult.confidence,
+          factChecked: true,
+          verificationDetails: {
+            verified: verificationResult.verified,
+            statements: verificationResult.statements
+              .filter(s => !s.accurate)
+              .map(s => ({
+                text: s.text,
+                lineNumber: s.lineNumber,
+                status: s.status,
+                correction: s.suggestedCorrection
+              }))
+          }
+        };
+      }
+      
+      // Return original if verification failed
+      return {
+        answer: answerText,
+        confidence: 0.5,
+        factChecked: false
+      };
+    } catch (error) {
+      this.logger.error(`Error in fact checking: ${error.message}`);
+      // Return original answer on error
+      return {
+        answer: answerText,
+        confidence: 0.5,
+        factChecked: false,
+        error: `Fact checking failed: ${error.message}`
+      };
     }
   }
   
@@ -386,19 +842,31 @@ class MultiStepReasoningService {
         }
       }
       
+      // Look for knowledge to inform calculation
+      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeContext = knowledgeItems.length > 0
+        ? `\nRelevant Knowledge:
+          ${knowledgeItems.map((item, i) => {
+            const content = item.data || item.content;
+            const contentStr = typeof content === 'object' ? JSON.stringify(content) : content;
+            return `[${i+1}] ${contentStr}`;
+          }).join('\n')}`
+        : '';
+      
       // Use OpenAI to perform the calculation
       const calculationPrompt = `
       Perform the following calculation step:
       
       Step description: ${step.description}
       Input data: ${JSON.stringify(inputData)}
+      ${knowledgeContext}
       
       Calculation instructions: ${step.parameters.instructions || 'Perform the calculation described in the step description'}
       
       Return a JSON object with your calculation result and an explanation of your approach.
       `;
       
-      const calculationResult = await OpenAIService.processQuery(calculationPrompt);
+      const calculationResult = await this.openAIService.processQuery(calculationPrompt);
       
       // Try to parse the result as JSON
       let result;
@@ -443,7 +911,33 @@ class MultiStepReasoningService {
       const textToProcess = step.parameters.text || context.originalQuery || '';
       
       // Use OpenAI to extract parameters from the text
-      const extractionResult = await OpenAIService.extractParameters(textToProcess);
+      const extractionResult = await this.openAIService.extractParameters(textToProcess);
+      
+      // If using WorkingMemoryService, store extracted entities
+      if (this.workingMemoryService && context.sessionId && context.queryId) {
+        const entities = [];
+        
+        // Convert parameters to entity format
+        if (extractionResult.parameters) {
+          for (const [key, value] of Object.entries(extractionResult.parameters)) {
+            entities.push({
+              type: key,
+              value,
+              confidence: extractionResult.confidence
+            });
+          }
+        }
+        
+        // Store entities if any were extracted
+        if (entities.length > 0) {
+          await this.workingMemoryService.storeEntityMentions(
+            context.sessionId,
+            context.queryId,
+            entities,
+            this.options.defaultTTL
+          );
+        }
+      }
       
       const endTime = Date.now();
       
@@ -561,6 +1055,17 @@ class MultiStepReasoningService {
         throw new Error('No data available for validation');
       }
       
+      // Look for knowledge to inform validation
+      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeContext = knowledgeItems.length > 0
+        ? `\nValidate against the following knowledge:
+          ${knowledgeItems.map((item, i) => {
+            const content = item.data || item.content;
+            const contentStr = typeof content === 'object' ? JSON.stringify(content) : content;
+            return `[${i+1}] ${contentStr}`;
+          }).join('\n')}`
+        : '';
+      
       // For simplicity, we'll use OpenAI to validate the data
       const validationPrompt = `
       Validate the following data:
@@ -568,6 +1073,7 @@ class MultiStepReasoningService {
       Validation criteria: ${step.parameters.validationCriteria || step.description}
       
       Data: ${JSON.stringify(dataToValidate)}
+      ${knowledgeContext}
       
       Return a JSON object with:
       - isValid: A boolean indicating whether the data is valid
@@ -575,7 +1081,7 @@ class MultiStepReasoningService {
       - validatedData: The validated data
       `;
       
-      const validationResponse = await OpenAIService.processQuery(validationPrompt);
+      const validationResponse = await this.openAIService.processQuery(validationPrompt);
       
       // Try to parse the response
       let validationResult;
@@ -639,6 +1145,17 @@ class MultiStepReasoningService {
         throw new Error('Need at least two items to compare');
       }
       
+      // Look for knowledge to inform comparison
+      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeContext = knowledgeItems.length > 0
+        ? `\nUse the following knowledge to inform your comparison:
+          ${knowledgeItems.map((item, i) => {
+            const content = item.data || item.content;
+            const contentStr = typeof content === 'object' ? JSON.stringify(content) : content;
+            return `[${i+1}] ${contentStr}`;
+          }).join('\n')}`
+        : '';
+      
       // For simplicity, we'll use OpenAI to compare the items
       const comparisonPrompt = `
       Compare the following items:
@@ -647,6 +1164,7 @@ class MultiStepReasoningService {
       
       Items:
       ${items.map((item, i) => `Item ${i+1}: ${JSON.stringify(item)}`).join('\n\n')}
+      ${knowledgeContext}
       
       Return a JSON object with:
       - differences: Key differences between the items
@@ -654,7 +1172,7 @@ class MultiStepReasoningService {
       - recommendation: Recommended item based on the comparison criteria
       `;
       
-      const comparisonResponse = await OpenAIService.processQuery(comparisonPrompt);
+      const comparisonResponse = await this.openAIService.processQuery(comparisonPrompt);
       
       // Try to parse the response
       let comparisonResult;
@@ -709,6 +1227,17 @@ class MultiStepReasoningService {
         }
       }
       
+      // Look for knowledge to inform recommendations
+      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeContext = knowledgeItems.length > 0
+        ? `\nUse the following knowledge to inform your recommendations:
+          ${knowledgeItems.map((item, i) => {
+            const content = item.data || item.content;
+            const contentStr = typeof content === 'object' ? JSON.stringify(content) : content;
+            return `[${i+1}] ${contentStr}`;
+          }).join('\n')}`
+        : '';
+      
       // Use OpenAI to generate recommendations
       const recommendationPrompt = `
       Generate recommendations based on the following data:
@@ -717,6 +1246,7 @@ class MultiStepReasoningService {
       Parameters: ${JSON.stringify(step.parameters)}
       
       Input data: ${JSON.stringify(inputData)}
+      ${knowledgeContext}
       
       Return a JSON object with:
       - recommendations: An array of recommendation objects
@@ -724,7 +1254,7 @@ class MultiStepReasoningService {
       - confidence: Confidence level for the recommendations
       `;
       
-      const recommendationResponse = await OpenAIService.processQuery(recommendationPrompt);
+      const recommendationResponse = await this.openAIService.processQuery(recommendationPrompt);
       
       // Try to parse the response
       let recommendationResult;
@@ -756,6 +1286,48 @@ class MultiStepReasoningService {
     }
   }
   
+  /**
+   * Get knowledge items for a specific step
+   * @private
+   * @param {Object} step - The step definition
+   * @param {Object} context - Global context
+   * @param {Array} previousResults - Results from previous steps
+   * @returns {Array} - Relevant knowledge items
+   */
+  _getKnowledgeForStep(step, context, previousResults) {
+    try {
+      // First try to get from knowledge retrieval step if available
+      const knowledgeStep = previousResults.find(r => 
+        r.stepId.includes('knowledge') && r.success
+      );
+      
+      if (knowledgeStep && knowledgeStep.result) {
+        const knowledgeResult = knowledgeStep.result;
+        return [
+          ...(knowledgeResult.facts || []),
+          ...(knowledgeResult.contextual || [])
+        ];
+      }
+      
+      // If session and query ID are available, try working memory
+      if (context.sessionId && context.queryId) {
+        const retrievedKnowledge = this.workingMemoryService.getRetrievedKnowledge(
+          context.sessionId,
+          context.queryId
+        );
+        
+        if (retrievedKnowledge && retrievedKnowledge.items) {
+          return retrievedKnowledge.items;
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      this.logger.warn(`Error getting knowledge for step: ${error.message}`);
+      return [];
+    }
+  }
+  
   // Helper methods
   
   /**
@@ -782,6 +1354,7 @@ class MultiStepReasoningService {
     if (desc.includes('validat') || desc.includes('verify') || desc.includes('check')) return 'validation';
     if (desc.includes('compar') || desc.includes('contrast')) return 'comparison';
     if (desc.includes('recommend') || desc.includes('suggest')) return 'recommendation';
+    if (desc.includes('knowledge') || desc.includes('fact')) return 'knowledge_retrieval';
     
     return 'generic';
   }
@@ -798,9 +1371,11 @@ class MultiStepReasoningService {
       case 'calculation': return 2.0; // seconds
       case 'parameter_extraction': return 3.5;
       case 'data_retrieval': return 1.5;
+      case 'knowledge_retrieval': return 3.0;
       case 'validation': return 0.5;
       case 'comparison': return 3.0;
       case 'recommendation': return 4.0;
+      case 'fact_checking': return 2.5;
       default: return 1.0;
     }
   }
@@ -875,6 +1450,51 @@ class MultiStepReasoningService {
     }
     
     return String(result);
+  }
+  
+  /**
+   * Execute a query with multi-step reasoning
+   * @param {string} query - The query to process
+   * @param {Object} context - Additional context (sessionId, etc.)
+   * @param {Object} options - Processing options
+   * @returns {Promise<Object>} - The reasoning results and answer
+   */
+  async executeQuery(query, context = {}, options = {}) {
+    try {
+      // Step 1: Plan the query steps
+      const plan = await this.planQuerySteps(query, context);
+      
+      // If planning failed, return the error
+      if (plan.status === 'invalid_plan') {
+        return {
+          success: false,
+          error: plan.reason,
+          suggestedAlternative: plan.suggestedAlternative
+        };
+      }
+      
+      // Step 2: Execute the reasoning steps
+      const results = await this.executeStepSequence(plan, context);
+      
+      // Return the results
+      return {
+        success: results.success,
+        answer: results.finalAnswer?.answer,
+        confidence: results.finalAnswer?.confidence,
+        reasoning: results.finalAnswer?.reasoningProcess,
+        evidence: results.finalAnswer?.supportingEvidence,
+        knowledgeSources: results.finalAnswer?.knowledgeSources,
+        factChecked: results.finalAnswer?.factChecked,
+        executionTime: results.executionTime,
+        error: results.error
+      };
+    } catch (error) {
+      this.logger.error(`Error executing query: ${error.message}`);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 }
 

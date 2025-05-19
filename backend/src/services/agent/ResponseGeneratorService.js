@@ -4,9 +4,18 @@
  * This service provides structured response generation capabilities for the AgentController.
  * It uses templates, dynamic content replacement, and LLM-based generation to create
  * natural language responses for different query types and intents.
+ * 
+ * Enhanced features:
+ * - Integration with WorkingMemoryService for context retrieval
+ * - Integration with MultiStepReasoningService for complex responses
+ * - Support for multiple response formats (text, JSON, HTML)
+ * - Template interpolation with reasoning results and knowledge
+ * - Personalized responses based on user context
  */
 
-const openaiService = require('./OpenAIService');
+const OpenAIService = require('./OpenAIService');
+const WorkingMemoryService = require('./WorkingMemoryService');
+const MultiStepReasoningService = require('./MultiStepReasoningService');
 const logger = require('../../utils/logger');
 const { performance } = require('perf_hooks');
 
@@ -14,7 +23,28 @@ const { performance } = require('perf_hooks');
  * Service for generating structured responses
  */
 class ResponseGeneratorService {
-  constructor() {
+  /**
+   * Initialize the response generator service
+   * 
+   * @param {Object} services - Service dependencies
+   * @param {Object} options - Configuration options
+   */
+  constructor(services = {}, options = {}) {
+    // Initialize dependencies
+    this.openAIService = services.openAIService || OpenAIService;
+    this.workingMemoryService = services.workingMemoryService || new WorkingMemoryService();
+    this.multiStepReasoningService = services.multiStepReasoningService || new MultiStepReasoningService({
+      workingMemoryService: this.workingMemoryService
+    });
+    
+    // Configure options
+    this.options = {
+      defaultTTL: options.defaultTTL || 30 * 60 * 1000, // 30 minutes
+      enablePersonalization: options.enablePersonalization !== false,
+      useMultiStepReasoning: options.useMultiStepReasoning !== false,
+      ...options
+    };
+    
     // Initialize response templates by intent
     this.responseTemplates = {
       capacity_query: {
@@ -58,6 +88,47 @@ class ResponseGeneratorService {
         topic: "Here's how I can help with {topic}: {topic_capabilities}",
         list: "Here are some things you can ask me: {query_list}",
         error: "I'm not sure how to help with that. Try asking about capacity, maintenance, or infrastructure."
+      },
+      complex_reasoning: {
+        default: "{reasoning_result}",
+        with_evidence: "Based on the analysis: {reasoning_result}\n\nEvidence: {evidence_summary}",
+        detailed: "{reasoning_result}\n\nReasoning process:\n{reasoning_steps}"
+      },
+      knowledge_based: {
+        default: "According to the available information, {knowledge_result}",
+        detailed: "According to the available information: {knowledge_result}\n\nSources: {knowledge_sources}"
+      }
+    };
+    
+    // Initialize response format templates
+    this.formatTemplates = {
+      text: {
+        wrapperStart: "",
+        wrapperEnd: "",
+        sectionStart: "",
+        sectionEnd: "\n\n",
+        listItemPrefix: "• "
+      },
+      json: {
+        wrapperStart: "{",
+        wrapperEnd: "}",
+        sectionStart: "\"",
+        sectionEnd: "\",",
+        listItemPrefix: ""
+      },
+      html: {
+        wrapperStart: "<div class=\"response\">",
+        wrapperEnd: "</div>",
+        sectionStart: "<section>",
+        sectionEnd: "</section>",
+        listItemPrefix: "<li>"
+      },
+      markdown: {
+        wrapperStart: "",
+        wrapperEnd: "",
+        sectionStart: "## ",
+        sectionEnd: "\n\n",
+        listItemPrefix: "* "
       }
     };
     
@@ -88,14 +159,27 @@ class ResponseGeneratorService {
       key_metrics: "Key metrics: {metrics_list}."
     };
     
+    // Initialize templates for reasoning output
+    this.reasoningTemplates = {
+      step_summary: "Step {step_number}: {step_description}",
+      evidence_item: "• {evidence_content}",
+      reasoning_summary: "Reasoning summary: {summary}",
+      knowledge_source: "[{source_index}] {source_name}: {source_content}"
+    };
+    
     // Initialize performance metrics
     this.metrics = {
       totalGenerated: 0,
       successfulGeneration: 0,
       failedGeneration: 0,
+      templateBasedGeneration: 0,
+      llmBasedGeneration: 0,
+      reasoningBasedGeneration: 0,
       totalLatency: 0,
       averageLatency: 0
     };
+    
+    logger.info('Enhanced ResponseGeneratorService initialized');
   }
 
   /**
@@ -118,19 +202,36 @@ class ResponseGeneratorService {
       // Extract key parameters
       const { intent, entities, data, query, options = {} } = input;
       
+      // Extract session and user info for context
+      const sessionId = options.sessionId || `session-${Date.now()}`;
+      const userId = options.userId;
+      const queryId = options.queryId || `query-${Date.now()}`;
+      
       // Set response options
       const responseOptions = {
         templateType: options.templateType || 'default',
         tone: options.tone || 'professional',
         format: options.format || 'text',
         detail: options.detail || 'medium',
-        useLLM: options.useLLM !== false, // Default to true
-        includeVisualizations: options.includeVisualizations !== false // Default to true
+        useLLM: options.useLLM !== false, 
+        includeVisualizations: options.includeVisualizations !== false,
+        useReasoning: options.useReasoning,
+        sessionId,
+        userId,
+        queryId
       };
+      
+      // Retrieve context from working memory if available
+      let context = {};
+      if (this.options.enablePersonalization && sessionId) {
+        context = await this.getContextForResponse(sessionId, queryId, options);
+      }
       
       // Generate response text
       let responseText;
       let suggestedActions = [];
+      let generationMethod = 'template';
+      let reasoningResult = null;
       
       // Check if we're handling an error case
       if (input.error) {
@@ -140,6 +241,24 @@ class ResponseGeneratorService {
           entities
         );
       } 
+      // Check if we should use multi-step reasoning for complex queries
+      else if (this.shouldUseReasoning(input, responseOptions)) {
+        const reasoningResponse = await this.generateReasoningBasedResponse(
+          query, 
+          {
+            sessionId,
+            queryId,
+            intent,
+            entities,
+            ...context
+          },
+          responseOptions
+        );
+        
+        responseText = reasoningResponse.text;
+        reasoningResult = reasoningResponse.reasoning;
+        generationMethod = 'reasoning';
+      }
       // Check if we have a template for this intent
       else if (this.responseTemplates[intent]) {
         // Try to use specific template type if available, fallback to default
@@ -149,23 +268,43 @@ class ResponseGeneratorService {
         // Get template
         const template = this.responseTemplates[intent][templateType];
         
+        // Prepare enhanced data with context
+        const enhancedData = this._enhanceDataWithContext(data, context);
+        
         // Fill in template with entities and data
-        responseText = await this._fillTemplate(template, entities, data, options);
+        responseText = await this._fillTemplate(template, entities, enhancedData, {
+          ...responseOptions,
+          context
+        });
         
         // Generate suggested follow-up actions based on the current context
-        suggestedActions = this._generateSuggestedActions(intent, entities, data);
+        suggestedActions = this._generateSuggestedActions(intent, entities, enhancedData);
+        generationMethod = 'template';
       } 
       // Fallback to LLM generation for unknown intents or missing templates
       else {
-        const llmResponse = await this._generateResponseWithLLM(query, intent, entities, data, options);
+        const llmResponse = await this._generateResponseWithLLM(
+          query, 
+          intent, 
+          entities, 
+          data, 
+          {
+            ...responseOptions,
+            context
+          }
+        );
         responseText = llmResponse.text;
         suggestedActions = llmResponse.suggestedActions || [];
+        generationMethod = 'llm';
       }
+      
+      // Apply output formatting if needed
+      const formattedResponse = this._applyOutputFormat(responseText, responseOptions.format);
       
       // Generate speech version if needed
       let responseSpeech = null;
       if (responseOptions.format === 'speech') {
-        responseSpeech = this._formatForSpeech(responseText);
+        responseSpeech = this._formatForSpeech(formattedResponse);
       }
       
       // Process visualizations if available and requested
@@ -174,22 +313,40 @@ class ResponseGeneratorService {
         visualizations = data.visualizations;
       }
       
+      // Store the response in working memory if session ID is provided
+      if (sessionId) {
+        await this.storeResponseInMemory(
+          sessionId, 
+          queryId, 
+          formattedResponse, 
+          {
+            intent,
+            entities,
+            suggestedActions,
+            generationMethod,
+            reasoning: reasoningResult
+          }
+        );
+      }
+      
       // Track performance metrics
       const processingTime = performance.now() - startTime;
       this._updateMetrics({
         processingTime,
-        success: true
+        success: true,
+        method: generationMethod
       });
       
-      logger.debug(`Response generated in ${processingTime.toFixed(2)}ms`);
+      logger.debug(`Response generated in ${processingTime.toFixed(2)}ms using ${generationMethod}`);
       
       return {
-        text: responseText,
+        text: formattedResponse,
         speech: responseSpeech,
         visualizations,
         suggestedActions,
         processingTime,
-        requestId
+        requestId,
+        reasoning: reasoningResult
       };
     } catch (error) {
       const processingTime = performance.now() - startTime;
@@ -217,12 +374,262 @@ class ResponseGeneratorService {
   }
 
   /**
+   * Determine if reasoning should be used for response generation
+   * @param {Object} input - Input data
+   * @param {Object} options - Response options
+   * @returns {boolean} - Whether to use reasoning
+   */
+  shouldUseReasoning(input, options) {
+    // If explicitly set in options, use that
+    if (options.useReasoning !== undefined) {
+      return options.useReasoning;
+    }
+    
+    // If multi-step reasoning is disabled globally, don't use it
+    if (!this.options.useMultiStepReasoning) {
+      return false;
+    }
+    
+    // Check if the intent indicates a complex query
+    const complexIntents = [
+      'analysis', 'comparison', 'optimization', 'impact_assessment',
+      'forecast', 'planning', 'recommendation', 'what_if'
+    ];
+    
+    if (input.intent && complexIntents.some(i => input.intent.includes(i))) {
+      return true;
+    }
+    
+    // Check for query complexity indicators
+    const complexityIndicators = [
+      'why', 'how', 'explain', 'analyze', 'compare', 'difference', 
+      'impact', 'predict', 'forecast', 'optimize', 'best way', 
+      'recommend', 'suggestion', 'improve'
+    ];
+    
+    if (input.query && complexityIndicators.some(indicator => 
+      input.query.toLowerCase().includes(indicator))) {
+      return true;
+    }
+    
+    // Default to not using reasoning for simple queries
+    return false;
+  }
+  
+  /**
+   * Generate a response using multi-step reasoning
+   * @param {string} query - The user query
+   * @param {Object} context - Query context
+   * @param {Object} options - Response options
+   * @returns {Promise<Object>} - Generated response with reasoning
+   */
+  async generateReasoningBasedResponse(query, context, options) {
+    try {
+      this.metrics.reasoningBasedGeneration++;
+      logger.info(`Generating reasoning-based response for query: ${query}`);
+      
+      // Execute query using multi-step reasoning
+      const reasoningResult = await this.multiStepReasoningService.executeQuery(
+        query,
+        context,
+        {
+          ...options,
+          detail: options.detail
+        }
+      );
+      
+      if (!reasoningResult.success) {
+        throw new Error(`Reasoning failed: ${reasoningResult.error}`);
+      }
+      
+      // Get the appropriate template
+      const templateType = options.detail === 'comprehensive' ? 'detailed' : 
+                          (options.detail === 'brief' ? 'default' : 'with_evidence');
+                          
+      const template = this.responseTemplates.complex_reasoning[templateType];
+      
+      // Format reasoning steps if detailed template
+      let reasoningSteps = '';
+      if (templateType === 'detailed' && reasoningResult.reasoning) {
+        reasoningSteps = reasoningResult.reasoning
+          .map(step => `${this.reasoningTemplates.step_summary
+            .replace('{step_number}', step.stepNumber)
+            .replace('{step_description}', step.description)}\n${step.explanation}`)
+          .join('\n\n');
+      }
+      
+      // Format evidence if with_evidence template
+      let evidenceSummary = '';
+      if (templateType === 'with_evidence' && reasoningResult.evidence) {
+        evidenceSummary = reasoningResult.evidence
+          .map(evidence => this.reasoningTemplates.evidence_item
+            .replace('{evidence_content}', this._summarizeEvidenceItem(evidence)))
+          .join('\n');
+      }
+      
+      // Fill template with reasoning results
+      const filledTemplate = template
+        .replace('{reasoning_result}', reasoningResult.answer || '')
+        .replace('{reasoning_steps}', reasoningSteps)
+        .replace('{evidence_summary}', evidenceSummary);
+      
+      return {
+        text: filledTemplate,
+        reasoning: {
+          answer: reasoningResult.answer,
+          confidence: reasoningResult.confidence,
+          steps: reasoningResult.reasoning,
+          evidence: reasoningResult.evidence,
+          sources: reasoningResult.knowledgeSources
+        }
+      };
+    } catch (error) {
+      logger.error(`Error in reasoning-based response generation: ${error.message}`);
+      
+      // Fall back to standard LLM generation
+      const llmResponse = await this._generateResponseWithLLM(
+        query, 
+        context.intent, 
+        context.entities, 
+        {}, 
+        options
+      );
+      
+      return {
+        text: llmResponse.text,
+        reasoning: null
+      };
+    }
+  }
+  
+  /**
+   * Summarize an evidence item
+   * @private
+   * @param {Object} evidence - Evidence item
+   * @returns {string} - Summary of evidence
+   */
+  _summarizeEvidenceItem(evidence) {
+    if (typeof evidence === 'string') {
+      return evidence;
+    }
+    
+    if (evidence.summary) {
+      return evidence.summary;
+    }
+    
+    if (evidence.description) {
+      return `${evidence.description}${evidence.summary ? ': ' + evidence.summary : ''}`;
+    }
+    
+    return JSON.stringify(evidence);
+  }
+  
+  /**
+   * Retrieve context from working memory for response generation
+   * @param {string} sessionId - Session identifier
+   * @param {string} queryId - Query identifier
+   * @param {Object} options - Additional options
+   * @returns {Promise<Object>} - Context for response generation
+   */
+  async getContextForResponse(sessionId, queryId, options = {}) {
+    try {
+      if (!this.workingMemoryService) {
+        return {};
+      }
+      
+      // Get session context
+      const sessionContext = await this.workingMemoryService.getSessionContext(sessionId) || {};
+      
+      // Get any previous query results or linked queries
+      const followUpContext = await this.workingMemoryService.getContextForFollowUp(sessionId, queryId);
+      
+      // Get knowledge retrieval context for this session
+      const knowledgeContext = await this.workingMemoryService.getKnowledgeRetrievalContext(
+        sessionId, 
+        queryId, 
+        {
+          entityLimit: options.entityLimit || 5,
+          historyLimit: options.historyLimit || 3
+        }
+      );
+      
+      return {
+        sessionContext,
+        followUpContext,
+        knowledgeContext,
+        previousQueries: sessionContext.previousQueries || [],
+        userPreferences: sessionContext.userPreferences || {},
+        recentEntities: knowledgeContext.recentEntities || []
+      };
+    } catch (error) {
+      logger.error(`Error retrieving context for response: ${error.message}`);
+      return {};
+    }
+  }
+  
+  /**
+   * Store response in working memory
+   * @param {string} sessionId - Session identifier
+   * @param {string} queryId - Query identifier
+   * @param {string} response - Generated response
+   * @param {Object} metadata - Response metadata
+   * @returns {Promise<boolean>} - Success status
+   */
+  async storeResponseInMemory(sessionId, queryId, response, metadata = {}) {
+    try {
+      if (!this.workingMemoryService) {
+        return false;
+      }
+      
+      // Store as final result
+      await this.workingMemoryService.storeFinalResult(
+        sessionId,
+        queryId,
+        {
+          response,
+          metadata,
+          timestamp: Date.now()
+        },
+        this.options.defaultTTL
+      );
+      
+      // Update session context with the latest query
+      const sessionContext = await this.workingMemoryService.getSessionContext(sessionId) || {};
+      const previousQueries = sessionContext.previousQueries || [];
+      
+      // Add this query to the list of previous queries (keep last 5)
+      previousQueries.unshift({
+        queryId,
+        intent: metadata.intent,
+        entities: metadata.entities,
+        timestamp: Date.now()
+      });
+      
+      if (previousQueries.length > 5) {
+        previousQueries.pop();
+      }
+      
+      await this.workingMemoryService.updateSessionContextField(
+        sessionId,
+        'previousQueries',
+        previousQueries
+      );
+      
+      return true;
+    } catch (error) {
+      logger.error(`Error storing response in memory: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Generate a system interaction response
    * @param {string} type - System interaction type
    * @param {Object} params - Parameters for template filling
+   * @param {Object} options - Additional options
    * @returns {Promise<string>} - Generated system response
    */
-  async generateSystemResponse(type, params) {
+  async generateSystemResponse(type, params, options = {}) {
     try {
       if (!this.systemTemplates[type]) {
         logger.warn(`No system template found for type: ${type}`);
@@ -231,7 +638,10 @@ class ResponseGeneratorService {
       
       // Get template and fill in parameters
       const template = this.systemTemplates[type];
-      return this._fillTemplate(template, {}, params);
+      const response = await this._fillTemplate(template, {}, params, options);
+      
+      // Apply output formatting if needed
+      return this._applyOutputFormat(response, options.format || 'text');
     } catch (error) {
       logger.error(`System response generation error: ${error.message}`);
       return `System message: ${JSON.stringify(params)}`;
@@ -242,9 +652,10 @@ class ResponseGeneratorService {
    * Generate description for visualization
    * @param {Object} visualization - Visualization data
    * @param {Object} context - Additional context information
+   * @param {Object} options - Additional options
    * @returns {Promise<string>} - Generated description
    */
-  async generateVisualizationDescription(visualization, context = {}) {
+  async generateVisualizationDescription(visualization, context = {}, options = {}) {
     try {
       const templateKey = visualization.type === 'chart' ? 
         'chart_description' : 'data_summary';
@@ -254,7 +665,7 @@ class ResponseGeneratorService {
       }
       
       // Generate chart description using OpenAI
-      const chartDescription = await openaiService.generateChartDescription(
+      const chartDescription = await this.openAIService.generateChartDescription(
         visualization.data,
         visualization.title,
         context
@@ -262,7 +673,7 @@ class ResponseGeneratorService {
       
       // Fill template with description
       const template = this.visualizationTemplates[templateKey];
-      return this._fillTemplate(
+      const description = await this._fillTemplate(
         template, 
         {}, 
         {
@@ -270,11 +681,61 @@ class ResponseGeneratorService {
           key_insight: chartDescription.insight || "",
           summary_description: chartDescription.main || "key metrics",
           highlight: chartDescription.highlight || ""
-        }
+        },
+        options
       );
+      
+      // Apply output formatting if needed
+      return this._applyOutputFormat(description, options.format || 'text');
     } catch (error) {
       logger.error(`Visualization description error: ${error.message}`);
       return "";
+    }
+  }
+  
+  /**
+   * Generate a response from knowledge and reasoning results
+   * @param {string} query - User query
+   * @param {Object} knowledgeItems - Retrieved knowledge
+   * @param {Object} reasoningResult - Multi-step reasoning results
+   * @param {Object} options - Generation options
+   * @returns {Promise<string>} - Generated response
+   */
+  async generateKnowledgeBasedResponse(query, knowledgeItems, reasoningResult, options = {}) {
+    try {
+      // Prepare knowledge sources summary
+      const knowledgeSources = knowledgeItems.map((item, index) => 
+        this.reasoningTemplates.knowledge_source
+          .replace('{source_index}', index + 1)
+          .replace('{source_name}', item.source || 'Unknown')
+          .replace('{source_content}', item.content || JSON.stringify(item.data || {}))
+      ).join('\n');
+      
+      // Select template based on detail level
+      const templateType = options.detail === 'comprehensive' ? 'detailed' : 'default';
+      const template = this.responseTemplates.knowledge_based[templateType];
+      
+      // Use reasoning result if available, otherwise generate with LLM
+      let knowledgeResult;
+      if (reasoningResult && reasoningResult.answer) {
+        knowledgeResult = reasoningResult.answer;
+      } else {
+        // Generate response using OpenAI
+        const response = await this.openAIService.processQuery(
+          `Based on this knowledge, answer the question: "${query}"\n\nKnowledge:\n${knowledgeSources}`
+        );
+        knowledgeResult = response.text;
+      }
+      
+      // Fill template with knowledge and reasoning
+      const filledTemplate = template
+        .replace('{knowledge_result}', knowledgeResult)
+        .replace('{knowledge_sources}', knowledgeSources);
+      
+      return filledTemplate;
+    } catch (error) {
+      logger.error(`Knowledge-based response generation error: ${error.message}`);
+      throw error;
     }
   }
 
@@ -294,6 +755,31 @@ class ResponseGeneratorService {
         ...entities,
         ...(data || {})
       };
+      
+      // Add context parameters if available
+      if (options.context) {
+        // Add user-specific parameters
+        if (options.context.userPreferences) {
+          params.user_preferences = options.context.userPreferences;
+        }
+        
+        // Add session-specific parameters
+        if (options.context.sessionContext) {
+          params.session_context = options.context.sessionContext;
+        }
+        
+        // Add recent entities for reference
+        if (options.context.recentEntities) {
+          params.recent_entities = options.context.recentEntities;
+        }
+      }
+      
+      // Add reasoning result parameters if available
+      if (options.reasoning) {
+        params.reasoning_result = options.reasoning.answer;
+        params.reasoning_confidence = options.reasoning.confidence;
+        params.reasoning_steps = options.reasoning.steps;
+      }
       
       // Replace template placeholders with values
       let filledTemplate = template;
@@ -319,7 +805,8 @@ class ResponseGeneratorService {
         filledTemplate = await this._generateMissingPlaceholders(
           filledTemplate, 
           entities, 
-          data
+          data,
+          options.context
         );
       }
       
@@ -337,9 +824,10 @@ class ResponseGeneratorService {
    * @param {string} partialTemplate - Partially filled template
    * @param {Object} entities - Extracted entities
    * @param {Object} data - Result data
+   * @param {Object} context - Additional context
    * @returns {Promise<string>} - Fully filled template
    */
-  async _generateMissingPlaceholders(partialTemplate, entities, data) {
+  async _generateMissingPlaceholders(partialTemplate, entities, data, context = {}) {
     try {
       // Extract remaining placeholders
       const remainingPlaceholders = partialTemplate.match(/{([^{}]+)}/g) || [];
@@ -349,11 +837,12 @@ class ResponseGeneratorService {
       }
       
       // Generate content for missing placeholders using OpenAI
-      const response = await openaiService.generateContent({
+      const response = await this.openAIService.generateContent({
         template: partialTemplate,
         missingFields: remainingPlaceholders.map(p => p.substring(1, p.length - 1)),
         entities,
-        data
+        data,
+        context
       });
       
       // Replace remaining placeholders with generated content
@@ -415,6 +904,48 @@ class ResponseGeneratorService {
         return undefined;
     }
   }
+  
+  /**
+   * Enhance data with context information for personalization
+   * @private
+   * @param {Object} data - Original data
+   * @param {Object} context - Context information
+   * @returns {Object} - Enhanced data with context
+   */
+  _enhanceDataWithContext(data = {}, context = {}) {
+    const enhancedData = { ...data };
+    
+    // Add context-specific information
+    if (context.userPreferences) {
+      enhancedData.userPreferences = context.userPreferences;
+    }
+    
+    if (context.recentEntities) {
+      // Group entities by type
+      const entitiesByType = {};
+      for (const entity of context.recentEntities) {
+        if (!entitiesByType[entity.type]) {
+          entitiesByType[entity.type] = [];
+        }
+        entitiesByType[entity.type].push(entity.value);
+      }
+      
+      // Add to enhanced data
+      enhancedData.recentEntities = entitiesByType;
+    }
+    
+    // Add previous queries if available
+    if (context.previousQueries) {
+      enhancedData.previousQueries = context.previousQueries;
+    }
+    
+    // Add retrieved knowledge if available
+    if (context.knowledgeContext && context.knowledgeContext.priorKnowledge) {
+      enhancedData.retrievedKnowledge = context.knowledgeContext.priorKnowledge;
+    }
+    
+    return enhancedData;
+  }
 
   /**
    * Generate a response using OpenAI
@@ -428,12 +959,16 @@ class ResponseGeneratorService {
    */
   async _generateResponseWithLLM(query, intent, entities, data, options = {}) {
     try {
+      this.metrics.llmBasedGeneration++;
+      
       // Prepare custom format instructions if needed
       let formatInstructions = '';
       if (options.format === 'json') {
         formatInstructions = 'Return response as a JSON object.';
       } else if (options.format === 'markdown') {
         formatInstructions = 'Format response using Markdown for readability.';
+      } else if (options.format === 'html') {
+        formatInstructions = 'Format response using HTML for display.';
       } else if (options.format === 'bullet_points') {
         formatInstructions = 'Format response as a bulleted list for clarity.';
       }
@@ -469,13 +1004,26 @@ class ResponseGeneratorService {
           break;
       }
       
+      // Prepare personalization instructions if context available
+      let personalizationInstructions = '';
+      if (options.context && this.options.enablePersonalization) {
+        if (options.context.userPreferences) {
+          personalizationInstructions += `Consider user preferences: ${JSON.stringify(options.context.userPreferences)}. `;
+        }
+        
+        if (options.context.recentEntities && options.context.recentEntities.length > 0) {
+          personalizationInstructions += `Reference relevant recent entities: ${JSON.stringify(options.context.recentEntities.slice(0, 3))}. `;
+        }
+      }
+      
       // Call OpenAI to generate response
-      const response = await openaiService.generateResponse(query, intent, {
+      const response = await this.openAIService.generateResponse(query, intent, {
         ...data,
         entities,
         formatInstructions,
         toneInstructions,
-        detailInstructions
+        detailInstructions,
+        personalizationInstructions
       });
       
       return {
@@ -486,6 +1034,74 @@ class ResponseGeneratorService {
       logger.error(`LLM response generation error: ${error.message}`);
       throw error;
     }
+  }
+  
+  /**
+   * Apply output formatting to response
+   * @private
+   * @param {string} text - Response text
+   * @param {string} format - Desired format (text, json, html, markdown)
+   * @returns {string} - Formatted response
+   */
+  _applyOutputFormat(text, format = 'text') {
+    if (!format || format === 'text') {
+      return text;
+    }
+    
+    const formatTemplate = this.formatTemplates[format];
+    if (!formatTemplate) {
+      logger.warn(`Unknown output format: ${format}, using text`);
+      return text;
+    }
+    
+    // If the text is already in the target format, return as is
+    if (format === 'json' && text.trim().startsWith('{') && text.trim().endsWith('}')) {
+      return text;
+    }
+    
+    if (format === 'html' && text.trim().startsWith('<') && text.trim().endsWith('>')) {
+      return text;
+    }
+    
+    // Apply format transformation
+    if (format === 'json') {
+      try {
+        // Try to create a valid JSON
+        const sections = text.split('\n\n').filter(Boolean);
+        let jsonObject = {};
+        
+        sections.forEach((section, index) => {
+          jsonObject[`section${index + 1}`] = section;
+        });
+        
+        return JSON.stringify(jsonObject, null, 2);
+      } catch (error) {
+        logger.warn(`Error formatting as JSON: ${error.message}`);
+        // Return a simple JSON object with the text as a single property
+        return `{"response": ${JSON.stringify(text)}}`;
+      }
+    }
+    
+    // For HTML and markdown, apply the wrapper and section formatting
+    if (format === 'html' || format === 'markdown') {
+      const sections = text.split('\n\n').filter(Boolean);
+      const formattedSections = sections.map(section => {
+        // Check if it's a list
+        if (section.trim().match(/^[-•*]\s/m)) {
+          const listItems = section.split(/\n[-•*]\s/).filter(Boolean);
+          return `${formatTemplate.sectionStart}${listItems.map(item => 
+            `${formatTemplate.listItemPrefix}${item}`
+          ).join('\n')}${formatTemplate.sectionEnd}`;
+        } else {
+          return `${formatTemplate.sectionStart}${section}${formatTemplate.sectionEnd}`;
+        }
+      });
+      
+      return `${formatTemplate.wrapperStart}${formattedSections.join('')}${formatTemplate.wrapperEnd}`;
+    }
+    
+    // Default: return unmodified text
+    return text;
   }
   
   /**
@@ -564,6 +1180,9 @@ class ResponseGeneratorService {
     speech = speech.replace(/\*(.*?)\*/g, '$1');     // Italic
     speech = speech.replace(/\[(.*?)\]\((.*?)\)/g, '$1'); // Links
     speech = speech.replace(/#{1,6}\s+(.*?)$/gm, '$1'); // Headers
+    
+    // Remove HTML tags
+    speech = speech.replace(/<[^>]*>/g, '');
     
     // Replace common abbreviations
     speech = speech.replace(/(\b)e\.g\.(\b)/g, '$1for example$2');
@@ -698,6 +1317,23 @@ class ResponseGeneratorService {
           parameters: { based_on: entities.scenario_name }
         });
         break;
+        
+      case 'complex_reasoning':
+        // Suggest related analyses or explanations
+        actions.push({
+          type: 'suggestion',
+          text: 'Explain the reasoning process',
+          intent: 'explanation',
+          entities: { explanation_type: 'reasoning_process' }
+        });
+        
+        actions.push({
+          type: 'suggestion',
+          text: 'Show evidence used in analysis',
+          intent: 'explanation',
+          entities: { explanation_type: 'evidence' }
+        });
+        break;
     }
     
     // Add help action for all intents
@@ -735,6 +1371,15 @@ class ResponseGeneratorService {
       this.metrics.failedGeneration++;
     }
     
+    // Update method-specific metrics
+    if (result.method === 'template') {
+      this.metrics.templateBasedGeneration++;
+    } else if (result.method === 'llm') {
+      this.metrics.llmBasedGeneration++;
+    } else if (result.method === 'reasoning') {
+      this.metrics.reasoningBasedGeneration++;
+    }
+    
     this.metrics.averageLatency = this.metrics.totalLatency / this.metrics.totalGenerated;
   }
   
@@ -743,7 +1388,11 @@ class ResponseGeneratorService {
    * @returns {Object} - Current metrics
    */
   getMetrics() {
-    return { ...this.metrics };
+    return { 
+      ...this.metrics,
+      multiStepReasoningMetrics: this.multiStepReasoningService ? 
+        this.multiStepReasoningService.getMetrics() : null
+    };
   }
   
   /**
@@ -754,9 +1403,17 @@ class ResponseGeneratorService {
       totalGenerated: 0,
       successfulGeneration: 0,
       failedGeneration: 0,
+      templateBasedGeneration: 0,
+      llmBasedGeneration: 0,
+      reasoningBasedGeneration: 0,
       totalLatency: 0,
       averageLatency: 0
     };
+    
+    if (this.multiStepReasoningService && 
+        typeof this.multiStepReasoningService.resetMetrics === 'function') {
+      this.multiStepReasoningService.resetMetrics();
+    }
   }
   
   /**
@@ -772,6 +1429,16 @@ class ResponseGeneratorService {
     
     this.responseTemplates[intent][templateType] = template;
     logger.info(`Updated template for intent ${intent}, type ${templateType}`);
+  }
+  
+  /**
+   * Add or update a format template
+   * @param {string} formatName - Format name
+   * @param {Object} formatTemplate - Format template configuration
+   */
+  updateFormatTemplate(formatName, formatTemplate) {
+    this.formatTemplates[formatName] = formatTemplate;
+    logger.info(`Updated format template for ${formatName}`);
   }
 }
 

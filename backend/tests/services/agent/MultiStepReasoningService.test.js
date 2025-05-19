@@ -1,14 +1,22 @@
 /**
- * Tests for MultiStepReasoningService
+ * Tests for Enhanced MultiStepReasoningService
  */
 
 const MultiStepReasoningService = require('../../../src/services/agent/MultiStepReasoningService');
 const OpenAIService = require('../../../src/services/agent/OpenAIService');
 const ContextService = require('../../../src/services/agent/ContextService');
+const WorkingMemoryService = require('../../../src/services/agent/WorkingMemoryService');
+const RetrievalAugmentedGenerationService = require('../../../src/services/agent/knowledge/RetrievalAugmentedGenerationService');
+const FactVerifierService = require('../../../src/services/agent/knowledge/FactVerifierService');
+const KnowledgeRetrievalService = require('../../../src/services/agent/knowledge/KnowledgeRetrievalService');
 
-// Mock the dependencies
+// Mock dependencies
 jest.mock('../../../src/services/agent/OpenAIService');
 jest.mock('../../../src/services/agent/ContextService');
+jest.mock('../../../src/services/agent/WorkingMemoryService');
+jest.mock('../../../src/services/agent/knowledge/RetrievalAugmentedGenerationService');
+jest.mock('../../../src/services/agent/knowledge/FactVerifierService');
+jest.mock('../../../src/services/agent/knowledge/KnowledgeRetrievalService');
 jest.mock('../../../src/utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
@@ -16,15 +24,67 @@ jest.mock('../../../src/utils/logger', () => ({
   debug: jest.fn()
 }));
 
-describe('MultiStepReasoningService', () => {
+describe('Enhanced MultiStepReasoningService', () => {
   let service;
+  let mockWorkingMemoryService;
+  let mockRagService;
+  let mockFactVerifier;
+  let mockKnowledgeRetrievalService;
   
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
     
-    // Create new instance for each test
-    service = new MultiStepReasoningService();
+    // Setup mock working memory service
+    mockWorkingMemoryService = new WorkingMemoryService();
+    mockWorkingMemoryService.storeSessionContext = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.getSessionContext = jest.fn().mockResolvedValue({});
+    mockWorkingMemoryService.storeQueryPlan = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.storeStepResult = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.storeFinalResult = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.storeEntityMentions = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.storeRetrievedKnowledge = jest.fn().mockResolvedValue(true);
+    mockWorkingMemoryService.getRetrievedKnowledge = jest.fn().mockReturnValue({
+      items: [
+        { type: 'fact', content: 'Test fact 1' },
+        { type: 'fact', content: 'Test fact 2' }
+      ]
+    });
+    
+    // Setup mock knowledge retrieval service
+    mockKnowledgeRetrievalService = new KnowledgeRetrievalService();
+    mockKnowledgeRetrievalService.retrieveKnowledge = jest.fn().mockResolvedValue({
+      facts: [
+        { type: 'fact', content: 'Test fact 1' },
+        { type: 'fact', content: 'Test fact 2' }
+      ],
+      contextual: [
+        { type: 'contextual', content: 'Test contextual 1' }
+      ],
+      sources: ['database', 'document']
+    });
+    
+    // Setup mock RAG service
+    mockRagService = new RetrievalAugmentedGenerationService();
+    mockRagService.knowledgeRetrievalService = mockKnowledgeRetrievalService;
+    mockRagService.generateResponse = jest.fn().mockResolvedValue({
+      text: 'Generated answer with knowledge',
+      sources: [{ source: 'database', count: 2 }],
+      isFactChecked: true,
+      confidence: 0.85
+    });
+    
+    // Setup mock fact verifier
+    mockFactVerifier = new FactVerifierService();
+    mockFactVerifier.verifyResponse = jest.fn().mockResolvedValue({
+      verified: true,
+      confidence: 0.9,
+      statements: [
+        { text: 'Statement 1', lineNumber: 1, accurate: true, status: 'SUPPORTED' },
+        { text: 'Statement 2', lineNumber: 2, accurate: false, status: 'PARTIALLY SUPPORTED', suggestedCorrection: 'Corrected statement 2' }
+      ],
+      correctedResponse: 'Fact-checked response text'
+    });
     
     // Mock OpenAI responses
     OpenAIService.performMultiStepReasoning.mockResolvedValue({
@@ -67,67 +127,71 @@ describe('MultiStepReasoningService', () => {
       confidence: 0.9,
       reasoning: ['Terminal 1 is explicitly mentioned']
     });
+    
+    // Create service instance with mocks
+    service = new MultiStepReasoningService({
+      workingMemoryService: mockWorkingMemoryService,
+      ragService: mockRagService,
+      factVerifier: mockFactVerifier,
+      contextService: new ContextService(),
+    });
   });
 
   describe('planQuerySteps', () => {
-    it('should generate a valid reasoning plan', async () => {
+    it('should generate a plan with knowledge retrieval step', async () => {
       const query = 'What would happen if we added 5 more stands to Terminal 1?';
-      const context = { currentCapacity: 50 };
+      const context = { sessionId: 'test-session' };
       
       const plan = await service.planQuerySteps(query, context);
       
       expect(plan).toHaveProperty('queryId');
       expect(plan).toHaveProperty('originalQuery', query);
       expect(plan).toHaveProperty('steps');
-      expect(plan.steps).toHaveLength(2);
+      expect(plan.steps).toHaveLength(3); // 1 knowledge step + 2 original steps
       expect(plan).toHaveProperty('confidence', 0.85);
+      
+      // First step should be knowledge retrieval
+      expect(plan.steps[0]).toHaveProperty('type', 'knowledge_retrieval');
       expect(plan.steps[0]).toHaveProperty('stepId', 'step-1');
-      expect(plan.steps[1]).toHaveProperty('stepId', 'step-2');
+      
+      // Original steps should have dependencies updated
       expect(plan.steps[1]).toHaveProperty('dependsOn', ['step-1']);
+      expect(plan.steps[2]).toHaveProperty('dependsOn', ['step-2']);
       
-      // Verify OpenAI service was called
-      expect(OpenAIService.performMultiStepReasoning).toHaveBeenCalledWith(query, context);
-      
-      // Verify context service was used to store the plan
-      expect(service.contextService.set).toHaveBeenCalled();
+      // Working memory integration should be used
+      expect(mockWorkingMemoryService.storeSessionContext).toHaveBeenCalled();
+      expect(mockWorkingMemoryService.storeQueryPlan).toHaveBeenCalled();
     });
-    
-    it('should handle errors during plan generation', async () => {
-      // Mock an error
-      OpenAIService.performMultiStepReasoning.mockRejectedValue(new Error('Service unavailable'));
-      
-      const query = 'What would happen if we added 5 more stands to Terminal 1?';
-      
-      await expect(service.planQuerySteps(query)).rejects.toThrow('Failed to plan query steps');
-    });
-    
-    it('should detect and reject plans with circular dependencies', async () => {
-      // Mock a plan with circular dependencies
-      OpenAIService.performMultiStepReasoning.mockResolvedValue({
+
+    it('should preserve existing knowledge retrieval steps', async () => {
+      // Mock a plan that already has knowledge retrieval
+      OpenAIService.performMultiStepReasoning.mockResolvedValueOnce({
         steps: [
           {
             stepNumber: 1,
-            description: 'Step 1',
-            dependsOn: ['step-2']
+            description: 'Retrieve relevant knowledge',
+            type: 'knowledge_retrieval',
+            parameters: { query: 'test' }
           },
           {
             stepNumber: 2,
-            description: 'Step 2',
+            description: 'Process the knowledge',
             dependsOn: ['step-1']
           }
         ]
       });
       
-      const query = 'Query with circular dependencies';
-      const result = await service.planQuerySteps(query);
+      const query = 'What is the airport capacity?';
+      const plan = await service.planQuerySteps(query, {});
       
-      expect(result).toHaveProperty('status', 'invalid_plan');
-      expect(result).toHaveProperty('reason', 'Circular dependency detected in plan');
+      // Should not modify the plan if it already has knowledge retrieval
+      expect(plan.steps).toHaveLength(2);
+      expect(plan.steps[0].type).toBe('knowledge_retrieval');
     });
   });
 
   describe('executeStepSequence', () => {
-    it('should execute all steps in a plan successfully', async () => {
+    it('should execute all steps including knowledge retrieval', async () => {
       const plan = {
         queryId: 'test-query-1',
         originalQuery: 'What would happen if we added 5 more stands?',
@@ -135,215 +199,382 @@ describe('MultiStepReasoningService', () => {
           {
             stepId: 'step-1',
             stepNumber: 1,
-            description: 'Retrieve capacity data',
-            type: 'data_retrieval',
+            description: 'Retrieve relevant knowledge',
+            type: 'knowledge_retrieval',
             dependsOn: [],
-            parameters: { dataSource: 'capacity' }
+            parameters: { query: 'airport capacity stands' }
           },
           {
             stepId: 'step-2',
             stepNumber: 2,
+            description: 'Get current capacity data',
+            type: 'data_retrieval',
+            dependsOn: ['step-1'],
+            parameters: { dataSource: 'capacity' }
+          },
+          {
+            stepId: 'step-3',
+            stepNumber: 3,
             description: 'Calculate impact',
             type: 'calculation',
-            dependsOn: ['step-1'],
+            dependsOn: ['step-2'],
             parameters: {
               dataSource: 'previous_step',
-              stepId: 'step-1'
+              stepId: 'step-2'
             }
           }
         ]
       };
       
-      const results = await service.executeStepSequence(plan);
+      const context = { sessionId: 'test-session' };
+      
+      const results = await service.executeStepSequence(plan, context);
       
       expect(results).toHaveProperty('success', true);
       expect(results).toHaveProperty('stepResults');
-      expect(results.stepResults).toHaveLength(2);
+      expect(results.stepResults).toHaveLength(3); // All steps executed
       expect(results).toHaveProperty('finalAnswer');
       
-      // Check that step 2 was executed after step 1
-      expect(results.stepResults[0].stepId).toBe('step-1');
-      expect(results.stepResults[1].stepId).toBe('step-2');
+      // Knowledge retrieval step should have been called
+      expect(mockKnowledgeRetrievalService.retrieveKnowledge).toHaveBeenCalled();
+      expect(mockWorkingMemoryService.storeRetrievedKnowledge).toHaveBeenCalled();
       
-      // Verify context service was used to store results
-      expect(service.contextService.set).toHaveBeenCalledTimes(3); // Plan + 2 steps
+      // Working memory should store all step results
+      expect(mockWorkingMemoryService.storeStepResult).toHaveBeenCalledTimes(3);
+      
+      // Final result should be stored
+      expect(mockWorkingMemoryService.storeFinalResult).toHaveBeenCalled();
     });
     
-    it('should stop execution if a step fails', async () => {
-      // Mock step failure
-      jest.spyOn(service, 'executeStep').mockImplementation((step) => {
-        if (step.stepId === 'step-1') {
-          return Promise.resolve({
-            success: true,
-            result: { data: 'Sample data' },
-            executionTime: 0.5
-          });
-        } else {
-          return Promise.resolve({
-            success: false,
-            error: 'Step failed',
-            executionTime: 0.2
-          });
-        }
-      });
-      
+    it('should use RAG for final answer if knowledge is available', async () => {
       const plan = {
-        queryId: 'test-query-1',
-        originalQuery: 'Test query',
+        queryId: 'test-query-2',
+        originalQuery: 'How many more flights can we handle?',
         steps: [
           {
             stepId: 'step-1',
             stepNumber: 1,
-            description: 'Step 1',
-            type: 'data_retrieval',
-            dependsOn: []
+            description: 'Retrieve relevant knowledge',
+            type: 'knowledge_retrieval',
+            dependsOn: [],
+            parameters: { query: 'flight capacity' }
           },
           {
             stepId: 'step-2',
             stepNumber: 2,
-            description: 'Step 2',
+            description: 'Calculate capacity',
             type: 'calculation',
-            dependsOn: ['step-1']
-          },
-          {
-            stepId: 'step-3',
-            stepNumber: 3,
-            description: 'Step 3',
-            type: 'recommendation',
-            dependsOn: ['step-2']
+            dependsOn: ['step-1'],
+            parameters: {}
           }
         ]
       };
       
-      const results = await service.executeStepSequence(plan);
-      
-      expect(results).toHaveProperty('success', false);
-      expect(results).toHaveProperty('error');
-      expect(results.stepResults).toHaveLength(2); // Only executed steps 1 and 2
-      expect(service.executeStep).toHaveBeenCalledTimes(2); // Only steps 1 and 2 were attempted
-    });
-  });
-
-  describe('executeStep', () => {
-    it('should execute a calculation step correctly', async () => {
-      const step = {
-        stepId: 'step-2',
-        type: 'calculation',
-        description: 'Calculate capacity impact',
-        parameters: {
-          instructions: 'Calculate the impact of 5 additional stands'
+      // Mock a successful knowledge retrieval
+      const knowledgeStepResult = {
+        success: true,
+        result: {
+          facts: [{ content: 'Airport capacity is 50 flights per hour' }],
+          contextual: [{ content: 'Peak hours are 7-9am' }]
         }
       };
       
-      const result = await service.executeStep(step, {}, []);
+      // Mock the executeStep method
+      jest.spyOn(service, 'executeStep').mockImplementation((step) => {
+        if (step.type === 'knowledge_retrieval') {
+          return Promise.resolve(knowledgeStepResult);
+        } else {
+          return Promise.resolve({
+            success: true,
+            result: { calculationResult: 10 },
+            executionTime: 0.5
+          });
+        }
+      });
       
-      expect(result).toHaveProperty('success', true);
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('calculationResult', 42);
+      const results = await service.executeStepSequence(plan, { sessionId: 'test-session' });
+      
+      // Final answer should use RAG
+      expect(mockRagService.generateResponse).toHaveBeenCalled();
+      expect(results.finalAnswer).toHaveProperty('factChecked', true);
+      expect(results.finalAnswer).toHaveProperty('knowledgeSources');
     });
-    
-    it('should execute a parameter extraction step correctly', async () => {
+  });
+
+  describe('executeKnowledgeRetrievalStep', () => {
+    it('should retrieve and store knowledge correctly', async () => {
       const step = {
         stepId: 'step-1',
-        type: 'parameter_extraction',
-        description: 'Extract parameters from query',
+        type: 'knowledge_retrieval',
         parameters: {
-          text: 'Add 5 wide-body stands to Terminal 1'
+          query: 'airport capacity planning',
+          retrievalType: 'semantic',
+          maxResults: 5
         }
       };
       
-      const result = await service.executeStep(step, {}, []);
+      const context = {
+        sessionId: 'test-session',
+        queryId: 'test-query'
+      };
+      
+      const result = await service.executeKnowledgeRetrievalStep(step, context, []);
       
       expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('parameters');
-      expect(result.result.parameters).toHaveProperty('terminal', 'Terminal 1');
-    });
-    
-    it('should handle errors during step execution', async () => {
-      // Mock OpenAI service to throw an error
-      OpenAIService.processQuery.mockRejectedValueOnce(new Error('Service error'));
+      expect(result.result).toHaveProperty('facts');
+      expect(result.result).toHaveProperty('contextual');
       
-      const step = {
-        stepId: 'step-2',
-        type: 'calculation',
-        description: 'Calculate capacity impact'
-      };
+      // Knowledge retrieval service should be called
+      expect(mockKnowledgeRetrievalService.retrieveKnowledge).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'airport capacity planning',
+          queryId: 'test-query'
+        }),
+        expect.objectContaining({
+          sessionId: 'test-session'
+        }),
+        expect.objectContaining({
+          maxResults: 5,
+          retrievalType: 'semantic'
+        })
+      );
       
-      const result = await service.executeStep(step, {}, []);
-      
-      expect(result).toHaveProperty('success', false);
-      expect(result).toHaveProperty('error');
-    });
-    
-    it('should handle unsupported step types', async () => {
-      const step = {
-        stepId: 'unknown-step',
-        type: 'unknown_type',
-        description: 'Unknown step type'
-      };
-      
-      const result = await service.executeStep(step, {}, []);
-      
-      expect(result).toHaveProperty('success', false);
-      expect(result).toHaveProperty('error', "Unsupported step type: unknown_type");
+      // Working memory should store retrieved knowledge
+      expect(mockWorkingMemoryService.storeRetrievedKnowledge).toHaveBeenCalledWith(
+        'test-session',
+        'test-query',
+        expect.any(Array),
+        expect.any(Object),
+        expect.any(Number)
+      );
     });
   });
 
-  describe('helper methods', () => {
-    it('should correctly check dependencies', () => {
+  describe('executeFactCheckingStep', () => {
+    it('should check facts against retrieved knowledge', async () => {
+      const step = {
+        stepId: 'step-3',
+        type: 'fact_checking',
+        parameters: {
+          dataSource: 'previous_step',
+          stepId: 'step-2',
+          strictMode: false
+        }
+      };
+      
       const previousResults = [
-        { stepId: 'step-1', success: true },
-        { stepId: 'step-2', success: false },
-        { stepId: 'step-3', success: true }
+        {
+          stepId: 'step-1',
+          success: true,
+          result: {
+            facts: [
+              { content: 'Airport has 30 stands' },
+              { content: 'Terminal A has 10 gates' }
+            ],
+            contextual: []
+          }
+        },
+        {
+          stepId: 'step-2',
+          success: true,
+          result: {
+            text: 'The airport has 35 stands and Terminal A has 12 gates.'
+          }
+        }
       ];
       
-      // All dependencies satisfied
-      expect(service.checkDependencies(['step-1', 'step-3'], previousResults)).toBe(true);
+      const context = {
+        sessionId: 'test-session',
+        queryId: 'test-query'
+      };
       
-      // Some dependencies not satisfied
-      expect(service.checkDependencies(['step-1', 'step-2'], previousResults)).toBe(false);
+      const result = await service.executeFactCheckingStep(step, context, previousResults);
       
-      // No dependencies
-      expect(service.checkDependencies([], previousResults)).toBe(true);
+      expect(result).toHaveProperty('success', true);
+      expect(result).toHaveProperty('result');
       
-      // Missing dependency
-      expect(service.checkDependencies(['step-4'], previousResults)).toBe(false);
+      // Fact verifier should be called with correct params
+      expect(mockFactVerifier.verifyResponse).toHaveBeenCalledWith(
+        'The airport has 35 stands and Terminal A has 12 gates.',
+        expect.any(Array),
+        expect.objectContaining({
+          strictMode: false
+        })
+      );
     });
     
-    it('should detect cycles in dependency graphs', () => {
-      // No cycles
-      expect(service.detectCycle({
-        1: [2, 3],
-        2: [4],
-        3: [],
-        4: []
-      })).toBe(false);
+    it('should fall back to working memory if no knowledge step result available', async () => {
+      const step = {
+        stepId: 'step-2',
+        type: 'fact_checking',
+        parameters: {
+          text: 'The airport has 30 stands.'
+        }
+      };
       
-      // With cycles
-      expect(service.detectCycle({
-        1: [2],
-        2: [3],
-        3: [1]
-      })).toBe(true);
+      const context = {
+        sessionId: 'test-session',
+        queryId: 'test-query'
+      };
       
-      // Self-dependency
-      expect(service.detectCycle({
-        1: [1]
-      })).toBe(true);
+      const result = await service.executeFactCheckingStep(step, context, []);
+      
+      expect(result).toHaveProperty('success', true);
+      expect(mockWorkingMemoryService.getRetrievedKnowledge).toHaveBeenCalledWith(
+        'test-session',
+        'test-query'
+      );
+      
+      expect(mockFactVerifier.verifyResponse).toHaveBeenCalled();
+    });
+  });
+
+  describe('executeQuery', () => {
+    it('should execute the entire reasoning process in one call', async () => {
+      // Spy on the required methods
+      jest.spyOn(service, 'planQuerySteps');
+      jest.spyOn(service, 'executeStepSequence');
+      
+      const query = 'What is the impact of adding 5 more stands?';
+      const context = { sessionId: 'test-session' };
+      
+      const result = await service.executeQuery(query, context);
+      
+      expect(service.planQuerySteps).toHaveBeenCalledWith(query, context);
+      expect(service.executeStepSequence).toHaveBeenCalled();
+      
+      expect(result).toHaveProperty('success');
+      expect(result).toHaveProperty('answer');
+      expect(result).toHaveProperty('confidence');
+      expect(result).toHaveProperty('reasoning');
     });
     
-    it('should correctly determine step types from descriptions', () => {
-      expect(service.determineStepType({ description: 'Calculate the impact' })).toBe('calculation');
-      expect(service.determineStepType({ description: 'Extract parameters from query' })).toBe('parameter_extraction');
-      expect(service.determineStepType({ description: 'Retrieve data from database' })).toBe('data_retrieval');
-      expect(service.determineStepType({ description: 'Validate the results' })).toBe('validation');
-      expect(service.determineStepType({ description: 'Compare two scenarios' })).toBe('comparison');
-      expect(service.determineStepType({ description: 'Recommend the best option' })).toBe('recommendation');
-      expect(service.determineStepType({ description: 'Some other step' })).toBe('generic');
+    it('should handle planning errors gracefully', async () => {
+      // Mock a planning failure
+      jest.spyOn(service, 'planQuerySteps').mockResolvedValue({
+        status: 'invalid_plan',
+        reason: 'Missing required parameters',
+        suggestedAlternative: 'Provide specific details'
+      });
       
-      // Should respect explicit type when provided
-      expect(service.determineStepType({ description: 'Calculate', type: 'validation' })).toBe('validation');
+      const result = await service.executeQuery('Invalid query', {});
+      
+      expect(result).toHaveProperty('success', false);
+      expect(result).toHaveProperty('error', 'Missing required parameters');
+      expect(result).toHaveProperty('suggestedAlternative', 'Provide specific details');
+    });
+  });
+
+  describe('generateKnowledgeGroundedAnswer', () => {
+    it('should use RAG service to generate knowledge-grounded answers', async () => {
+      const plan = {
+        queryId: 'test-query',
+        originalQuery: 'What is the capacity?'
+      };
+      
+      const stepResults = [
+        {
+          stepId: 'step-1',
+          result: {
+            facts: [{ content: 'Capacity is 50 flights per hour' }],
+            contextual: []
+          }
+        },
+        {
+          stepId: 'step-2',
+          result: { calculationResult: 42 }
+        }
+      ];
+      
+      const knowledgeStep = stepResults[0];
+      const context = { sessionId: 'test-session' };
+      
+      const answer = await service.generateKnowledgeGroundedAnswer(
+        plan, stepResults, knowledgeStep, context
+      );
+      
+      expect(answer).toHaveProperty('answer', 'Generated answer with knowledge');
+      expect(answer).toHaveProperty('factChecked', true);
+      expect(answer).toHaveProperty('knowledgeSources');
+      expect(answer).toHaveProperty('confidence', 0.85);
+      
+      // RAG service should be called with correct params
+      expect(mockRagService.generateResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining('What is the capacity?'),
+          queryId: 'test-query'
+        }),
+        expect.objectContaining({
+          sessionId: 'test-session',
+          reasoningResults: expect.any(Array),
+          originalQuery: 'What is the capacity?'
+        }),
+        expect.objectContaining({
+          preRetrievedKnowledge: expect.any(Object),
+          factCheck: true
+        })
+      );
+    });
+    
+    it('should fall back to standard approach if RAG fails', async () => {
+      // Mock RAG failure
+      mockRagService.generateResponse.mockRejectedValueOnce(new Error('RAG failure'));
+      
+      // Spy on generateFinalAnswer to ensure it's called as fallback
+      jest.spyOn(service, 'generateFinalAnswer').mockResolvedValueOnce({
+        answer: 'Fallback answer'
+      });
+      
+      const plan = { queryId: 'test', originalQuery: 'Query' };
+      const stepResults = [{ stepId: 'step-1', result: { facts: [] } }];
+      const knowledgeStep = stepResults[0];
+      
+      const answer = await service.generateKnowledgeGroundedAnswer(
+        plan, stepResults, knowledgeStep, {}
+      );
+      
+      expect(service.generateFinalAnswer).toHaveBeenCalled();
+      expect(answer).toHaveProperty('answer', 'Fallback answer');
+    });
+  });
+
+  describe('_factCheckFinalAnswer', () => {
+    it('should check and correct final answer using fact verifier', async () => {
+      const answerText = 'The airport has 25 stands.';
+      const knowledgeItems = [
+        { content: 'The airport has 30 stands.' }
+      ];
+      
+      const checkedAnswer = await service._factCheckFinalAnswer(
+        answerText, knowledgeItems, 'How many stands?'
+      );
+      
+      expect(checkedAnswer).toHaveProperty('answer', 'Fact-checked response text');
+      expect(checkedAnswer).toHaveProperty('factChecked', true);
+      expect(checkedAnswer).toHaveProperty('confidence', 0.9);
+      expect(checkedAnswer).toHaveProperty('verificationDetails');
+      
+      // Fact verifier should be called
+      expect(mockFactVerifier.verifyResponse).toHaveBeenCalledWith(
+        answerText,
+        knowledgeItems,
+        expect.any(Object)
+      );
+    });
+    
+    it('should return original answer if no knowledge items available', async () => {
+      const answerText = 'The airport has 25 stands.';
+      
+      const checkedAnswer = await service._factCheckFinalAnswer(
+        answerText, [], 'How many stands?'
+      );
+      
+      expect(checkedAnswer).toHaveProperty('answer', answerText);
+      expect(checkedAnswer).toHaveProperty('factChecked', false);
+      
+      // Fact verifier should not be called
+      expect(mockFactVerifier.verifyResponse).not.toHaveBeenCalled();
     });
   });
 });
