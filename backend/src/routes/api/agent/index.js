@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const validationMiddleware = require('../../../middleware/validationMiddleware');
+const { errorHandler } = require('../../../middleware/errorHandler');
 
 // Define fallback handlers for when controllers aren't available
 const fallbackHandler = (controllerName, methodName) => (req, res) => {
@@ -94,17 +96,86 @@ try {
   reasoningController = reasoningFallbacks;
 }
 
-// Route definitions with proper function wrappers
+// Route definitions with validation middleware
 // Agent query routes
-router.post('/query', (req, res) => agentController.processQuery(req, res));
-router.get('/context/:contextId', (req, res) => agentController.getContext(req, res));
-router.get('/history', (req, res) => agentController.getHistory(req, res));
-router.post('/feedback', (req, res) => agentController.processFeedback(req, res));
+router.post('/query', 
+  validationMiddleware.validateAgentQuery,
+  (req, res, next) => {
+    try {
+      agentController.processQuery(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/context/:contextId', 
+  validationMiddleware.validateContextId,
+  (req, res, next) => {
+    try {
+      agentController.getContext(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/history', 
+  validationMiddleware.validatePagination,
+  (req, res, next) => {
+    try {
+      agentController.getHistory(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/feedback', 
+  validationMiddleware.validateFeedback,
+  validationMiddleware.validateResponseId,
+  (req, res, next) => {
+    try {
+      agentController.processFeedback(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // Action approval routes
-router.post('/actions/approve/:proposalId', (req, res) => agentController.approveAction(req, res));
-router.post('/actions/reject/:proposalId', (req, res) => agentController.rejectAction(req, res));
-router.get('/actions/status/:proposalId', (req, res) => agentController.getActionStatus(req, res));
+router.post('/actions/approve/:proposalId', 
+  validationMiddleware.validateProposalId,
+  (req, res, next) => {
+    try {
+      agentController.approveAction(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/actions/reject/:proposalId', 
+  validationMiddleware.validateProposalId,
+  (req, res, next) => {
+    try {
+      agentController.rejectAction(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/actions/status/:proposalId', 
+  validationMiddleware.validateProposalId,
+  (req, res, next) => {
+    try {
+      agentController.getActionStatus(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // Insights routes
 router.post('/insights/save', (req, res) => insightsController.saveInsight(req, res));

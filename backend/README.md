@@ -91,6 +91,21 @@ Detailed documentation on the testing framework, test scenarios, and how to exte
 
 - `/src/services/maintenance/` - Maintenance scheduling and integration
 
+### Agent and Conversation Management
+
+- `/src/controllers/agent/AgentController.js` - Handles agent interactions and queries
+- `/src/services/agent/ContextService.js` - Manages conversation context and memory
+- `/src/services/agent/NLPService.js` - Natural language processing 
+- `/src/services/agent/ResponseGeneratorService.js` - Template-based response generation
+
+### Error Handling and Validation
+
+- `/src/middleware/errorHandler.js` - Global error handling middleware
+- `/src/middleware/validationMiddleware.js` - Request validation middleware
+- `/src/utils/validation.js` - Validation utility functions
+
+Detailed documentation on error handling and validation is available in the [error handling guide](./docs/error-handling.md).
+
 ## Database Structure
 
 The system uses a relational database with the following key tables:
