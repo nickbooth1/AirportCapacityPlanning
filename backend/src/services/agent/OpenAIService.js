@@ -811,23 +811,81 @@ Identify the relationships between these entities.`
    * @param {string} query - The original user query
    * @param {string} intent - The classified intent
    * @param {Object} data - The data retrieved from APIs
+   * @param {Object} options - Optional generation options
    * @returns {Promise<Object>} - Generated response
    */
-  async generateResponse(query, intent, data) {
+  async generateResponse(query, intent, data, options = {}) {
     try {
-      const messages = [
-        {
-          role: 'system',
-          content: `You are an AI assistant for airport capacity planning.
+      // Extract options for customization
+      const formatInstructions = options.formatInstructions || '';
+      const toneInstructions = options.toneInstructions || '';
+      const detailInstructions = options.detailInstructions || '';
+      const entities = options.entities || {};
+      
+      // Build dynamic system prompt based on options
+      const systemPromptBase = `You are an AI assistant for airport capacity planning.
 Your task is to generate a natural language response based on data retrieved from the system.
 The response should be clear, concise, and directly address the user's query.
 Do not include any visualizations or data that is not provided.
-Format your response to be readable in a chat interface.`
+Format your response to be readable in a chat interface.
+${formatInstructions}
+${toneInstructions}
+${detailInstructions}`;
+
+      // Add intent-specific instructions
+      let intentInstructions = '';
+      switch(intent) {
+        case 'capacity_query':
+          intentInstructions = `
+For capacity queries, emphasize key metrics and trends. 
+If data shows changes over time, highlight significant increases or decreases.
+Include specific capacity numbers and percentages when available.`;
+          break;
+        case 'maintenance_query':
+          intentInstructions = `
+For maintenance queries, be precise about timing, impact, and status.
+Clearly state when maintenance is scheduled to begin and end.
+If there are capacity impacts, quantify them if possible.`;
+          break;
+        case 'infrastructure_query':
+          intentInstructions = `
+For infrastructure queries, provide clear details about terminal, stand, or pier configurations.
+Include information about capacity, capabilities, and constraints.`;
+          break;
+        case 'stand_status_query':
+          intentInstructions = `
+For stand status queries, be explicit about current status and upcoming changes.
+Include timing for when status will change if available.`;
+          break;
+        case 'scenario_query':
+          intentInstructions = `
+For scenario queries, highlight key differences from baseline or between scenarios.
+Focus on actionable insights and recommendations when possible.`;
+          break;
+      }
+      
+      // Full system prompt with intent-specific instructions
+      const systemPrompt = `${systemPromptBase}${intentInstructions}`;
+      
+      // Generate suggested follow-up actions for the user
+      const suggestFollowUps = `
+You should also suggest up to 3 follow-up questions or actions the user might want to take based on this data.
+Include these suggestions at the end of your response in this format:
+SUGGESTED FOLLOW-UPS:
+1. [First follow-up question or action]
+2. [Second follow-up question or action]
+3. [Third follow-up question or action]`;
+      
+      const messages = [
+        {
+          role: 'system',
+          content: systemPrompt + (options.includeSuggestions ? suggestFollowUps : '')
         },
         {
           role: 'user',
           content: `Query: ${query}
 Intent: ${intent}
+${entities && Object.keys(entities).length > 0 ? `Entities: ${JSON.stringify(entities, null, 2)}\n` : ''}
 Data: ${JSON.stringify(data, null, 2)}
 
 Generate a natural language response based on this information.`
@@ -837,20 +895,183 @@ Generate a natural language response based on this information.`
       const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: messages,
-        temperature: 0.7,
+        temperature: 0.5, // Slightly lower temperature for more consistent responses
         max_tokens: 1000
       });
       
       // Update token usage
       this.updateTokenUsage(completion.usage);
       
+      // Extract response text
+      const responseText = completion.choices[0]?.message?.content || '';
+      
+      // Extract suggested follow-ups if included
+      let suggestedActions = [];
+      if (options.includeSuggestions) {
+        const followUpMatch = responseText.match(/SUGGESTED FOLLOW-UPS:([\s\S]*)/);
+        if (followUpMatch) {
+          const followUpText = followUpMatch[1];
+          const followUps = followUpText.match(/\d+\.\s*(.*?)(?=\n\d+\.|\n*$)/g);
+          
+          if (followUps) {
+            suggestedActions = followUps.map(f => {
+              const text = f.replace(/^\d+\.\s*/, '').trim();
+              return {
+                type: 'suggestion',
+                text,
+                intent: intent,
+                autoGenerated: true
+              };
+            });
+          }
+          
+          // Remove suggestions from response text
+          const cleanedText = responseText.replace(/SUGGESTED FOLLOW-UPS:[\s\S]*/, '').trim();
+          
+          return {
+            text: cleanedText,
+            suggestedActions,
+            usage: completion.usage
+          };
+        }
+      }
+      
       return {
-        text: completion.choices[0]?.message?.content || '',
+        text: responseText,
+        suggestedActions,
         usage: completion.usage
       };
     } catch (error) {
       logger.error(`Response Generation Error: ${error.message}`);
       throw new Error(`Failed to generate response: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Generate content to fill template placeholders
+   * @param {Object} params - Generation parameters
+   * @param {string} params.template - Template with placeholders
+   * @param {Array<string>} params.missingFields - List of missing placeholder names
+   * @param {Object} params.entities - Entity data
+   * @param {Object} params.data - Result data
+   * @returns {Promise<Object>} - Generated field values
+   */
+  async generateContent(params) {
+    try {
+      const { template, missingFields, entities, data } = params;
+      
+      const messages = [
+        {
+          role: 'system',
+          content: `You are an AI assistant for airport capacity planning.
+Your task is to generate content to fill in missing fields in a response template.
+You will be given a template with {placeholder} markers and a list of missing fields.
+Generate appropriate content for each missing field based on the context, entities, and data provided.
+Keep each field's content concise and relevant - typically 1-5 words or a short phrase for each placeholder.
+Format your response as a JSON object with field names as keys and generated content as values.`
+        },
+        {
+          role: 'user',
+          content: `Template: "${template}"
+Missing fields: ${JSON.stringify(missingFields)}
+Entities: ${JSON.stringify(entities || {})}
+Data: ${JSON.stringify(data || {})}
+
+Generate content for the missing fields.`
+        }
+      ];
+      
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        messages: messages,
+        temperature: 0.3, // Lower temperature for more consistent field generation
+        max_tokens: 500,
+        response_format: { type: 'json_object' }
+      });
+      
+      // Update token usage
+      this.updateTokenUsage(completion.usage);
+      
+      // Parse the JSON response
+      const responseText = completion.choices[0]?.message?.content || '{}';
+      const parsedResponse = JSON.parse(responseText);
+      
+      return {
+        fields: parsedResponse,
+        usage: completion.usage
+      };
+    } catch (error) {
+      logger.error(`Content Generation Error: ${error.message}`);
+      // Return empty result on error
+      return {
+        fields: {},
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * Generate a description for a chart or visualization
+   * @param {Object} data - Visualization data
+   * @param {string} title - Visualization title
+   * @param {Object} context - Additional context
+   * @returns {Promise<Object>} - Generated description
+   */
+  async generateChartDescription(data, title = '', context = {}) {
+    try {
+      const messages = [
+        {
+          role: 'system',
+          content: `You are an AI assistant specialized in airport operations data analysis.
+Your task is to generate a concise description of a data visualization based on the provided data.
+Focus on highlighting key trends, patterns, anomalies, and insights that would be valuable to airport capacity planners.
+Your description should be clear, factual, and informative.
+
+Structure your response as a JSON object with these fields:
+- main: A 1-2 sentence description of what the chart shows (main trends/patterns)
+- insight: The most important insight or conclusion from the data
+- highlight: A specific data point or comparison worth highlighting`
+        },
+        {
+          role: 'user',
+          content: `Visualization Title: ${title || 'Untitled Visualization'}
+Visualization Data: ${JSON.stringify(data, null, 2)}
+${context ? `Additional Context: ${JSON.stringify(context, null, 2)}` : ''}
+
+Generate a concise description of this visualization.`
+        }
+      ];
+      
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        messages: messages,
+        temperature: 0.2, // Very low temperature for factual descriptions
+        max_tokens: 300,
+        response_format: { type: 'json_object' }
+      });
+      
+      // Update token usage
+      this.updateTokenUsage(completion.usage);
+      
+      // Parse the JSON response
+      const responseText = completion.choices[0]?.message?.content || '{}';
+      const parsedResponse = JSON.parse(responseText);
+      
+      return {
+        main: parsedResponse.main || '',
+        insight: parsedResponse.insight || '',
+        highlight: parsedResponse.highlight || '',
+        usage: completion.usage
+      };
+    } catch (error) {
+      logger.error(`Chart Description Error: ${error.message}`);
+      // Return empty result on error
+      return {
+        main: `The ${title || 'visualization'} shows data related to airport capacity.`,
+        insight: '',
+        highlight: '',
+        error: error.message
+      };
     }
   }
 

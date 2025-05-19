@@ -791,21 +791,28 @@ class NLPService {
       // Use different response types based on requested format
       const responseType = options.responseType || 'text';
       
-      // Generate response using OpenAI
-      const response = await openaiService.generateResponse({
+      // Use ResponseGeneratorService for template-based responses
+      const responseGeneratorService = require('./ResponseGeneratorService');
+      const response = await responseGeneratorService.generateResponse({
+        query: input.query || '',
         intent,
         entities,
-        actionResult,
-        responseType,
-        tone: options.tone || 'professional',
-        length: options.length || 'medium',
-        userPreferences: options.userPreferences
+        data: actionResult,
+        options: {
+          templateType: options.templateType || 'default',
+          useLLM: options.useLLM !== false,
+          includeSuggestions: options.includeSuggestions !== false,
+          tone: options.tone || 'professional',
+          detail: options.detail || 'medium',
+          format: responseType
+        }
       });
       
       return {
         responseText: response.text,
-        responseSpeech: response.speech,
+        responseSpeech: response.speech || response.text,
         suggestedActions: response.suggestedActions || [],
+        visualizations: response.visualizations || [],
         responseType
       };
     } catch (error) {
@@ -815,13 +822,17 @@ class NLPService {
       const fallbackResponses = {
         [this.intents.CAPACITY_QUERY]: "Here is the capacity information you requested.",
         [this.intents.MAINTENANCE_QUERY]: "Here is the maintenance information you requested.",
+        [this.intents.INFRASTRUCTURE_QUERY]: "Here is the infrastructure information you requested.",
+        [this.intents.STAND_STATUS_QUERY]: "Here is the stand status you requested.",
+        [this.intents.SCENARIO_QUERY]: "Here is the scenario information you requested.",
         [this.intents.UNKNOWN]: "I'm sorry, I couldn't process that request."
       };
       
       return {
-        responseText: fallbackResponses[input.intent] || fallbackResponses[this.intents.UNKNOWN],
-        responseSpeech: fallbackResponses[input.intent] || fallbackResponses[this.intents.UNKNOWN],
+        responseText: fallbackResponses[intent] || fallbackResponses[this.intents.UNKNOWN],
+        responseSpeech: fallbackResponses[intent] || fallbackResponses[this.intents.UNKNOWN],
         suggestedActions: [],
+        visualizations: [],
         responseType: 'text',
         isErrorFallback: true
       };

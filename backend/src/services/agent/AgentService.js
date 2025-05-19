@@ -8,6 +8,7 @@ const nlpService = require('./NLPService');
 const contextService = require('./ContextService');
 const toolOrchestratorService = require('./ToolOrchestratorService');
 const visualizationService = require('./VisualizationService');
+const responseGeneratorService = require('./ResponseGeneratorService');
 const feedbackLearningService = require('./initFeedbackLearning');
 const continuousLearningService = require('./ContinuousLearningService');
 const longTermMemoryService = require('./LongTermMemoryService');
@@ -85,8 +86,11 @@ class AgentService {
           parameters: toolResult.parameters
         });
         
-        // Generate response for action proposal
-        const responseText = `I can ${toolResult.description}. Would you like me to proceed with this action?`;
+        // Generate response for action proposal using templates
+        const responseText = await responseGeneratorService.generateSystemResponse(
+          'action_approval_request',
+          { action_description: toolResult.description }
+        );
         
         // Create response record
         const agentResponse = await AgentResponse.query().insert({
@@ -192,14 +196,35 @@ class AgentService {
           }
         }
         
-        // Generate response text using OpenAI
+        // Generate response text using ResponseGeneratorService
         try {
-          const openaiResponse = await openaiService.generateResponse(
+          const responseResult = await responseGeneratorService.generateResponse({
             query,
             intent,
-            toolResult.data
-          );
-          responseText = openaiResponse.text;
+            entities,
+            data: toolResult.data,
+            options: {
+              useLLM: true,
+              includeSuggestions: true,
+              tone: 'professional',
+              detail: 'medium',
+              format: 'text'
+            }
+          });
+          responseText = responseResult.text;
+          
+          // Add suggested actions to visualizations if available
+          if (responseResult.suggestedActions && responseResult.suggestedActions.length > 0) {
+            // Create a suggestions visualization
+            const suggestionsViz = {
+              type: 'suggestions',
+              format: 'json',
+              data: responseResult.suggestedActions,
+              title: 'Suggested Follow-ups',
+              metadata: { source: 'response_generator' }
+            };
+            visualizations.push(suggestionsViz);
+          }
         } catch (error) {
           logger.error(`Response generation error: ${error.message}`);
           responseText = `I found information related to your query about ${entities.terminal || ''} ${entities.aircraft_type || ''} ${entities.time_period || ''}, but I encountered an error generating a natural language response.`;
@@ -378,10 +403,15 @@ class AgentService {
         contextId: context.id
       });
       
-      // Generate response text
-      const responseText = actionResult.success
-        ? `I've successfully executed the action: ${proposal.description}.`
-        : `I couldn't execute the action: ${proposal.description}. Error: ${actionResult.error || 'Unknown error'}`;
+      // Generate response text from template
+      const responseText = await responseGeneratorService.generateSystemResponse(
+        actionResult.success ? 'action_approved' : 'action_error',
+        { 
+          action_description: proposal.description,
+          result_summary: actionResult.success ? actionResult.summary || '' : '',
+          error_message: actionResult.error || 'Unknown error'
+        }
+      );
       
       // Create response record
       const agentResponse = await AgentResponse.query().insert({
@@ -488,10 +518,14 @@ class AgentService {
         contextId: context.id
       });
       
-      // Generate response text
-      const responseText = `I've cancelled the action: ${proposal.description}.${
-        reason ? ` Reason: ${reason}` : ''
-      }`;
+      // Generate response text from template
+      const responseText = await responseGeneratorService.generateSystemResponse(
+        'action_rejected',
+        { 
+          action_description: proposal.description,
+          reason: reason ? `Reason: ${reason}` : ''
+        }
+      );
       
       // Create response record
       const agentResponse = await AgentResponse.query().insert({
