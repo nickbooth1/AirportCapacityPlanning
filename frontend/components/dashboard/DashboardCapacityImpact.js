@@ -42,24 +42,52 @@ const DashboardCapacityImpact = () => {
       const startDateStr = format(start, 'yyyy-MM-dd');
       const endDateStr = format(end, 'yyyy-MM-dd');
       
-      // Direct fetch to the API
-      const url = new URL(`${API_BASE_URL}/api/capacity/impact-analysis`);
-      url.searchParams.append('startDate', startDateStr);
-      url.searchParams.append('endDate', endDateStr);
-      
-      console.log('Dashboard capacity impact fetch URL:', url.toString());
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch capacity impact data');
+      // Handle API connection errors gracefully
+      try {
+        // Direct fetch to the API
+        const url = new URL(`${API_BASE_URL}/api/capacity/impact-analysis`);
+        url.searchParams.append('startDate', startDateStr);
+        url.searchParams.append('endDate', endDateStr);
+        
+        console.log('Dashboard capacity impact fetch URL:', url.toString());
+        
+        // Set a timeout to avoid long-hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          // Include credentials if needed
+          credentials: 'include'
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setData(result.dailyImpacts || []);
+        setError(null);
+      } catch (fetchErr) {
+        console.error('API connection error:', fetchErr);
+        // Provide mock data instead of failing completely
+        setData([
+          {
+            date: format(new Date(), 'yyyy-MM-dd'),
+            originalDailyCapacity: { total: 100 },
+            finalNetCapacity: { total: 85 },
+            maintenanceImpacts: {
+              definite: { reduction: { total: 10 } },
+              potential: { reduction: { total: 5 } }
+            }
+          }
+        ]);
+        setError('Using sample data - API connection failed');
       }
-      
-      const result = await response.json();
-      setData(result.dailyImpacts || []);
-      setError(null);
     } catch (err) {
-      console.error('Error fetching dashboard capacity impact:', err);
+      console.error('Error in dashboard component:', err);
       setError(err.message);
       setData([]);
     } finally {
@@ -68,8 +96,14 @@ const DashboardCapacityImpact = () => {
   };
 
   useEffect(() => {
-    const { start, end } = timeRanges[timeRange].getRange();
-    fetchData(start, end);
+    try {
+      const { start, end } = timeRanges[timeRange].getRange();
+      fetchData(start, end);
+    } catch (err) {
+      console.error('Error setting date range:', err);
+      setError('Date range error');
+      setLoading(false);
+    }
   }, [timeRange]);
 
   const handleTimeRangeChange = (event, newRange) => {

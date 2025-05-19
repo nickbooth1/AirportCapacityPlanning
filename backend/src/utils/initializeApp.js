@@ -137,51 +137,70 @@ function addTestRoutes(app) {
  * @param {Object} app - Express application
  */
 function registerRoutes(app) {
-  // Import routes
-  const apiRoutes = require('../routes');
-  const maintenanceRoutes = require('../routes/maintenanceRoutes');
-  const terminalsRoutes = require('../routes/terminals');
-  const piersRoutes = require('../routes/piers');
-  const standsRoutes = require('../routes/stands');
-  const aircraftTypesRoutes = require('../routes/aircraft-types');
-  const aircraftSizeCategoriesRoutes = require('../routes/aircraft-size-categories');
-  const configRoutes = require('../routes/config');
-  const capacityRoutes = require('../routes/capacity');
-  const airportRoutes = require('../routes/airportRoutes');
-  const ghaRoutes = require('../routes/ghaRoutes');
-  const airportConfigRoutes = require('../routes/airportConfig');
-  const flightUploadRoutes = require('../routes/api/flightUpload');
-  const flightDataRoutes = require('../routes/api/flightData');
-  const flightScheduleRoutes = require('../routes/api/flightSchedule');
-  const standConstraintsRoutes = require('../routes/stand-constraints');
-  const standAdjacenciesRoutes = require('../routes/standAdjacencies');
+  const { safeRouter } = require('../routes/route-fix');
+  
+  // Create a base router for consistent route definitions
+  const baseRouter = express.Router();
+  const safeBaseRouter = safeRouter(baseRouter);
 
-  // Mount routes
-  app.use('/api', apiRoutes);
-  app.use('/api/maintenance', maintenanceRoutes);
-  app.use('/api/terminals', terminalsRoutes);
-  app.use('/api/piers', piersRoutes);
-  app.use('/api/stands', standsRoutes);
-  app.use('/api/aircraft-types', aircraftTypesRoutes);
-  app.use('/api/aircraft-size-categories', aircraftSizeCategoriesRoutes);
-  app.use('/api/config', configRoutes);
-  app.use('/api/capacity', capacityRoutes);
-  app.use('/api/airports', airportRoutes);
-  app.use('/api/ghas', ghaRoutes);
-  app.use('/api/airport-config', airportConfigRoutes);
-  app.use('/api/flights/upload', flightUploadRoutes);
-  app.use('/api/flights', flightDataRoutes);
-  app.use('/api/flight-schedules', flightScheduleRoutes);
-  app.use('/api/stand-constraints', standConstraintsRoutes);
-  app.use('/api/stand-adjacencies', standAdjacenciesRoutes);
-
-  // Import and use agent routes if available
+  // Import main API routes
+  let apiRoutes;
   try {
-    const agentRoutes = require('../routes/api/agent');
-    app.use('/api/agent', agentRoutes);
-    logger.info('Agent routes initialized');
+    apiRoutes = require('../routes');
+    app.use('/api', apiRoutes);
+    logger.info('Main API routes initialized');
   } catch (error) {
-    logger.warn(`Failed to initialize agent routes: ${error.message}`);
+    logger.error(`Failed to initialize main API routes: ${error.message}`);
+    app.use('/api', (req, res) => {
+      res.status(500).json({ error: 'API routes initialization failed' });
+    });
+  }
+
+  // Define a function to safely import and mount routes
+  function mountRoutes(path, routeModule, fallbackMessage) {
+    try {
+      const routes = require(routeModule);
+      app.use(path, routes);
+      logger.info(`Routes mounted: ${path}`);
+      return true;
+    } catch (error) {
+      logger.error(`Failed to initialize routes for ${path}: ${error.message}`);
+      
+      // Create a fallback router for error responses
+      const fallbackRouter = express.Router();
+      fallbackRouter.all('*', (req, res) => {
+        res.status(500).json({ 
+          error: 'Route initialization failed',
+          message: fallbackMessage || `The ${path} routes are currently unavailable`
+        });
+      });
+      
+      app.use(path, fallbackRouter);
+      return false;
+    }
+  }
+
+  // Mount individual route modules with safe error handling
+  mountRoutes('/api/maintenance', '../routes/maintenanceRoutes', 'Maintenance routes unavailable');
+  mountRoutes('/api/terminals', '../routes/terminals', 'Terminal routes unavailable');
+  mountRoutes('/api/piers', '../routes/piers', 'Pier routes unavailable');
+  mountRoutes('/api/stands', '../routes/stands', 'Stand routes unavailable');
+  mountRoutes('/api/aircraft-types', '../routes/aircraft-types', 'Aircraft types routes unavailable');
+  mountRoutes('/api/aircraft-size-categories', '../routes/aircraft-size-categories', 'Aircraft categories routes unavailable');
+  mountRoutes('/api/config', '../routes/config', 'Configuration routes unavailable');
+  mountRoutes('/api/capacity', '../routes/capacity', 'Capacity routes unavailable');
+  mountRoutes('/api/airports', '../routes/airportRoutes', 'Airport routes unavailable');
+  mountRoutes('/api/ghas', '../routes/ghaRoutes', 'Ground handling agent routes unavailable');
+  mountRoutes('/api/airport-config', '../routes/airportConfig', 'Airport config routes unavailable');
+  mountRoutes('/api/flights/upload', '../routes/api/flightUpload', 'Flight upload routes unavailable');
+  mountRoutes('/api/flights', '../routes/api/flightData', 'Flight data routes unavailable');
+  mountRoutes('/api/flight-schedules', '../routes/api/flightSchedule', 'Flight schedule routes unavailable');
+  mountRoutes('/api/stand-constraints', '../routes/stand-constraints', 'Stand constraint routes unavailable');
+  mountRoutes('/api/stand-adjacencies', '../routes/standAdjacencies', 'Stand adjacencies routes unavailable');
+  
+  // Agent routes with special handling
+  if (!mountRoutes('/api/agent', '../routes/api/agent', 'Agent routes unavailable')) {
+    logger.warn('Using fallback for agent routes');
   }
 
   // Add mock routes for airlines

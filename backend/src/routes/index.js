@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { safeRouter } = require('./route-fix');
+
+// Convert router to use safe route registration
+const safeExpressRouter = safeRouter(router);
 
 // Import route files
 const standsRoutes = require('./stands');
@@ -19,20 +23,20 @@ const columnMappingRoutes = require('./api/columnMapping');
 const apiRoutes = require('./api/index');
 
 // Mount routes
-router.use('/stands', standsRoutes);
-// router.use('/stand-adjacencies', standAdjacenciesRoutes);
-router.use('/capacity', capacityRoutes);
-// router.use('/time-slots', timeSlotRoutes);
-// router.use('/aircraft-types', aircraftTypesRoutes);
-// router.use('/settings', settingsRoutes);
-router.use('/autonomous', autonomousOperationsRoutes);
-router.use('/voice', voiceInterfaceRoutes);
+safeExpressRouter.use('/stands', standsRoutes);
+// safeExpressRouter.use('/stand-adjacencies', standAdjacenciesRoutes);
+safeExpressRouter.use('/capacity', capacityRoutes);
+// safeExpressRouter.use('/time-slots', timeSlotRoutes);
+// safeExpressRouter.use('/aircraft-types', aircraftTypesRoutes);
+// safeExpressRouter.use('/settings', settingsRoutes);
+safeExpressRouter.use('/autonomous', autonomousOperationsRoutes);
+safeExpressRouter.use('/voice', voiceInterfaceRoutes);
 
 // Register routes
-router.use('/flights/upload', flightUploadRoutes);
-router.use('/flights', flightDataRoutes);
-router.use('/flight-schedules', flightScheduleRoutes);
-router.use('/column-mapping', columnMappingRoutes);
-router.use('/', apiRoutes); // Mount our debug API routes
+safeExpressRouter.use('/flights/upload', flightUploadRoutes);
+safeExpressRouter.use('/flights', flightDataRoutes);
+safeExpressRouter.use('/flight-schedules', flightScheduleRoutes);
+safeExpressRouter.use('/column-mapping', columnMappingRoutes);
+safeExpressRouter.use('/', apiRoutes); // Mount our debug API routes
 
-module.exports = router;
+module.exports = safeExpressRouter;

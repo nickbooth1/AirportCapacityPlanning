@@ -28,7 +28,8 @@ import {
   ImportOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 import scenarioApi from '../../api/scenarioApi';
 import ScenarioVisualization from './ScenarioVisualization';
@@ -411,7 +412,7 @@ const ScenarioManagement = ({ templates = [] }) => {
             selectedRowKeys,
             onChange: (keys) => setSelectedRowKeys(keys),
             // Max 2 selections for comparison
-            getCheckboxProps: () => ({
+            getCheckboxProps: (record) => ({
               disabled: selectedRowKeys.length >= 2 && !selectedRowKeys.includes(record.scenarioId)
             })
           }}
@@ -477,7 +478,7 @@ const ScenarioManagement = ({ templates = [] }) => {
                   <Paragraph>
                     <strong>Description:</strong> {selectedScenarioData.description}
                   </Paragraph>
-                  <Space split={<Divider type="vertical" />}>
+                  <Space>
                     <Text type="secondary">
                       Created: {new Date(selectedScenarioData.createdAt).toLocaleString()}
                     </Text>

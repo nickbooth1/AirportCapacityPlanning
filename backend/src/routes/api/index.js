@@ -1,31 +1,73 @@
 const express = require('express');
 const router = express.Router();
+const { safeRouter } = require('../route-fix');
+
+// Convert router to use safe route registration
+const safeExpressRouter = safeRouter(router);
 
 // Import controllers
 const maintenanceRequestService = require('../../services/maintenanceRequestService');
 
-// Import route modules
-const agentRoutes = require('./agent');
-const proactiveInsightsRoutes = require('./proactiveInsights');
-const externalDataRoutes = require('./externalData');
-const collaborationRoutes = require('./collaboration');
-const feedbackRoutes = require('./feedback');
-const userPreferencesRoutes = require('./userPreferences');
+// Try to import route modules, using safe error handling
+let agentRoutes, proactiveInsightsRoutes, externalDataRoutes, 
+    collaborationRoutes, feedbackRoutes, userPreferencesRoutes;
+
+try {
+  agentRoutes = require('./agent');
+} catch (error) {
+  console.error('Failed to load agent routes:', error.message);
+  agentRoutes = express.Router();
+}
+
+try {
+  proactiveInsightsRoutes = require('./proactiveInsights');
+} catch (error) {
+  console.error('Failed to load proactiveInsights routes:', error.message);
+  proactiveInsightsRoutes = express.Router();
+}
+
+try {
+  externalDataRoutes = require('./externalData');
+} catch (error) {
+  console.error('Failed to load externalData routes:', error.message);
+  externalDataRoutes = express.Router();
+}
+
+try {
+  collaborationRoutes = require('./collaboration');
+} catch (error) {
+  console.error('Failed to load collaboration routes:', error.message);
+  collaborationRoutes = express.Router();
+}
+
+try {
+  feedbackRoutes = require('./feedback');
+} catch (error) {
+  console.error('Failed to load feedback routes:', error.message);
+  feedbackRoutes = express.Router();
+}
+
+try {
+  userPreferencesRoutes = require('./userPreferences');
+} catch (error) {
+  console.error('Failed to load userPreferences routes:', error.message);
+  userPreferencesRoutes = express.Router();
+}
 
 // Register routes
-router.use('/agent', agentRoutes);
+safeExpressRouter.use('/agent', agentRoutes);
 
 // Register Phase 3 routes
-router.use('/insights', proactiveInsightsRoutes);
-router.use('/external', externalDataRoutes);
-router.use('/collaboration', collaborationRoutes);
-router.use('/agent/feedback', feedbackRoutes);
+safeExpressRouter.use('/insights', proactiveInsightsRoutes);
+safeExpressRouter.use('/external', externalDataRoutes);
+safeExpressRouter.use('/collaboration', collaborationRoutes);
+safeExpressRouter.use('/agent/feedback', feedbackRoutes);
 
 // Register Phase 4 routes
-router.use('/preferences', userPreferencesRoutes);
+safeExpressRouter.use('/preferences', userPreferencesRoutes);
 
 // Debug route to help troubleshoot maintenance request filtering
-router.get('/debug/maintenance-requests', async (req, res) => {
+safeExpressRouter.get('/debug/maintenance-requests', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
@@ -60,4 +102,4 @@ router.get('/debug/maintenance-requests', async (req, res) => {
 });
 
 // Export the router
-module.exports = router; 
+module.exports = safeExpressRouter;

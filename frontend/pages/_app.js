@@ -1,7 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import { CacheProvider } from '@emotion/react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import createEmotionCache from '../lib/createEmotionCache';
 import theme from '../lib/theme';
 import { AirportConfigProvider } from '../src/contexts/AirportConfigContext';
