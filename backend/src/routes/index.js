@@ -1,42 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const { safeRouter } = require('./route-fix');
 
-// Convert router to use safe route registration
-const safeExpressRouter = safeRouter(router);
+// Import route modules safely
+function importRouteModule(path, fallbackPath = '/') {
+  try {
+    return require(path);
+  } catch (error) {
+    console.error(`Failed to import route module ${path}: ${error.message}`);
+    const fallbackRouter = express.Router();
+    fallbackRouter.all('*', (req, res) => {
+      res.status(500).json({ 
+        error: 'Route module not available',
+        message: `Failed to load the requested route: ${fallbackPath}`
+      });
+    });
+    return fallbackRouter;
+  }
+}
 
-// Import route files
-const standsRoutes = require('./stands');
-// const standAdjacenciesRoutes = require('./standAdjacencies'); // Route not available yet
-const capacityRoutes = require('./capacity');
-// const timeSlotRoutes = require('./timeSlots'); // This file doesn't exist
-// const aircraftTypesRoutes = require('./aircraftTypes'); // Route not available yet
-// const settingsRoutes = require('./settings'); // Route not available yet
-const autonomousOperationsRoutes = require('./autonomousOperations');
-const voiceInterfaceRoutes = require('./voiceInterface');
+// Import API routes
+const apiIndex = importRouteModule('./api/index', '/api');
+router.use('/', apiIndex);
 
-// Import route modules
-const flightUploadRoutes = require('./api/flightUpload');
-const flightDataRoutes = require('./api/flightData');
-const flightScheduleRoutes = require('./api/flightSchedule');
-const columnMappingRoutes = require('./api/columnMapping');
-const apiRoutes = require('./api/index');
+// API-specific routes - mount these directly on their respective paths
+router.use('/flights/upload', importRouteModule('./api/flightUpload', '/api/flights/upload'));
+router.use('/flights', importRouteModule('./api/flightData', '/api/flights'));
+router.use('/flight-schedules', importRouteModule('./api/flightSchedule', '/api/flight-schedules'));
+router.use('/column-mapping', importRouteModule('./api/columnMapping', '/api/column-mapping'));
 
-// Mount routes
-safeExpressRouter.use('/stands', standsRoutes);
-// safeExpressRouter.use('/stand-adjacencies', standAdjacenciesRoutes);
-safeExpressRouter.use('/capacity', capacityRoutes);
-// safeExpressRouter.use('/time-slots', timeSlotRoutes);
-// safeExpressRouter.use('/aircraft-types', aircraftTypesRoutes);
-// safeExpressRouter.use('/settings', settingsRoutes);
-safeExpressRouter.use('/autonomous', autonomousOperationsRoutes);
-safeExpressRouter.use('/voice', voiceInterfaceRoutes);
+// Main feature routes
+router.use('/stands', importRouteModule('./stands', '/api/stands'));
+router.use('/capacity', importRouteModule('./capacity', '/api/capacity'));
+router.use('/autonomous', importRouteModule('./autonomousOperations', '/api/autonomous'));
+router.use('/voice', importRouteModule('./voiceInterface', '/api/voice'));
 
-// Register routes
-safeExpressRouter.use('/flights/upload', flightUploadRoutes);
-safeExpressRouter.use('/flights', flightDataRoutes);
-safeExpressRouter.use('/flight-schedules', flightScheduleRoutes);
-safeExpressRouter.use('/column-mapping', columnMappingRoutes);
-safeExpressRouter.use('/', apiRoutes); // Mount our debug API routes
-
-module.exports = safeExpressRouter;
+module.exports = router;

@@ -27,6 +27,23 @@ function ensureCallback(handler) {
 }
 
 /**
+ * Convert objects that might be mistakenly used as middleware to proper middleware functions
+ * 
+ * @param {Function|Object} handler - The middleware object/function
+ * @returns {Function} A proper Express middleware function
+ */
+function ensureMiddleware(handler) {
+  if (typeof handler !== 'function') {
+    console.warn(`Converting invalid middleware (${typeof handler}) to a pass-through function`);
+    return (req, res, next) => {
+      console.warn(`Skipping invalid middleware (${typeof handler})`);
+      next();
+    };
+  }
+  return handler;
+}
+
+/**
  * Wraps a controller method to ensure it's called correctly
  * 
  * @param {Object} controller - The controller object
@@ -66,6 +83,25 @@ function withAuth(authMiddleware, handler) {
     authMiddleware,
     ensureCallback(handler)
   ];
+}
+
+/**
+ * Ensures a router is a valid Express router
+ * 
+ * @param {Object} router - The router to check
+ * @returns {Object} Either the original router or a fallback router
+ */
+function ensureRouter(router) {
+  if (!router || typeof router.use !== 'function') {
+    console.warn(`Invalid router detected, creating fallback router`);
+    const express = require('express');
+    const fallbackRouter = express.Router();
+    fallbackRouter.all('*', (req, res) => {
+      res.status(500).json({ error: 'Route not properly configured' });
+    });
+    return fallbackRouter;
+  }
+  return router;
 }
 
 /**
@@ -128,23 +164,58 @@ function safeRouter(router) {
     }));
   };
   
-  // Also handle router.use for mounting middleware
+  // Enhanced router.use to handle various scenarios
   safeRouterObj.use = function(path, ...handlers) {
+    // Handle both router.use(middleware) and router.use(path, middleware) forms
+    let routePath = '/';
+    let middlewares = [];
+    
     if (typeof path === 'function') {
-      // router.use(handler) form
-      return original.use(...[path, ...handlers].map(h => {
-        if (typeof h === 'function') return h;
-        console.warn(`Replaced invalid middleware (was ${typeof h})`);
-        return (req, res, next) => next();
-      }));
+      // router.use(middleware) form
+      middlewares = [path, ...handlers];
+    } else if (path && typeof path === 'object' && typeof path.use === 'function') {
+      // router.use(subRouter) form
+      return original.use(ensureRouter(path));
+    } else if (typeof path === 'string') {
+      // router.use(path, middleware) form
+      routePath = path;
+      middlewares = handlers;
+      
+      // Special case: check if first handler is a router
+      if (middlewares.length === 1 && middlewares[0] && typeof middlewares[0] === 'object') {
+        const potentialRouter = middlewares[0];
+        
+        if (typeof potentialRouter.use === 'function') {
+          // It looks like a router
+          return original.use(routePath, ensureRouter(potentialRouter));
+        } else {
+          console.warn(`Object used as middleware for path ${routePath} - creating fallback middleware`);
+          return original.use(routePath, (req, res, next) => {
+            console.warn(`Fallback middleware for ${routePath}`);
+            next();
+          });
+        }
+      }
     } else {
-      // router.use(path, handler) form
-      return original.use(path, ...handlers.map(h => {
-        if (typeof h === 'function') return h;
-        console.warn(`Replaced invalid middleware for path ${path} (was ${typeof h})`);
-        return (req, res, next) => next();
-      }));
+      // Unknown form - likely an object being used as a path
+      console.warn(`Invalid use of router.use with first argument type: ${typeof path}`);
+      return original.use((req, res, next) => {
+        console.warn(`Fallback for invalid router.use call`);
+        next();
+      });
     }
+    
+    // Process middlewares 
+    const safeMiddlewares = middlewares.map(m => {
+      if (typeof m === 'function') return m;
+      console.warn(`Replaced invalid middleware for path ${routePath} (was ${typeof m})`);
+      return (req, res, next) => {
+        console.warn(`Skipping invalid middleware for ${routePath}`);
+        next();
+      };
+    });
+    
+    return original.use(routePath, ...safeMiddlewares);
   };
   
   return safeRouterObj;
@@ -154,5 +225,7 @@ module.exports = {
   ensureCallback,
   controllerMethod,
   withAuth,
-  safeRouter
+  safeRouter,
+  ensureMiddleware,
+  ensureRouter
 };

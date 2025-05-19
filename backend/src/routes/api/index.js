@@ -1,73 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { safeRouter } = require('../route-fix');
-
-// Convert router to use safe route registration
-const safeExpressRouter = safeRouter(router);
 
 // Import controllers
 const maintenanceRequestService = require('../../services/maintenanceRequestService');
 
-// Try to import route modules, using safe error handling
-let agentRoutes, proactiveInsightsRoutes, externalDataRoutes, 
-    collaborationRoutes, feedbackRoutes, userPreferencesRoutes;
-
-try {
-  agentRoutes = require('./agent');
-} catch (error) {
-  console.error('Failed to load agent routes:', error.message);
-  agentRoutes = express.Router();
-}
-
-try {
-  proactiveInsightsRoutes = require('./proactiveInsights');
-} catch (error) {
-  console.error('Failed to load proactiveInsights routes:', error.message);
-  proactiveInsightsRoutes = express.Router();
-}
-
-try {
-  externalDataRoutes = require('./externalData');
-} catch (error) {
-  console.error('Failed to load externalData routes:', error.message);
-  externalDataRoutes = express.Router();
-}
-
-try {
-  collaborationRoutes = require('./collaboration');
-} catch (error) {
-  console.error('Failed to load collaboration routes:', error.message);
-  collaborationRoutes = express.Router();
-}
-
-try {
-  feedbackRoutes = require('./feedback');
-} catch (error) {
-  console.error('Failed to load feedback routes:', error.message);
-  feedbackRoutes = express.Router();
-}
-
-try {
-  userPreferencesRoutes = require('./userPreferences');
-} catch (error) {
-  console.error('Failed to load userPreferences routes:', error.message);
-  userPreferencesRoutes = express.Router();
-}
-
-// Register routes
-safeExpressRouter.use('/agent', agentRoutes);
-
-// Register Phase 3 routes
-safeExpressRouter.use('/insights', proactiveInsightsRoutes);
-safeExpressRouter.use('/external', externalDataRoutes);
-safeExpressRouter.use('/collaboration', collaborationRoutes);
-safeExpressRouter.use('/agent/feedback', feedbackRoutes);
-
-// Register Phase 4 routes
-safeExpressRouter.use('/preferences', userPreferencesRoutes);
-
 // Debug route to help troubleshoot maintenance request filtering
-safeExpressRouter.get('/debug/maintenance-requests', async (req, res) => {
+router.get('/debug/maintenance-requests', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
@@ -101,5 +39,35 @@ safeExpressRouter.get('/debug/maintenance-requests', async (req, res) => {
   }
 });
 
+// Create agent route fallback
+router.all('/agent/*', (req, res) => {
+  res.status(500).json({ error: 'Agent routes not properly initialized' });
+});
+
+// Create insights route fallback
+router.all('/insights/*', (req, res) => {
+  res.status(500).json({ error: 'Insights routes not properly initialized' });
+});
+
+// Create external route fallback
+router.all('/external/*', (req, res) => {
+  res.status(500).json({ error: 'External data routes not properly initialized' });
+});
+
+// Create collaboration route fallback
+router.all('/collaboration/*', (req, res) => {
+  res.status(500).json({ error: 'Collaboration routes not properly initialized' });
+});
+
+// Create agent feedback route fallback
+router.all('/agent/feedback/*', (req, res) => {
+  res.status(500).json({ error: 'Feedback routes not properly initialized' });
+});
+
+// Create user preferences fallback
+router.all('/preferences/*', (req, res) => {
+  res.status(500).json({ error: 'User preferences routes not properly initialized' });
+});
+
 // Export the router
-module.exports = safeExpressRouter;
+module.exports = router;

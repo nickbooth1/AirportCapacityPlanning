@@ -12,7 +12,8 @@ import {
   Divider,
   Empty,
   Alert,
-  Spin
+  Spin,
+  Statistic
 } from 'antd';
 import { 
   BarChartOutlined, 
@@ -647,27 +648,6 @@ const ScenarioVisualization = ({
         </Tabs>
       </Space>
     </Card>
-  );
-};
-
-// Statistic component for displaying comparison metrics
-const Statistic = ({ title, value, suffix, precision, valueStyle }) => {
-  let displayValue = value;
-  
-  if (precision !== undefined) {
-    displayValue = parseFloat(value).toFixed(precision);
-  }
-  
-  return (
-    <div>
-      <Text type="secondary">{title}</Text>
-      <div>
-        <Text strong style={{ fontSize: '24px', ...valueStyle }}>
-          {displayValue}
-        </Text>
-        {suffix && <Text> {suffix}</Text>}
-      </div>
-    </div>
   );
 };
 
