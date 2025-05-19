@@ -1,8 +1,17 @@
 const express = require('express');
 const router = express.Router();
 
-// Import controllers
+// Import controllers and routes
 const maintenanceRequestService = require('../../services/maintenanceRequestService');
+
+// Import agent routes
+let agentRoutes;
+try {
+  agentRoutes = require('./agent');
+} catch (error) {
+  console.error('Failed to load agent routes:', error.message);
+  agentRoutes = null;
+}
 
 // Debug route to help troubleshoot maintenance request filtering
 router.get('/debug/maintenance-requests', async (req, res) => {
@@ -39,10 +48,15 @@ router.get('/debug/maintenance-requests', async (req, res) => {
   }
 });
 
-// Create agent route fallback
-router.all('/agent/*', (req, res) => {
-  res.status(500).json({ error: 'Agent routes not properly initialized' });
-});
+// Agent routes
+if (agentRoutes) {
+  router.use('/agent', agentRoutes);
+} else {
+  // Create agent route fallback
+  router.all('/agent/*', (req, res) => {
+    res.status(500).json({ error: 'Agent routes not properly initialized' });
+  });
+}
 
 // Create insights route fallback
 router.all('/insights/*', (req, res) => {
