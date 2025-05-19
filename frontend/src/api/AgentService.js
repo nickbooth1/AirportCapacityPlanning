@@ -39,14 +39,35 @@ export const AgentService = {
    * @returns {Promise<Object>} - New conversation object
    */
   async createConversation() {
-    // Using a simulated response for now
-    // In a real implementation, this would call the API
-    return {
-      id: 'new-' + Date.now(),
-      title: 'New Conversation',
-      createdAt: new Date().toISOString(),
-      messages: []
-    };
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/context`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create conversation');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return {
+          id: data.data.contextId,
+          title: 'New Conversation',
+          createdAt: new Date().toISOString(),
+          messages: []
+        };
+      } else {
+        throw new Error(data.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      throw error;
+    }
   },
 
   /**

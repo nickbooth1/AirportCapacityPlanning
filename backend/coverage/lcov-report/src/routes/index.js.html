@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -99,13 +99,7 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -113,17 +107,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -132,6 +125,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -140,39 +138,38 @@
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
 const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
 &nbsp;
-// Import route files
-const standsRoutes = <span class="cstat-no" title="statement not covered" >require('./stands');</span>
-// const standAdjacenciesRoutes = require('./standAdjacencies'); // Route not available yet
-const capacityRoutes = <span class="cstat-no" title="statement not covered" >require('./capacity');</span>
-// const timeSlotRoutes = require('./timeSlots'); // This file doesn't exist
-// const aircraftTypesRoutes = require('./aircraftTypes'); // Route not available yet
-// const settingsRoutes = require('./settings'); // Route not available yet
-const autonomousOperationsRoutes = <span class="cstat-no" title="statement not covered" >require('./autonomousOperations');</span>
-const voiceInterfaceRoutes = <span class="cstat-no" title="statement not covered" >require('./voiceInterface');</span>
+// Import route modules safely
+function <span class="fstat-no" title="function not covered" >importRouteModule(</span>path, fallbackPath = <span class="branch-0 cbranch-no" title="branch not covered" >'/')</span> {
+<span class="cstat-no" title="statement not covered" >  try {</span>
+<span class="cstat-no" title="statement not covered" >    return require(path);</span>
+  } catch (error) {
+<span class="cstat-no" title="statement not covered" >    console.error(`Failed to import route module ${path}: ${error.message}`);</span>
+    const fallbackRouter = <span class="cstat-no" title="statement not covered" >express.Router();</span>
+<span class="cstat-no" title="statement not covered" >    fallbackRouter.all('*', <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      res.status(500).json({ </span>
+        error: 'Route module not available',
+        message: `Failed to load the requested route: ${fallbackPath}`
+      });
+    });
+<span class="cstat-no" title="statement not covered" >    return fallbackRouter;</span>
+  }
+}
 &nbsp;
-// Import route modules
-const flightUploadRoutes = <span class="cstat-no" title="statement not covered" >require('./api/flightUpload');</span>
-const flightDataRoutes = <span class="cstat-no" title="statement not covered" >require('./api/flightData');</span>
-const flightScheduleRoutes = <span class="cstat-no" title="statement not covered" >require('./api/flightSchedule');</span>
-const columnMappingRoutes = <span class="cstat-no" title="statement not covered" >require('./api/columnMapping');</span>
-const apiRoutes = <span class="cstat-no" title="statement not covered" >require('./api/index');</span>
+// Import API routes
+const apiIndex = <span class="cstat-no" title="statement not covered" >importRouteModule('./api/index', '/api');</span>
+<span class="cstat-no" title="statement not covered" >router.use('/', apiIndex);</span>
 &nbsp;
-// Mount routes
-<span class="cstat-no" title="statement not covered" >router.use('/stands', standsRoutes);</span>
-// router.use('/stand-adjacencies', standAdjacenciesRoutes);
-<span class="cstat-no" title="statement not covered" >router.use('/capacity', capacityRoutes);</span>
-// router.use('/time-slots', timeSlotRoutes);
-// router.use('/aircraft-types', aircraftTypesRoutes);
-// router.use('/settings', settingsRoutes);
-<span class="cstat-no" title="statement not covered" >router.use('/autonomous', autonomousOperationsRoutes);</span>
-<span class="cstat-no" title="statement not covered" >router.use('/voice', voiceInterfaceRoutes);</span>
+// API-specific routes - mount these directly on their respective paths
+<span class="cstat-no" title="statement not covered" >router.use('/flights/upload', importRouteModule('./api/flightUpload', '/api/flights/upload'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/flights', importRouteModule('./api/flightData', '/api/flights'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/flight-schedules', importRouteModule('./api/flightSchedule', '/api/flight-schedules'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/column-mapping', importRouteModule('./api/columnMapping', '/api/column-mapping'));</span>
 &nbsp;
-// Register routes
-<span class="cstat-no" title="statement not covered" >router.use('/flights/upload', flightUploadRoutes);</span>
-<span class="cstat-no" title="statement not covered" >router.use('/flights', flightDataRoutes);</span>
-<span class="cstat-no" title="statement not covered" >router.use('/flight-schedules', flightScheduleRoutes);</span>
-<span class="cstat-no" title="statement not covered" >router.use('/column-mapping', columnMappingRoutes);</span>
-<span class="cstat-no" title="statement not covered" >router.use('/', apiRoutes); </span>// Mount our debug API routes
+// Main feature routes
+<span class="cstat-no" title="statement not covered" >router.use('/stands', importRouteModule('./stands', '/api/stands'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/capacity', importRouteModule('./capacity', '/api/capacity'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/autonomous', importRouteModule('./autonomousOperations', '/api/autonomous'));</span>
+<span class="cstat-no" title="statement not covered" >router.use('/voice', importRouteModule('./voiceInterface', '/api/voice'));</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >module.exports = router;</span></pre></td></tr></table></pre>
 
@@ -181,7 +178,7 @@ const apiRoutes = <span class="cstat-no" title="statement not covered" >require(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-18T18:14:58.550Z
+                at 2025-05-19T18:01:55.598Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

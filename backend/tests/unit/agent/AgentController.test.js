@@ -3,13 +3,57 @@
  * Tests the controller methods in isolation using mocks
  */
 
+// Create mocks before requiring the module
+jest.mock('../../../src/services/agent/AgentService', () => ({
+  processQuery: jest.fn(),
+  processApproval: jest.fn(),
+  processRejection: jest.fn(),
+  processFeedback: jest.fn()
+}));
+
+jest.mock('../../../src/services/agent/ContextService', () => ({
+  getContext: jest.fn(),
+  getUserContexts: jest.fn(),
+  createContext: jest.fn(),
+  addUserMessage: jest.fn(),
+  addAgentMessage: jest.fn(),
+  addIntent: jest.fn(),
+  updateEntities: jest.fn()
+}));
+
+jest.mock('../../../src/services/agent/NLPService', () => ({
+  intents: {
+    CAPACITY_QUERY: 'CAPACITY_QUERY',
+    MAINTENANCE_QUERY: 'MAINTENANCE_QUERY',
+    FLIGHT_QUERY: 'FLIGHT_QUERY',
+    OPERATIONAL_QUERY: 'OPERATIONAL_QUERY'
+  },
+  processQuery: jest.fn()
+}));
+
+jest.mock('../../../src/services/agent/ToolOrchestratorService', () => ({
+  executeTool: jest.fn(),
+  executeApprovedAction: jest.fn()
+}));
+
+jest.mock('../../../src/utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+}));
+
+jest.mock('../../../src/models/agent/ActionProposal', () => ({
+  query: jest.fn().mockReturnThis(),
+  findById: jest.fn(),
+  deleteById: jest.fn()
+}));
+
+// Now require the controller and other dependencies
 const agentController = require('../../../src/controllers/agent/AgentController');
 const agentService = require('../../../src/services/agent/AgentService');
+const contextService = require('../../../src/services/agent/ContextService');
 const logger = require('../../../src/utils/logger');
-
-// Mock dependencies
-jest.mock('../../../src/services/agent/AgentService');
-jest.mock('../../../src/utils/logger');
 
 describe('AgentController Unit Tests', () => {
   // Reset mocks before each test
@@ -18,7 +62,7 @@ describe('AgentController Unit Tests', () => {
   });
 
   describe('processQuery', () => {
-    it('should return 400 if query is missing', async () => {
+    it('should return error if query is missing', async () => {
       // Setup
       const req = {
         body: {},
@@ -28,18 +72,13 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processQuery(req, res);
+      await agentController.processQuery(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Query is required'
-        })
-      );
+      expect(next).toHaveBeenCalled();
       expect(agentService.processQuery).not.toHaveBeenCalled();
     });
 
@@ -68,9 +107,10 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processQuery(req, res);
+      await agentController.processQuery(req, res, next);
 
       // Assert
       expect(agentService.processQuery).toHaveBeenCalledWith(
@@ -83,12 +123,14 @@ describe('AgentController Unit Tests', () => {
         success: true,
         data: mockResult
       });
+      expect(next).not.toHaveBeenCalled();
     });
 
-    it('should handle errors and return error response', async () => {
+    it('should handle errors and pass to next middleware', async () => {
       // Setup
       const errorMessage = 'Service error';
-      agentService.processQuery.mockRejectedValue(new Error(errorMessage));
+      const error = new Error(errorMessage);
+      agentService.processQuery.mockRejectedValue(error);
 
       const req = {
         body: {
@@ -100,25 +142,21 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processQuery(req, res);
+      await agentController.processQuery(req, res, next);
 
       // Assert
       expect(agentService.processQuery).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.stringContaining(errorMessage)
-        })
-      );
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
     });
   });
 
   describe('getContext', () => {
-    it('should return 400 if contextId is missing', async () => {
+    it('should pass error to next if contextId is missing', async () => {
       // Setup
       const req = {
         params: {},
@@ -128,30 +166,24 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.getContext(req, res);
+      await agentController.getContext(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Context ID is required'
-        })
-      );
+      expect(next).toHaveBeenCalled();
+      expect(contextService.getContext).not.toHaveBeenCalled();
     });
 
-    it('should return 403 if user does not own the context', async () => {
+    it('should pass forbidden error to next if user does not own the context', async () => {
       // Setup
       const mockContext = {
         id: 'ctx123',
         userId: 'different-user'
       };
 
-      // Mock the imported contextService within AgentController
-      const contextService = require('../../../src/services/agent/ContextService');
-      contextService.getContext = jest.fn().mockResolvedValue(mockContext);
+      contextService.getContext.mockResolvedValue(mockContext);
 
       const req = {
         params: { contextId: 'ctx123' },
@@ -161,19 +193,17 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.getContext(req, res);
+      await agentController.getContext(req, res, next);
 
       // Assert
       expect(contextService.getContext).toHaveBeenCalledWith('ctx123');
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.stringContaining('access')
-        })
-      );
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'ForbiddenError'
+      }));
+      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should return context if user owns it', async () => {
@@ -184,9 +214,7 @@ describe('AgentController Unit Tests', () => {
         messages: []
       };
 
-      // Mock the imported contextService within AgentController
-      const contextService = require('../../../src/services/agent/ContextService');
-      contextService.getContext = jest.fn().mockResolvedValue(mockContext);
+      contextService.getContext.mockResolvedValue(mockContext);
 
       const req = {
         params: { contextId: 'ctx123' },
@@ -196,9 +224,10 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.getContext(req, res);
+      await agentController.getContext(req, res, next);
 
       // Assert
       expect(contextService.getContext).toHaveBeenCalledWith('ctx123');
@@ -207,6 +236,7 @@ describe('AgentController Unit Tests', () => {
         success: true,
         data: mockContext
       });
+      expect(next).not.toHaveBeenCalled();
     });
   });
 
@@ -228,24 +258,24 @@ describe('AgentController Unit Tests', () => {
         }
       ];
 
-      // Mock the imported contextService within AgentController
-      const contextService = require('../../../src/services/agent/ContextService');
-      contextService.getUserContexts = jest.fn().mockResolvedValue(mockContexts);
+      contextService.getUserContexts.mockResolvedValue(mockContexts);
 
       const req = {
         user: { id: 'user123' },
         query: {
           offset: '0',
           limit: '10'
-        }
+        },
+        pagination: { limit: 10, offset: 0 } // Added by middleware
       };
       const res = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.getHistory(req, res);
+      await agentController.getHistory(req, res, next);
 
       // Assert
       expect(contextService.getUserContexts).toHaveBeenCalledWith('user123', 10, 0);
@@ -274,43 +304,40 @@ describe('AgentController Unit Tests', () => {
           offset: 0
         }
       });
+      expect(next).not.toHaveBeenCalled();
     });
 
     it('should handle errors when retrieving history', async () => {
       // Setup
       const errorMessage = 'Database error';
+      const error = new Error(errorMessage);
       
-      // Mock the imported contextService within AgentController
-      const contextService = require('../../../src/services/agent/ContextService');
-      contextService.getUserContexts = jest.fn().mockRejectedValue(new Error(errorMessage));
+      contextService.getUserContexts.mockRejectedValue(error);
 
       const req = {
         user: { id: 'user123' },
-        query: {}
+        query: {},
+        pagination: { limit: 10, offset: 0 } // Added by middleware
       };
       const res = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.getHistory(req, res);
+      await agentController.getHistory(req, res, next);
 
       // Assert
       expect(contextService.getUserContexts).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: expect.stringContaining(errorMessage)
-        })
-      );
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
     });
   });
 
   describe('processFeedback', () => {
-    it('should return 400 if responseId is missing', async () => {
+    it('should handle missing responseId', async () => {
       // Setup
       const req = {
         body: {
@@ -321,21 +348,17 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processFeedback(req, res);
+      await agentController.processFeedback(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Response ID is required'
-        })
-      );
+      expect(next).toHaveBeenCalled();
+      expect(agentService.processFeedback).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if rating is missing', async () => {
+    it('should handle missing rating', async () => {
       // Setup
       const req = {
         body: {
@@ -346,21 +369,17 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processFeedback(req, res);
+      await agentController.processFeedback(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Rating is required'
-        })
-      );
+      expect(next).toHaveBeenCalled();
+      expect(agentService.processFeedback).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if rating is out of range', async () => {
+    it('should handle rating out of range', async () => {
       // Setup
       const req = {
         body: {
@@ -372,18 +391,14 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processFeedback(req, res);
+      await agentController.processFeedback(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Rating must be between 1 and 5'
-        })
-      );
+      expect(next).toHaveBeenCalled();
+      expect(agentService.processFeedback).not.toHaveBeenCalled();
     });
 
     it('should process valid feedback successfully', async () => {
@@ -405,9 +420,10 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.processFeedback(req, res);
+      await agentController.processFeedback(req, res, next);
 
       // Assert
       expect(agentService.processFeedback).toHaveBeenCalledWith(
@@ -420,12 +436,13 @@ describe('AgentController Unit Tests', () => {
         success: true,
         data: mockResult
       });
+      expect(next).not.toHaveBeenCalled();
     });
   });
 
   // Additional tests for action approval and rejection endpoints...
   describe('approveAction', () => {
-    it('should return 400 if proposalId is missing', async () => {
+    it('should handle missing proposalId', async () => {
       // Setup
       const req = {
         params: {},
@@ -435,18 +452,14 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.approveAction(req, res);
+      await agentController.approveAction(req, res, next);
 
       // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          error: 'Proposal ID is required'
-        })
-      );
+      expect(next).toHaveBeenCalled();
+      expect(agentService.processApproval).not.toHaveBeenCalled();
     });
     
     it('should process action approval with valid proposalId', async () => {
@@ -466,9 +479,10 @@ describe('AgentController Unit Tests', () => {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
+      const next = jest.fn();
 
       // Execute
-      await agentController.approveAction(req, res);
+      await agentController.approveAction(req, res, next);
 
       // Assert
       expect(agentService.processApproval).toHaveBeenCalledWith(
@@ -480,6 +494,31 @@ describe('AgentController Unit Tests', () => {
         success: true,
         data: mockResult
       });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('should handle approval errors', async () => {
+      // Setup
+      const error = new Error('Proposal not found');
+      agentService.processApproval.mockRejectedValue(error);
+
+      const req = {
+        params: { proposalId: 'prop123' },
+        user: { id: 'user123' }
+      };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      // Execute
+      await agentController.approveAction(req, res, next);
+
+      // Assert
+      expect(agentService.processApproval).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(error);
     });
   });
 });

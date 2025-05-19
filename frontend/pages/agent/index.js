@@ -23,25 +23,8 @@ import {
 import { useRouter } from 'next/router';
 import ChatPanel from '../../src/components/agent/ChatPanel';
 
-// Mock AgentService for development
-const AgentService = {
-  async getConversations() {
-    return [];
-  },
-  
-  async getInsights() {
-    return [];
-  },
-  
-  async createConversation() {
-    return {
-      id: 'new-' + Date.now(),
-      title: 'New Conversation',
-      createdAt: new Date().toISOString(),
-      messages: []
-    };
-  }
-};
+// Import the real AgentService
+import AgentService from '../../src/api/AgentService';
 
 export default function AgentHubPage() {
   const router = useRouter();

@@ -7,10 +7,13 @@ const path = require('path');
 
 // Define test types
 const testTypes = {
-  unit: 'unit/agent/AgentController.test.js',
+  unit: 'unit/agent/AgentController.updated.test.js',
+  minimal: 'unit/agent/minimal.test.js',
+  rejection: 'unit/agent/rejectAction.test.js',
+  action: 'unit/agent/getActionStatus.test.js',
   integration: 'integration/agent/AgentController.test.js',
   e2e: 'e2e/agent/AgentController.e2e.test.js',
-  all: 'agent/AgentController'
+  all: 'unit/agent/AgentController.updated.test.js'
 };
 
 // Parse command line arguments

@@ -126,6 +126,7 @@ const Chat = ({ contextId: initialContextId }) => {
   
   const fetchConversationHistory = async (contextId) => {
     try {
+      setLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/context/${contextId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -133,7 +134,8 @@ const Chat = ({ contextId: initialContextId }) => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch conversation history');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch conversation history (${response.status})`);
       }
       
       const data = await response.json();
@@ -145,14 +147,19 @@ const Chat = ({ contextId: initialContextId }) => {
           type: msg.role === 'user' ? 'user' : 'agent',
           text: msg.content,
           visualizations: msg.visualizations || [],
+          reasoningData: msg.reasoningData || null,
           timestamp: new Date(msg.timestamp)
         }));
         
         setMessages(formattedMessages);
+      } else {
+        throw new Error(data.error || 'Invalid response format from server');
       }
     } catch (error) {
       console.error('Error fetching conversation history:', error);
-      setError('Failed to load conversation history');
+      setError(`Failed to load conversation history: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -218,13 +225,16 @@ const Chat = ({ contextId: initialContextId }) => {
     const isComplex = detectComplexQuery(input);
     setIsComplexQuery(isComplex);
     
+    // Store the query text in case we need to retry
+    const queryText = input;
+    
     try {
       // If this is a complex query, consider using advanced reasoning
       if (isComplex) {
         try {
           // Initiate the reasoning process in parallel with regular query processing
-          const reasoningResult = await initiateReasoning(input, contextId);
-          if (reasoningResult.success && reasoningResult.data.reasoningId) {
+          const reasoningResult = await initiateReasoning(queryText, contextId);
+          if (reasoningResult.success && reasoningResult.data?.reasoningId) {
             setReasoningId(reasoningResult.data.reasoningId);
           }
         } catch (reasoningError) {
@@ -241,21 +251,33 @@ const Chat = ({ contextId: initialContextId }) => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          query: input,
+          query: queryText,
           contextId: contextId,
           enableMultiStepReasoning: isComplex // Let the backend know this might need enhanced reasoning
         })
       });
       
       if (!response.ok) {
-        throw new Error('Failed to send message to agent');
+        // Try to parse error message from response
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Request failed with status ${response.status}`;
+        
+        // Add a system message about the error
+        setMessages(prev => [...prev, {
+          id: `error-${Date.now()}`,
+          type: 'system',
+          text: `Error: ${errorMessage}\n\nPlease try again or refresh the page if the problem persists.`,
+          timestamp: new Date()
+        }]);
+        
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
       
       if (data.success) {
         // If this is a new conversation, update the contextId
-        if (!contextId && data.data.contextId) {
+        if (!contextId && data.data?.contextId) {
           setContextId(data.data.contextId);
           
           // Join the new conversation room
@@ -265,25 +287,48 @@ const Chat = ({ contextId: initialContextId }) => {
         }
         
         // If this requires approval, save the proposal
-        if (data.data.requiresApproval && data.data.proposalId) {
+        if (data.data?.requiresApproval && data.data?.proposalId) {
           setPendingActionProposal({
             id: data.data.proposalId,
-            description: data.data.response.text,
-            actionType: data.data.actionType
+            description: data.data.response?.text || 'Action requires approval',
+            actionType: data.data.actionType,
+            parameters: data.data.parameters
           });
         }
         
         // If there's a reasoning ID in the response, save it
-        if (data.data.reasoningId) {
+        if (data.data?.reasoningId) {
           setReasoningId(data.data.reasoningId);
         }
+        
+        // If no WebSocket response is received within 10 seconds, show a timeout message
+        const timeoutId = setTimeout(() => {
+          setIsAgentTyping(false);
+          setLoading(false);
+          setMessages(prev => {
+            // Only add timeout message if the latest message is still the user's message
+            if (prev[prev.length - 1].type === 'user') {
+              return [...prev, {
+                id: `timeout-${Date.now()}`,
+                type: 'system',
+                text: 'The agent is taking longer than expected to respond. Your message was received, and a response will appear when ready.',
+                timestamp: new Date()
+              }];
+            }
+            return prev;
+          });
+        }, 10000);
+        
+        // Clear timeout if component unmounts
+        return () => clearTimeout(timeoutId);
       } else {
         throw new Error(data.error || 'Unknown error occurred');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setError(error.message);
+      setError(`Error: ${error.message}`);
       setLoading(false);
+      setIsAgentTyping(false);
     }
   };
   
@@ -291,6 +336,16 @@ const Chat = ({ contextId: initialContextId }) => {
     if (!pendingActionProposal) return;
     
     try {
+      setLoading(true);
+      
+      // Add a system message about the approval
+      setMessages(prev => [...prev, {
+        id: `approval-${Date.now()}`,
+        type: 'system',
+        text: `Approving action: ${pendingActionProposal.description.split('\n')[0]}...`,
+        timestamp: new Date()
+      }]);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/actions/approve/${pendingActionProposal.id}`, {
         method: 'POST',
         headers: {
@@ -300,14 +355,41 @@ const Chat = ({ contextId: initialContextId }) => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to approve action');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to approve action (${response.status})`);
       }
       
       // Action result will be received via WebSocket
-      setLoading(true);
+      
+      // If no WebSocket response is received within 15 seconds, show a timeout message
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+        setMessages(prev => [...prev, {
+          id: `timeout-action-${Date.now()}`,
+          type: 'system',
+          text: 'The action is taking longer than expected to complete. The request was received and will be processed.',
+          timestamp: new Date()
+        }]);
+        
+        setPendingActionProposal(null);
+      }, 15000);
+      
+      // Clean up timeout if component unmounts
+      return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error('Error approving action:', error);
-      setError(error.message);
+      setError(`Error approving action: ${error.message}`);
+      setLoading(false);
+      
+      // Add error message as system message
+      setMessages(prev => [...prev, {
+        id: `error-approval-${Date.now()}`,
+        type: 'system',
+        text: `Error approving action: ${error.message}\n\nPlease try again or contact support.`,
+        timestamp: new Date()
+      }]);
+      
+      // Keep the proposal UI visible so user can retry
     }
   };
   
@@ -315,6 +397,14 @@ const Chat = ({ contextId: initialContextId }) => {
     if (!pendingActionProposal) return;
     
     try {
+      // Add a system message about the rejection
+      setMessages(prev => [...prev, {
+        id: `rejection-${Date.now()}`,
+        type: 'system',
+        text: `Action rejected${reason ? `: ${reason}` : ''}`,
+        timestamp: new Date()
+      }]);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/actions/reject/${pendingActionProposal.id}`, {
         method: 'POST',
         headers: {
@@ -325,14 +415,25 @@ const Chat = ({ contextId: initialContextId }) => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to reject action');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to reject action (${response.status})`);
       }
       
-      // Action result will be received via WebSocket
+      // Hide the proposal UI
       setPendingActionProposal(null);
     } catch (error) {
       console.error('Error rejecting action:', error);
-      setError(error.message);
+      setError(`Error rejecting action: ${error.message}`);
+      
+      // Add error message as system message
+      setMessages(prev => [...prev, {
+        id: `error-rejection-${Date.now()}`,
+        type: 'system',
+        text: `Error rejecting action: ${error.message}\n\nPlease try again or refresh the page.`,
+        timestamp: new Date()
+      }]);
+      
+      // Keep the proposal UI visible so user can retry
     }
   };
   
@@ -345,6 +446,13 @@ const Chat = ({ contextId: initialContextId }) => {
   
   const handleFeedback = async (responseId, isPositive, comment = '') => {
     try {
+      // Optimistically update UI to show feedback was given
+      setMessages(prev => prev.map(msg => 
+        msg.id === responseId 
+          ? { ...msg, feedback: isPositive ? 'positive' : 'negative' } 
+          : msg
+      ));
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/feedback`, {
         method: 'POST',
         headers: {
@@ -359,23 +467,40 @@ const Chat = ({ contextId: initialContextId }) => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to submit feedback');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to submit feedback (${response.status})`);
       }
       
-      // Update the message to show feedback was given
-      setMessages(prev => prev.map(msg => 
-        msg.id === responseId 
-          ? { ...msg, feedback: isPositive ? 'positive' : 'negative' } 
-          : msg
-      ));
+      // Success - notification could be added here if needed
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      setError(error.message);
+      
+      // Revert the optimistic update
+      setMessages(prev => prev.map(msg => 
+        msg.id === responseId 
+          ? { ...msg, feedback: undefined } 
+          : msg
+      ));
+      
+      // Show error briefly
+      setError(`Error submitting feedback: ${error.message}`);
+      
+      // Clear error after 4 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 4000);
     }
   };
   
   const handleSaveInsight = async (responseId, title, category, notes = '') => {
     try {
+      // Optimistically update UI to show saving is in progress
+      setMessages(prev => prev.map(msg => 
+        msg.id === responseId 
+          ? { ...msg, savingInsight: true } 
+          : msg
+      ));
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agent/insights/save`, {
         method: 'POST',
         headers: {
@@ -391,20 +516,51 @@ const Chat = ({ contextId: initialContextId }) => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save insight');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to save insight (${response.status})`);
       }
       
       const data = await response.json();
       
-      // Update the message to show it was saved
-      setMessages(prev => prev.map(msg => 
-        msg.id === responseId 
-          ? { ...msg, savedAsInsight: data.data.id } 
-          : msg
-      ));
+      if (!data.success || !data.data || !data.data.id) {
+        throw new Error('Invalid response from server when saving insight');
+      }
+      
+      // Add a system message about the saved insight
+      setMessages(prev => [
+        ...prev.map(msg => 
+          msg.id === responseId 
+            ? { ...msg, savedAsInsight: data.data.id, savingInsight: false } 
+            : msg
+        ),
+        {
+          id: `insight-saved-${Date.now()}`,
+          type: 'system',
+          text: `Insight saved: "${title}" in category ${category}`,
+          timestamp: new Date()
+        }
+      ]);
+      
     } catch (error) {
       console.error('Error saving insight:', error);
-      setError(error.message);
+      
+      // Revert the optimistic update
+      setMessages(prev => prev.map(msg => 
+        msg.id === responseId 
+          ? { ...msg, savingInsight: false, savedAsInsight: undefined } 
+          : msg
+      ));
+      
+      // Show error message
+      setError(`Error saving insight: ${error.message}`);
+      
+      // Add error as system message for better visibility
+      setMessages(prev => [...prev, {
+        id: `error-insight-${Date.now()}`,
+        type: 'system',
+        text: `Error saving insight: ${error.message}. Please try again.`,
+        timestamp: new Date()
+      }]);
     }
   };
   
