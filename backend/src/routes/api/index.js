@@ -4,14 +4,35 @@ const router = express.Router();
 // Import controllers and routes
 const maintenanceRequestService = require('../../services/maintenanceRequestService');
 
-// Import agent routes
-let agentRoutes;
-try {
-  agentRoutes = require('./agent');
-} catch (error) {
-  console.error('Failed to load agent routes:', error.message);
-  agentRoutes = null;
+// Import route modules safely
+function importRouteModule(path, fallbackPath = null) {
+  try {
+    return require(path);
+  } catch (error) {
+    console.error(`Failed to import route module ${path}: ${error.message}`);
+    if (fallbackPath) {
+      const fallbackRouter = express.Router();
+      fallbackRouter.all('*', (req, res) => {
+        res.status(500).json({ 
+          error: 'Route module not available',
+          message: `Failed to load the requested route: ${fallbackPath}`
+        });
+      });
+      return fallbackRouter;
+    }
+    return null;
+  }
 }
+
+// Import agent routes
+const agentRoutes = importRouteModule('./agent', '/api/agent');
+const insightsRoutes = importRouteModule('./proactiveInsights', '/api/insights');
+const collaborationRoutes = importRouteModule('./collaboration', '/api/collaboration');
+const feedbackRoutes = importRouteModule('./feedback', '/api/feedback');
+const externalDataRoutes = importRouteModule('./externalData', '/api/external');
+const scenarioRoutes = importRouteModule('./scenarioRoutes', '/api/scenarios');
+const userPreferencesRoutes = importRouteModule('./userPreferences', '/api/preferences');
+const reasoningRoutes = importRouteModule('./reasoning', '/api/reasoning');
 
 // Debug route to help troubleshoot maintenance request filtering
 router.get('/debug/maintenance-requests', async (req, res) => {
@@ -48,7 +69,7 @@ router.get('/debug/maintenance-requests', async (req, res) => {
   }
 });
 
-// Agent routes
+// Register routes
 if (agentRoutes) {
   router.use('/agent', agentRoutes);
 } else {
@@ -58,30 +79,68 @@ if (agentRoutes) {
   });
 }
 
-// Create insights route fallback
-router.all('/insights/*', (req, res) => {
-  res.status(500).json({ error: 'Insights routes not properly initialized' });
-});
+if (insightsRoutes) {
+  router.use('/insights', insightsRoutes);
+} else {
+  // Create insights route fallback
+  router.all('/insights/*', (req, res) => {
+    res.status(500).json({ error: 'Insights routes not properly initialized' });
+  });
+}
 
-// Create external route fallback
-router.all('/external/*', (req, res) => {
-  res.status(500).json({ error: 'External data routes not properly initialized' });
-});
+if (externalDataRoutes) {
+  router.use('/external', externalDataRoutes);
+} else {
+  // Create external route fallback
+  router.all('/external/*', (req, res) => {
+    res.status(500).json({ error: 'External data routes not properly initialized' });
+  });
+}
 
-// Create collaboration route fallback
-router.all('/collaboration/*', (req, res) => {
-  res.status(500).json({ error: 'Collaboration routes not properly initialized' });
-});
+if (collaborationRoutes) {
+  router.use('/collaboration', collaborationRoutes);
+} else {
+  // Create collaboration route fallback
+  router.all('/collaboration/*', (req, res) => {
+    res.status(500).json({ error: 'Collaboration routes not properly initialized' });
+  });
+}
 
-// Create agent feedback route fallback
-router.all('/agent/feedback/*', (req, res) => {
-  res.status(500).json({ error: 'Feedback routes not properly initialized' });
-});
+if (feedbackRoutes) {
+  router.use('/feedback', feedbackRoutes);
+} else {
+  // Create agent feedback route fallback
+  router.all('/feedback/*', (req, res) => {
+    res.status(500).json({ error: 'Feedback routes not properly initialized' });
+  });
+}
 
-// Create user preferences fallback
-router.all('/preferences/*', (req, res) => {
-  res.status(500).json({ error: 'User preferences routes not properly initialized' });
-});
+if (scenarioRoutes) {
+  router.use('/scenarios', scenarioRoutes);
+} else {
+  // Create scenarios route fallback
+  router.all('/scenarios/*', (req, res) => {
+    res.status(500).json({ error: 'Scenario routes not properly initialized' });
+  });
+}
+
+if (userPreferencesRoutes) {
+  router.use('/preferences', userPreferencesRoutes);
+} else {
+  // Create user preferences fallback
+  router.all('/preferences/*', (req, res) => {
+    res.status(500).json({ error: 'User preferences routes not properly initialized' });
+  });
+}
+
+if (reasoningRoutes) {
+  router.use('/reasoning', reasoningRoutes);
+} else {
+  // Create reasoning route fallback
+  router.all('/reasoning/*', (req, res) => {
+    res.status(500).json({ error: 'Reasoning routes not properly initialized' });
+  });
+}
 
 // Export the router
 module.exports = router;
