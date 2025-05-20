@@ -23,7 +23,9 @@ function registerServices() {
   // Import services from their respective files
   // We need to use require here to avoid circular dependencies
   const standCapacityService = require('../services/standCapacityService');
+  const capacityService = require('../services/capacityService');
   const maintenanceRequestService = require('../services/maintenanceRequestService');
+  const maintenanceService = require('../services/maintenanceService');
   const flightDataService = require('../services/FlightDataService');
   const airportConfigService = require('../services/airportConfigService');
   const airportService = require('../services/AirportService');
@@ -36,7 +38,9 @@ function registerServices() {
   
   // Register core services
   ServiceLocator.register('standCapacityService', standCapacityService);
+  ServiceLocator.register('capacityService', capacityService);  // Register the new facade service
   ServiceLocator.register('maintenanceRequestService', maintenanceRequestService);
+  ServiceLocator.register('maintenanceService', maintenanceService);  // Register the new facade service
   ServiceLocator.register('flightDataService', flightDataService);
   ServiceLocator.register('airportConfigService', airportConfigService);
   ServiceLocator.register('airportService', airportService);

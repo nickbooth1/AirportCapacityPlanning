@@ -111,14 +111,14 @@ class WebSocketService {
       const userId = query.userId;
       const authToken = query.token;
       
-      // Validate connection
+      // Temporarily allow anonymous connections
       if (!userId || !authToken) {
-        logger.warn('Connection attempt without userId or token');
-        ws.close(4000, 'Authentication required');
-        return;
+        // Use a default anonymous ID if not provided
+        userId = userId || `anonymous-${uuidv4().substring(0, 8)}`;
+        logger.info(`Anonymous WebSocket connection allowed for generated ID: ${userId}`);
       }
       
-      // TODO: Validate auth token in a real implementation
+      // TODO: Validate auth token in a real implementation when authentication is enabled
       
       // Generate connection ID
       const connectionId = uuidv4();

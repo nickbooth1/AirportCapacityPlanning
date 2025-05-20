@@ -14,6 +14,7 @@ class Stand extends Model {
         name: { type: 'string', minLength: 1, maxLength: 100 },
         code: { type: 'string', minLength: 1, maxLength: 10 },
         pier_id: { type: 'integer' },
+        terminal: { type: 'string' },
         is_active: { type: 'boolean', default: true },
         stand_type: { type: 'string', enum: ['contact', 'remote', 'cargo'] },
         has_jetbridge: { type: 'boolean', default: false },

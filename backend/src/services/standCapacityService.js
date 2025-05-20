@@ -104,7 +104,7 @@ class StandCapacityService {
   async fetchStands() {
     // Get all active stands directly from the database
     const stands = await db('stands')
-      .select('id', 'code', 'name', 'pier_id', 'max_aircraft_size_code')
+      .select('id', 'code', 'name', 'pier_id', 'terminal', 'max_aircraft_size_code')
       .where('is_active', true);
     
     console.log(`Fetched ${stands.length} stands`);
@@ -1285,8 +1285,19 @@ class StandCapacityService {
       
       // Filter by terminal if specified
       if (terminalIds && terminalIds.length > 0) {
-        matchesTerminal = stand.terminal_id && terminalIds.includes(Number(stand.terminal_id));
-        console.log(`Stand ${stand.id} terminal match: ${matchesTerminal}, terminal_id: ${stand.terminal_id}`);
+        // First try terminal_id, then fall back to terminal field
+        const terminalValue = stand.terminal_id || stand.terminal;
+        
+        // For string terminals (names/codes), do a different comparison
+        if (typeof terminalValue === 'string') {
+          // This is a simple match - in a real system, we'd query for terminal IDs by name
+          matchesTerminal = terminalIds.some(id => terminalValue.includes(id.toString()));
+          console.log(`Stand ${stand.id} terminal name match: ${matchesTerminal}, terminal: ${terminalValue}`);
+        } else {
+          // For numeric IDs, do direct comparison
+          matchesTerminal = terminalValue && terminalIds.includes(Number(terminalValue));
+          console.log(`Stand ${stand.id} terminal ID match: ${matchesTerminal}, terminal value: ${terminalValue}`);
+        }
       }
       
       return matchesPier && matchesTerminal;
@@ -1451,6 +1462,220 @@ class StandCapacityService {
     };
     
     return opposites[direction] || 'other';
+  }
+
+  /**
+   * Get terminal capacity data for a specific terminal
+   * @param {Object} options - Filter and calculation options
+   * @param {string} options.terminal - Terminal code or ID
+   * @param {string} options.aircraft_type - Optional aircraft type to filter by
+   * @param {string} options.timeRange - Optional time range (start/end dates)
+   * @param {boolean} options.includeVisualization - Whether to include visualization data
+   * @returns {Promise<Object>} - Terminal capacity data
+   */
+  async getTerminalCapacity(options = {}) {
+    try {
+      console.log(`Getting terminal capacity with options:`, options);
+      
+      // If no terminal is specified, throw an error
+      if (!options.terminal) {
+        throw new Error('Terminal ID or code is required');
+      }
+      
+      // Get terminal ID (if name was provided, look it up)
+      let terminalId = options.terminal;
+      if (isNaN(parseInt(options.terminal))) {
+        // Look up terminal by name/code
+        const terminal = await db('terminals')
+          .where('code', options.terminal)
+          .orWhere('name', 'like', `%${options.terminal}%`)
+          .first();
+          
+        if (terminal) {
+          terminalId = terminal.id;
+        } else {
+          throw new Error(`Terminal "${options.terminal}" not found`);
+        }
+      }
+      
+      // Get all stands in this terminal
+      const stands = await db('stands')
+        .where('terminal_id', terminalId)
+        .where('is_active', true);
+        
+      console.log(`Found ${stands.length} stands in terminal ${terminalId}`);
+      
+      if (stands.length === 0) {
+        throw new Error(`No active stands found in terminal ${options.terminal}`);
+      }
+      
+      // Get stand IDs for capacity calculation
+      const standIds = stands.map(stand => stand.id);
+      
+      // Prepare calculation options
+      const calcOptions = {
+        standIds,
+        useDefinedTimeSlots: true
+      };
+      
+      // Apply aircraft type filter if provided
+      if (options.aircraft_type) {
+        calcOptions.aircraft_type = options.aircraft_type;
+      }
+      
+      // Apply time range if provided
+      if (options.timeRange) {
+        if (options.timeRange.start) calcOptions.startDate = options.timeRange.start;
+        if (options.timeRange.end) calcOptions.endDate = options.timeRange.end;
+      }
+      
+      // Check if we have cached results
+      const cachedResults = await this.getLatestCapacityResults();
+      
+      let capacityData;
+      
+      if (cachedResults && !options.forceRecalculate) {
+        console.log('Using cached capacity results');
+        capacityData = this._extractTerminalCapacity(cachedResults, terminalId);
+      } else {
+        // Calculate capacity
+        console.log('Calculating terminal capacity');
+        const results = await this.calculateStandCapacity(calcOptions);
+        capacityData = this._extractTerminalCapacity(results, terminalId);
+      }
+      
+      // Format the response
+      const response = {
+        terminal: {
+          id: terminalId,
+          name: options.terminal,
+        },
+        standCount: stands.length,
+        capacity: capacityData.capacity,
+        timeSlots: capacityData.timeSlots,
+        aircraft_types: capacityData.aircraft_types || []
+      };
+      
+      // Add visualization data if requested
+      if (options.includeVisualization) {
+        response.visualization = capacityData.visualization;
+      }
+      
+      if (options.format === 'chart') {
+        response.chartData = this._formatCapacityForChart(capacityData);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`Error in getTerminalCapacity: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Extract terminal capacity data from capacity results
+   * @param {Object} results - Capacity calculation results
+   * @param {number} terminalId - Terminal ID
+   * @returns {Object} - Terminal capacity data
+   * @private
+   */
+  _extractTerminalCapacity(results, terminalId) {
+    const capacityData = {
+      capacity: {},
+      timeSlots: results.timeSlots || [],
+      visualization: null
+    };
+    
+    // Extract best and worst case capacity for this terminal
+    if (results.bestCaseCapacity) {
+      capacityData.capacity.bestCase = { ...results.bestCaseCapacity };
+    }
+    
+    if (results.worstCaseCapacity) {
+      capacityData.capacity.worstCase = { ...results.worstCaseCapacity };
+    }
+    
+    // Extract visualization data if available
+    if (results.visualization) {
+      capacityData.visualization = results.visualization;
+    }
+    
+    return capacityData;
+  }
+  
+  /**
+   * Format capacity data for chart visualization
+   * @param {Object} capacityData - Capacity data
+   * @returns {Object} - Data formatted for charts
+   * @private
+   */
+  _formatCapacityForChart(capacityData) {
+    // Basic chart data for hourly capacity
+    const chartData = {
+      labels: [],
+      datasets: [
+        {
+          label: 'Best Case Capacity',
+          data: [],
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Worst Case Capacity',
+          data: [],
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        }
+      ],
+      xAxisLabel: 'Time Slot',
+      yAxisLabel: 'Capacity (aircraft)'
+    };
+    
+    // Extract time slot names and capacity values
+    capacityData.timeSlots.forEach(slot => {
+      chartData.labels.push(slot.name);
+      
+      // Sum up capacity for best case
+      let bestCaseTotal = 0;
+      if (capacityData.capacity.bestCase && capacityData.capacity.bestCase[slot.name]) {
+        Object.values(capacityData.capacity.bestCase[slot.name]).forEach(value => {
+          bestCaseTotal += (typeof value === 'number') ? value : 0;
+        });
+      }
+      
+      // Sum up capacity for worst case
+      let worstCaseTotal = 0;
+      if (capacityData.capacity.worstCase && capacityData.capacity.worstCase[slot.name]) {
+        Object.values(capacityData.capacity.worstCase[slot.name]).forEach(value => {
+          worstCaseTotal += (typeof value === 'number') ? value : 0;
+        });
+      }
+      
+      chartData.datasets[0].data.push(bestCaseTotal);
+      chartData.datasets[1].data.push(worstCaseTotal);
+    });
+    
+    return chartData;
+  }
+  
+  /**
+   * Alias method for the AI agent - maps to getTerminalCapacity 
+   * This is needed because the ToolOrchestratorService maps 'capacityService' to this service instance
+   */
+  calculateStandCapacity(options) {
+    return this.getTerminalCapacity(options);
+  }
+  
+  /**
+   * Alias method for the AI agent - the main method called by StubNLPService default intent mapping
+   * @param {Object} options - Options for capacity calculation
+   * @returns {Promise<Object>} - Capacity calculation result
+   */
+  calculateCapacity(options) {
+    console.log('calculateCapacity called with options:', options);
+    return this.getTerminalCapacity(options);
   }
 }
 

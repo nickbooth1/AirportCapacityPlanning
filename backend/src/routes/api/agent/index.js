@@ -102,7 +102,7 @@ router.post('/query',
   validationMiddleware.validateAgentQuery,
   (req, res, next) => {
     try {
-      agentController.processQuery(req, res);
+      agentController.processQuery(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -114,7 +114,7 @@ router.get('/context/:contextId',
   validationMiddleware.validateContextId,
   (req, res, next) => {
     try {
-      agentController.getContext(req, res);
+      agentController.getContext(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -125,7 +125,7 @@ router.get('/context/:contextId',
 router.post('/context', 
   (req, res, next) => {
     try {
-      agentController.createContext(req, res);
+      agentController.createContext(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -136,7 +136,7 @@ router.get('/history',
   validationMiddleware.validatePagination,
   (req, res, next) => {
     try {
-      agentController.getHistory(req, res);
+      agentController.getHistory(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -148,7 +148,7 @@ router.post('/feedback',
   validationMiddleware.validateResponseId,
   (req, res, next) => {
     try {
-      agentController.processFeedback(req, res);
+      agentController.processFeedback(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -160,7 +160,7 @@ router.post('/actions/approve/:proposalId',
   validationMiddleware.validateProposalId,
   (req, res, next) => {
     try {
-      agentController.approveAction(req, res);
+      agentController.approveAction(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -171,7 +171,7 @@ router.post('/actions/reject/:proposalId',
   validationMiddleware.validateProposalId,
   (req, res, next) => {
     try {
-      agentController.rejectAction(req, res);
+      agentController.rejectAction(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -182,7 +182,7 @@ router.get('/actions/status/:proposalId',
   validationMiddleware.validateProposalId,
   (req, res, next) => {
     try {
-      agentController.getActionStatus(req, res);
+      agentController.getActionStatus(req, res, next);
     } catch (error) {
       next(error);
     }
@@ -190,18 +190,80 @@ router.get('/actions/status/:proposalId',
 );
 
 // Insights routes
-router.post('/insights/save', (req, res) => insightsController.saveInsight(req, res));
-router.get('/insights', (req, res) => insightsController.getInsights(req, res));
-router.get('/insights/:insightId', (req, res) => insightsController.getInsight(req, res));
-router.put('/insights/:insightId', (req, res) => insightsController.updateInsight(req, res));
-router.delete('/insights/:insightId', (req, res) => insightsController.deleteInsight(req, res));
-router.post('/insights/:insightId/tags', (req, res) => insightsController.addTag(req, res));
-router.delete('/insights/:insightId/tags/:tag', (req, res) => insightsController.removeTag(req, res));
+router.post('/insights/save', (req, res, next) => {
+  try {
+    insightsController.saveInsight(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/insights', 
+  validationMiddleware.validatePagination,
+  (req, res, next) => {
+    try {
+      insightsController.getInsights(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  });
+router.get('/insights/:insightId', (req, res, next) => {
+  try {
+    insightsController.getInsight(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.put('/insights/:insightId', (req, res, next) => {
+  try {
+    insightsController.updateInsight(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.delete('/insights/:insightId', (req, res, next) => {
+  try {
+    insightsController.deleteInsight(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/insights/:insightId/tags', (req, res, next) => {
+  try {
+    insightsController.addTag(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.delete('/insights/:insightId/tags/:tag', (req, res, next) => {
+  try {
+    insightsController.removeTag(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Visualization routes
-router.post('/visualizations/generate', (req, res) => visualizationController.generateVisualization(req, res));
-router.get('/visualizations/templates', (req, res) => visualizationController.getTemplates(req, res));
-router.post('/visualizations/export', (req, res) => visualizationController.exportVisualization(req, res));
+router.post('/visualizations/generate', (req, res, next) => {
+  try {
+    visualizationController.generateVisualization(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/visualizations/templates', (req, res, next) => {
+  try {
+    visualizationController.getTemplates(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/visualizations/export', (req, res, next) => {
+  try {
+    visualizationController.exportVisualization(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Scenario routes - handle with a fallback for now
 const scenarioRouter = express.Router();
@@ -211,12 +273,54 @@ scenarioRouter.all('*', (req, res) => {
 router.use('/scenarios', scenarioRouter);
 
 // Reasoning routes
-router.get('/reasoning/:id', (req, res) => reasoningController.getReasoningData(req, res));
-router.get('/reasoning/history/:contextId', (req, res) => reasoningController.getReasoningHistory(req, res));
-router.post('/reasoning/initiate', (req, res) => reasoningController.initiateReasoning(req, res));
-router.post('/reasoning/:reasoningId/step/:stepId/execute', (req, res) => reasoningController.executeReasoningStep(req, res));
-router.get('/reasoning/:reasoningId/step/:stepId/explain', (req, res) => reasoningController.getStepExplanation(req, res));
-router.get('/reasoning/:reasoningId/insights', (req, res) => reasoningController.getReasoningInsights(req, res));
-router.post('/reasoning/:reasoningId/feedback', (req, res) => reasoningController.saveReasoningFeedback(req, res));
+router.get('/reasoning/:id', (req, res, next) => {
+  try {
+    reasoningController.getReasoningData(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/reasoning/history/:contextId', (req, res, next) => {
+  try {
+    reasoningController.getReasoningHistory(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/reasoning/initiate', (req, res, next) => {
+  try {
+    reasoningController.initiateReasoning(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/reasoning/:reasoningId/step/:stepId/execute', (req, res, next) => {
+  try {
+    reasoningController.executeReasoningStep(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/reasoning/:reasoningId/step/:stepId/explain', (req, res, next) => {
+  try {
+    reasoningController.getStepExplanation(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.get('/reasoning/:reasoningId/insights', (req, res, next) => {
+  try {
+    reasoningController.getReasoningInsights(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/reasoning/:reasoningId/feedback', (req, res, next) => {
+  try {
+    reasoningController.saveReasoningFeedback(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

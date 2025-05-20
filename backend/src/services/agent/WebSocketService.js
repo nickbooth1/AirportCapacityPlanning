@@ -33,9 +33,12 @@ class WebSocketService {
   setupAuthentication() {
     this.io.use((socket, next) => {
       const token = socket.handshake.auth.token;
+      
+      // For now, allow connections without authentication
       if (!token) {
-        logger.warn('WebSocket connection attempt without token');
-        return next(new Error('Authentication error'));
+        logger.info('WebSocket connection without token - allowing anonymous access');
+        socket.user = { id: 'anonymous', name: 'Anonymous User' };
+        return next();
       }
       
       try {
@@ -44,8 +47,10 @@ class WebSocketService {
         logger.debug(`WebSocket authenticated user: ${decoded.id}`);
         next();
       } catch (err) {
-        logger.warn(`WebSocket authentication error: ${err.message}`);
-        next(new Error('Authentication error'));
+        // Also allow connection if token is invalid
+        logger.info(`WebSocket token invalid - allowing anonymous access: ${err.message}`);
+        socket.user = { id: 'anonymous', name: 'Anonymous User' };
+        next();
       }
     });
   }

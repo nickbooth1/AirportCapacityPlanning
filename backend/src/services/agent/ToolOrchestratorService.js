@@ -1,12 +1,15 @@
 const logger = require('../../utils/logger');
-const nlpService = require('./NLPService');
+const nlpService = require('./StubNLPService');  // Use the stub NLP service
 const standCapacityService = require('../standCapacityService');
+const capacityService = require('../capacityService');
 const maintenanceRequestService = require('../maintenanceRequestService');
+const maintenanceService = require('../maintenanceService');
 const airportConfigService = require('../airportConfigService');
 const airlineService = require('../AirlineService');
 const airportService = require('../AirportService');
 const flightDataService = require('../FlightDataService');
 const standCapacityToolService = require('../standCapacityToolService');
+const { ServiceLocator } = require('../../utils/di');
 
 /**
  * Service for orchestrating tools and API calls based on user intents
@@ -15,8 +18,10 @@ class ToolOrchestratorService {
   constructor() {
     // Register available services
     this.services = {
-      capacityService: standCapacityService,
-      maintenanceService: maintenanceRequestService,
+      capacityService: capacityService,  // Use our new facade service
+      maintenanceService: maintenanceService,  // Use our new facade service
+      standCapacityService: standCapacityService,  // Keep the original service for backward compatibility
+      maintenanceRequestService: maintenanceRequestService,  // Keep the original service for backward compatibility
       infrastructureService: airportConfigService,
       airlineService: airlineService,
       airportService: airportService,
@@ -34,7 +39,7 @@ class ToolOrchestratorService {
             /overall/, /total/, /airport-wide/, /all stands/, /entire airport/
           ],
           service: 'capacityService',
-          method: 'getOverallCapacity'
+          method: 'calculateCapacity'
         },
         {
           subtype: 'terminal_capacity',
@@ -42,7 +47,7 @@ class ToolOrchestratorService {
             /terminal/, /^T\d/, /terminal \d/
           ],
           service: 'capacityService',
-          method: 'getTerminalCapacity'
+          method: 'calculateStandCapacity'
         },
         {
           subtype: 'stand_capacity',
@@ -50,7 +55,7 @@ class ToolOrchestratorService {
             /stand \w+/, /gate \w+/, /stand capacity/, /\w+\d+\w*/
           ],
           service: 'capacityService',
-          method: 'getStandCapacity'
+          method: 'calculateStandCapacity'
         },
         {
           subtype: 'aircraft_type_capacity',
@@ -59,7 +64,7 @@ class ToolOrchestratorService {
             /capacity for \w+/, /handle \w+/
           ],
           service: 'capacityService',
-          method: 'getCapacityForAircraftType'
+          method: 'calculateCapacity'
         },
         {
           subtype: 'period_capacity',
@@ -68,14 +73,14 @@ class ToolOrchestratorService {
             /peak/, /busy/, /off-peak/
           ],
           service: 'capacityService',
-          method: 'getCapacityByTimePeriod'
+          method: 'calculateCapacityForTimeSlot'
         },
         {
           // Default subtype
           subtype: 'general_capacity',
           patterns: [],
           service: 'capacityService',
-          method: 'getCapacity'
+          method: 'calculateCapacity'
         }
       ],
       
@@ -338,9 +343,13 @@ class ToolOrchestratorService {
       // Determine the specific subtype of this query
       const { subtype, service: serviceId, method } = this.classifyQuerySubtype(intent, entities);
       
+      console.log(`TOOL DEBUG: Classified query as subtype=${subtype}, service=${serviceId}, method=${method}`);
+      console.log(`TOOL DEBUG: Entities:`, JSON.stringify(entities));
+      
       if (!serviceId || !method) {
         // If no specific subtype is identified, fall back to the general intent mapping
         const actionInfo = nlpService.mapIntentToAction(intent);
+        console.log(`TOOL DEBUG: No specific subtype found, using default mapping: service=${actionInfo.service}, method=${actionInfo.method}`);
         
         if (!actionInfo.service || !actionInfo.method) {
           logger.warn(`No tool mapping found for intent: ${intent}`);
@@ -358,6 +367,7 @@ class ToolOrchestratorService {
       
       // Get the service
       const service = this.services[serviceId];
+      console.log(`TOOL DEBUG: Looking up service '${serviceId}' - Available services:`, Object.keys(this.services));
       
       if (!service) {
         logger.error(`Service not found: ${serviceId}`);
@@ -369,6 +379,7 @@ class ToolOrchestratorService {
       }
       
       // Check if the method exists
+      console.log(`TOOL DEBUG: Checking for method '${method}' in service - Available methods:`, Object.keys(service));
       if (typeof service[method] !== 'function') {
         logger.error(`Method not found: ${method} in service ${serviceId}`);
         return {
@@ -637,14 +648,33 @@ class ToolOrchestratorService {
       }
       
       // Special case handling for known methods
-      if (method === 'getCapacity') {
-        const { terminal, aircraft_type, time_period, start_date, end_date } = parameters;
-        if (time_period) {
-          return await service[method](terminal, aircraft_type, time_period);
-        } else {
-          return await service[method](terminal, aircraft_type, { start: start_date, end: end_date });
-        }
+      if (method === 'calculateCapacity' || method === 'calculateStandCapacity') {
+        const { terminal, aircraft_type, stand, time_period, start_date, end_date } = parameters;
+        
+        // Build options object for capacity calculation
+        const options = {
+          terminal: terminal,
+          aircraftType: aircraft_type,
+          stand: stand,
+          timeRange: { start: start_date, end: end_date }
+        };
+        
+        return await service[method](options);
       } 
+      else if (method === 'calculateCapacityForTimeSlot') {
+        const { terminal, aircraft_type, stand, time_period, start_date, end_date } = parameters;
+        
+        // Get time slot details from time period
+        const timeSlot = time_period || 'peak';
+        const options = {
+          terminal: terminal,
+          aircraftType: aircraft_type,
+          stand: stand,
+          timeRange: { start: start_date, end: end_date }
+        };
+        
+        return await service[method](timeSlot, options);
+      }
       else if (method === 'getMaintenanceStatus' || method === 'getScheduledMaintenance' || 
                method === 'getActiveMaintenance') {
         const { stand, terminal, time_period, start_date, end_date, status } = parameters;

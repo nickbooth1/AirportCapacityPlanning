@@ -507,6 +507,196 @@ class MaintenanceRequestService {
       };
     });
   }
+  
+  /**
+   * Get scheduled maintenance requests for specified period and/or location
+   * @param {Object} options - Filter options
+   * @param {string} options.stand - Optional stand code or ID to filter by
+   * @param {string} options.terminal - Optional terminal code or ID to filter by
+   * @param {Object} options.timeRange - Optional time range to filter by
+   * @param {string} options.status - Optional status filter
+   * @returns {Promise<Array>} - Array of scheduled maintenance requests
+   */
+  async getScheduledMaintenance(options = {}) {
+    try {
+      logger.info(`Getting scheduled maintenance with options: ${JSON.stringify(options)}`);
+      
+      // Prepare filters for the query
+      const filters = {};
+      
+      // Process the stand parameter
+      if (options.stand) {
+        // Check if stand is provided as ID or code
+        if (isNaN(parseInt(options.stand))) {
+          // Look up stand by code
+          const stand = await Stand.query()
+            .where('code', options.stand)
+            .orWhere('name', 'like', `%${options.stand}%`)
+            .first();
+            
+          if (stand) {
+            filters.standId = stand.id;
+          } else {
+            throw new ValidationError({
+              message: `Stand "${options.stand}" not found`,
+              type: 'ValidationError'
+            });
+          }
+        } else {
+          filters.standId = parseInt(options.stand);
+        }
+      }
+      
+      // Process terminal parameter
+      if (options.terminal) {
+        // Get stands in the specified terminal
+        const stands = await Stand.query()
+          .select('id')
+          .where(query => {
+            if (isNaN(parseInt(options.terminal))) {
+              // Look up by terminal code or name
+              query.whereExists(
+                Stand.relatedQuery('terminal')
+                  .where('code', options.terminal)
+                  .orWhere('name', 'like', `%${options.terminal}%`)
+              );
+            } else {
+              // Look up by terminal ID
+              query.where('terminal_id', parseInt(options.terminal));
+            }
+          });
+          
+        if (stands && stands.length > 0) {
+          filters.standIds = stands.map(s => s.id);
+        } else {
+          throw new ValidationError({
+            message: `No stands found in terminal "${options.terminal}"`,
+            type: 'ValidationError'
+          });
+        }
+      }
+      
+      // Process time range
+      if (options.timeRange) {
+        if (options.timeRange.start) {
+          filters.startDate = options.timeRange.start;
+        } else {
+          // Default to current date if not specified
+          filters.startDate = new Date().toISOString().split('T')[0];
+        }
+        
+        if (options.timeRange.end) {
+          filters.endDate = options.timeRange.end;
+        } else {
+          // Default to 30 days from now if not specified
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 30);
+          filters.endDate = endDate.toISOString().split('T')[0];
+        }
+      } else {
+        // Default time range: current date to 30 days from now
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30);
+        
+        filters.startDate = startDate.toISOString().split('T')[0];
+        filters.endDate = endDate.toISOString().split('T')[0];
+      }
+      
+      // Process status filter
+      if (options.status) {
+        // Get status ID from name if string provided
+        if (isNaN(parseInt(options.status))) {
+          const statusTypes = await MaintenanceStatusType.query()
+            .where('name', 'like', `%${options.status}%`);
+            
+          if (statusTypes && statusTypes.length > 0) {
+            filters.status = statusTypes.map(s => s.id);
+          }
+        } else {
+          filters.status = parseInt(options.status);
+        }
+      } else {
+        // Default to active maintenance statuses
+        // 1 = Requested, 2 = Approved, 4 = In Progress
+        filters.status = [1, 2, 4];
+      }
+      
+      // Query for maintenance requests with the applied filters
+      const requests = await this.getAllRequests(filters);
+      
+      // Format the response for the agent
+      const formattedRequests = requests.map(request => ({
+        id: request.id,
+        title: request.title,
+        description: request.description,
+        stand: request.stand ? {
+          id: request.stand.id,
+          name: request.stand.name,
+          code: request.stand.code
+        } : null,
+        status: request.status ? {
+          id: request.status.id,
+          name: request.status.name
+        } : null,
+        startDate: request.start_datetime,
+        endDate: request.end_datetime,
+        requestor: request.requestor_name,
+        priority: request.priority,
+        impact: request.impact_description || 'Not specified'
+      }));
+      
+      // Add summary data
+      const summary = {
+        total: formattedRequests.length,
+        byPriority: {
+          high: formattedRequests.filter(r => r.priority === 'high').length,
+          medium: formattedRequests.filter(r => r.priority === 'medium').length,
+          low: formattedRequests.filter(r => r.priority === 'low').length
+        },
+        byStatus: {}
+      };
+      
+      // Count by status
+      formattedRequests.forEach(request => {
+        if (request.status) {
+          const statusName = request.status.name;
+          summary.byStatus[statusName] = (summary.byStatus[statusName] || 0) + 1;
+        }
+      });
+      
+      // Return the formatted data with summary
+      return {
+        requests: formattedRequests,
+        summary,
+        timeRange: {
+          start: filters.startDate,
+          end: filters.endDate
+        }
+      };
+    } catch (error) {
+      logger.error(`Error in getScheduledMaintenance: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get active maintenance (in progress)
+   * @param {string} stand - Optional stand to filter by
+   * @param {string} terminal - Optional terminal to filter by
+   * @param {Object} timeRange - Time range (defaults to current day)
+   * @param {string} status - Optional status filter
+   * @returns {Promise<Array>} - Array of active maintenance requests
+   */
+  async getActiveMaintenance(stand, terminal, timeRange, status) {
+    // Call getScheduledMaintenance with status filter set to "In Progress"
+    return this.getScheduledMaintenance({
+      stand,
+      terminal,
+      timeRange,
+      status: 'In Progress'
+    });
+  }
 }
 
 module.exports = new MaintenanceRequestService(); 
