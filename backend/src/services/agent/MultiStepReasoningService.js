@@ -6,7 +6,8 @@
  */
 
 const OpenAIService = require('./OpenAIService');
-const ContextService = require('./ContextService');
+const contextService = require('./ContextService');
+const { ContextService } = require('./ContextService');
 const ReasoningExplainer = require('./ReasoningExplainer');
 const WorkingMemoryService = require('./WorkingMemoryService');
 const RetrievalAugmentedGenerationService = require('./knowledge/RetrievalAugmentedGenerationService');
@@ -22,7 +23,7 @@ class MultiStepReasoningService {
    */
   constructor(services = {}, options = {}) {
     // Initialize dependencies
-    this.contextService = services.contextService || new ContextService();
+    this.contextService = services.contextService || contextService;
     this.workingMemoryService = services.workingMemoryService || new WorkingMemoryService();
     this.ragService = services.ragService || new RetrievalAugmentedGenerationService({ workingMemoryService: this.workingMemoryService });
     this.factVerifier = services.factVerifier || new FactVerifierService();
@@ -38,6 +39,20 @@ class MultiStepReasoningService {
     
     // Initialize logger
     this.logger = services.logger || logger;
+    
+    // Initialize metrics
+    this.metrics = {
+      queryCount: 0,
+      successfulQueries: 0,
+      failedQueries: 0,
+      stepCount: 0,
+      knowledgeRetrievalCount: 0,
+      factCheckingCount: 0,
+      averageQueryLatency: 0,
+      averageStepLatency: 0,
+      totalQueryLatency: 0,
+      totalStepLatency: 0
+    };
     
     this.logger.info('Enhanced MultiStepReasoningService initialized');
   }
@@ -414,6 +429,9 @@ class MultiStepReasoningService {
         }
       );
       
+      // Update metrics for knowledge retrieval
+      this.metrics.knowledgeRetrievalCount++;
+      
       // Store retrieved knowledge in working memory
       if (sessionId && queryId) {
         await this.workingMemoryService.storeRetrievedKnowledge(
@@ -495,6 +513,9 @@ class MultiStepReasoningService {
       if (knowledgeItems.length === 0) {
         throw new Error('No knowledge items available for fact checking');
       }
+      
+      // Update metrics for fact checking
+      this.metrics.factCheckingCount++;
       
       // Use FactVerifierService to verify the text
       const verificationResult = await this.factVerifier.verifyResponse(
@@ -843,7 +864,7 @@ class MultiStepReasoningService {
       }
       
       // Look for knowledge to inform calculation
-      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeItems = await this._getKnowledgeForStep(step, context, previousResults);
       const knowledgeContext = knowledgeItems.length > 0
         ? `\nRelevant Knowledge:
           ${knowledgeItems.map((item, i) => {
@@ -1056,7 +1077,7 @@ class MultiStepReasoningService {
       }
       
       // Look for knowledge to inform validation
-      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeItems = await this._getKnowledgeForStep(step, context, previousResults);
       const knowledgeContext = knowledgeItems.length > 0
         ? `\nValidate against the following knowledge:
           ${knowledgeItems.map((item, i) => {
@@ -1146,7 +1167,7 @@ class MultiStepReasoningService {
       }
       
       // Look for knowledge to inform comparison
-      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeItems = await this._getKnowledgeForStep(step, context, previousResults);
       const knowledgeContext = knowledgeItems.length > 0
         ? `\nUse the following knowledge to inform your comparison:
           ${knowledgeItems.map((item, i) => {
@@ -1228,7 +1249,7 @@ class MultiStepReasoningService {
       }
       
       // Look for knowledge to inform recommendations
-      const knowledgeItems = this._getKnowledgeForStep(step, context, previousResults);
+      const knowledgeItems = await this._getKnowledgeForStep(step, context, previousResults);
       const knowledgeContext = knowledgeItems.length > 0
         ? `\nUse the following knowledge to inform your recommendations:
           ${knowledgeItems.map((item, i) => {
@@ -1294,7 +1315,7 @@ class MultiStepReasoningService {
    * @param {Array} previousResults - Results from previous steps
    * @returns {Array} - Relevant knowledge items
    */
-  _getKnowledgeForStep(step, context, previousResults) {
+  async _getKnowledgeForStep(step, context, previousResults) {
     try {
       // First try to get from knowledge retrieval step if available
       const knowledgeStep = previousResults.find(r => 
@@ -1311,7 +1332,7 @@ class MultiStepReasoningService {
       
       // If session and query ID are available, try working memory
       if (context.sessionId && context.queryId) {
-        const retrievedKnowledge = this.workingMemoryService.getRetrievedKnowledge(
+        const retrievedKnowledge = await this.workingMemoryService.getRetrievedKnowledge(
           context.sessionId,
           context.queryId
         );
@@ -1453,6 +1474,44 @@ class MultiStepReasoningService {
   }
   
   /**
+   * Get current metrics for the multi-step reasoning service
+   * @returns {Object} - Current metrics
+   */
+  getMetrics() {
+    return {
+      queryCount: this.metrics?.queryCount || 0,
+      successfulQueries: this.metrics?.successfulQueries || 0,
+      failedQueries: this.metrics?.failedQueries || 0,
+      stepCount: this.metrics?.stepCount || 0,
+      averageStepsPerQuery: this.metrics?.queryCount 
+        ? (this.metrics.stepCount / this.metrics.queryCount).toFixed(2) 
+        : 0,
+      knowledgeRetrievalCount: this.metrics?.knowledgeRetrievalCount || 0,
+      factCheckingCount: this.metrics?.factCheckingCount || 0,
+      averageQueryLatency: this.metrics?.averageQueryLatency || 0,
+      averageStepLatency: this.metrics?.averageStepLatency || 0
+    };
+  }
+  
+  /**
+   * Reset metrics for the multi-step reasoning service
+   */
+  resetMetrics() {
+    this.metrics = {
+      queryCount: 0,
+      successfulQueries: 0,
+      failedQueries: 0,
+      stepCount: 0,
+      knowledgeRetrievalCount: 0,
+      factCheckingCount: 0,
+      averageQueryLatency: 0,
+      averageStepLatency: 0,
+      totalQueryLatency: 0,
+      totalStepLatency: 0
+    };
+  }
+  
+  /**
    * Execute a query with multi-step reasoning
    * @param {string} query - The query to process
    * @param {Object} context - Additional context (sessionId, etc.)
@@ -1461,11 +1520,18 @@ class MultiStepReasoningService {
    */
   async executeQuery(query, context = {}, options = {}) {
     try {
+      const startTime = Date.now();
+      
+      // Update metrics for query attempt
+      this.metrics.queryCount++;
+      
       // Step 1: Plan the query steps
       const plan = await this.planQuerySteps(query, context);
       
       // If planning failed, return the error
       if (plan.status === 'invalid_plan') {
+        // Update metrics for failed query
+        this.metrics.failedQueries++;
         return {
           success: false,
           error: plan.reason,
@@ -1475,6 +1541,30 @@ class MultiStepReasoningService {
       
       // Step 2: Execute the reasoning steps
       const results = await this.executeStepSequence(plan, context);
+      
+      // Update metrics
+      if (results.success) {
+        this.metrics.successfulQueries++;
+      } else {
+        this.metrics.failedQueries++;
+      }
+      
+      // Update step count
+      if (results.stepResults) {
+        this.metrics.stepCount += results.stepResults.length;
+      }
+      
+      // Update latency metrics
+      const queryLatency = (Date.now() - startTime) / 1000;
+      this.metrics.totalQueryLatency += queryLatency;
+      this.metrics.averageQueryLatency = this.metrics.totalQueryLatency / this.metrics.queryCount;
+      
+      // Calculate average step latency if there are any steps
+      if (results.stepResults && results.stepResults.length > 0) {
+        const totalStepTime = results.stepResults.reduce((sum, step) => sum + (step.executionTime || 0), 0);
+        this.metrics.totalStepLatency += totalStepTime;
+        this.metrics.averageStepLatency = this.metrics.totalStepLatency / this.metrics.stepCount;
+      }
       
       // Return the results
       return {
@@ -1489,6 +1579,9 @@ class MultiStepReasoningService {
         error: results.error
       };
     } catch (error) {
+      // Update metrics for failed query
+      this.metrics.failedQueries++;
+      
       this.logger.error(`Error executing query: ${error.message}`);
       return {
         success: false,

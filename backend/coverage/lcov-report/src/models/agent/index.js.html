@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>21/21</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>21/21</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -132,36 +132,36 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -196,36 +196,36 @@
  */
 &nbsp;
 // Phase 1-2 models
-const Scenario = <span class="cstat-no" title="statement not covered" >require('./Scenario');</span>
-const ScenarioVersion = <span class="cstat-no" title="statement not covered" >require('./ScenarioVersion');</span>
-const ScenarioCalculation = <span class="cstat-no" title="statement not covered" >require('./ScenarioCalculation');</span>
-const ScenarioComparison = <span class="cstat-no" title="statement not covered" >require('./ScenarioComparison');</span>
-const ActionProposal = <span class="cstat-no" title="statement not covered" >require('./ActionProposal');</span>
-const ConversationContext = <span class="cstat-no" title="statement not covered" >require('./ConversationContext');</span>
+const Scenario = require('./Scenario');
+const ScenarioVersion = require('./ScenarioVersion');
+const ScenarioCalculation = require('./ScenarioCalculation');
+const ScenarioComparison = require('./ScenarioComparison');
+const ActionProposal = require('./ActionProposal');
+const ConversationContext = require('./ConversationContext');
 &nbsp;
 // Phase 3 models - Long-term memory
-const UserPreference = <span class="cstat-no" title="statement not covered" >require('./UserPreference');</span>
-const DecisionHistory = <span class="cstat-no" title="statement not covered" >require('./DecisionHistory');</span>
-const Pattern = <span class="cstat-no" title="statement not covered" >require('./Pattern');</span>
+const UserPreference = require('./UserPreference');
+const DecisionHistory = require('./DecisionHistory');
+const Pattern = require('./Pattern');
 &nbsp;
 // Phase 3 models - Collaboration
-const Workspace = <span class="cstat-no" title="statement not covered" >require('./Workspace');</span>
-const WorkspaceMember = <span class="cstat-no" title="statement not covered" >require('./WorkspaceMember');</span>
-const Comment = <span class="cstat-no" title="statement not covered" >require('./Comment');</span>
-const CommentReaction = <span class="cstat-no" title="statement not covered" >require('./CommentReaction');</span>
-const Activity = <span class="cstat-no" title="statement not covered" >require('./Activity');</span>
+const Workspace = require('./Workspace');
+const WorkspaceMember = require('./WorkspaceMember');
+const Comment = require('./Comment');
+const CommentReaction = require('./CommentReaction');
+const Activity = require('./Activity');
 &nbsp;
 // Phase 3 models - Proactive analysis
-const ProactiveInsight = <span class="cstat-no" title="statement not covered" >require('./ProactiveInsight');</span>
-const Feedback = <span class="cstat-no" title="statement not covered" >require('./Feedback');</span>
-const Experiment = <span class="cstat-no" title="statement not covered" >require('./Experiment');</span>
+const ProactiveInsight = require('./ProactiveInsight');
+const Feedback = require('./Feedback');
+const Experiment = require('./Experiment');
 &nbsp;
 // Phase 3 models - External data integration
-const WeatherCache = <span class="cstat-no" title="statement not covered" >require('./WeatherCache');</span>
-const AirlineSchedulesCache = <span class="cstat-no" title="statement not covered" >require('./AirlineSchedulesCache');</span>
-const AirportCoordinates = <span class="cstat-no" title="statement not covered" >require('./AirportCoordinates');</span>
+const WeatherCache = require('./WeatherCache');
+const AirlineSchedulesCache = require('./AirlineSchedulesCache');
+const AirportCoordinates = require('./AirportCoordinates');
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   // Phase 1-2 models
   Scenario,
   ScenarioVersion,
@@ -262,7 +262,7 @@ const AirportCoordinates = <span class="cstat-no" title="statement not covered" 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

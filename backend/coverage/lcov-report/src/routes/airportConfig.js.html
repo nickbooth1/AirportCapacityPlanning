@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -97,64 +97,64 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Airport Configuration Routes
  * 
  * API endpoints for managing airport configuration settings.
  */
 &nbsp;
-const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
-const airportConfigController = <span class="cstat-no" title="statement not covered" >require('../controllers/airportConfigController');</span>
+const express = require('express');
+const router = express.Router();
+const airportConfigController = require('../controllers/airportConfigController');
 &nbsp;
 // Get airport configuration
-<span class="cstat-no" title="statement not covered" >router.get('/', airportConfigController.getAirportConfig);</span>
+router.get('/', airportConfigController.getAirportConfig);
 &nbsp;
 // Update airport configuration
-<span class="cstat-no" title="statement not covered" >router.put('/', airportConfigController.updateAirportConfig);</span>
+router.put('/', airportConfigController.updateAirportConfig);
 &nbsp;
 // Get airline terminal allocations
-<span class="cstat-no" title="statement not covered" >router.get('/allocations', airportConfigController.getAirlineTerminalAllocations);</span>
+router.get('/allocations', airportConfigController.getAirlineTerminalAllocations);
 &nbsp;
 // Add a new airline terminal allocation
-<span class="cstat-no" title="statement not covered" >router.post('/allocations', airportConfigController.addAirlineTerminalAllocation);</span>
+router.post('/allocations', airportConfigController.addAirlineTerminalAllocation);
 &nbsp;
 // Update an airline terminal allocation
-<span class="cstat-no" title="statement not covered" >router.put('/allocations/:id', airportConfigController.updateAirlineTerminalAllocation);</span>
+router.put('/allocations/:id', airportConfigController.updateAirlineTerminalAllocation);
 &nbsp;
 // Delete an airline terminal allocation
-<span class="cstat-no" title="statement not covered" >router.delete('/allocations/:id', airportConfigController.deleteAirlineTerminalAllocation);</span>
+router.delete('/allocations/:id', airportConfigController.deleteAirlineTerminalAllocation);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router; </span></pre></td></tr></table></pre>
+module.exports = router; </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

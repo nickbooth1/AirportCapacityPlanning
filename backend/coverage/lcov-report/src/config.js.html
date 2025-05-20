@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>24/42</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -145,9 +145,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -220,26 +220,26 @@
  * It serves as a centralized location for all configuration settings.
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >require('dotenv').config();</span>
+require('dotenv').config();
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   // Server configuration
   server: {
-    port: process.env.PORT || 3001,
-    env: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    port: process.env.PORT || <span class="branch-1 cbranch-no" title="branch not covered" >3001,</span>
+    env: process.env.NODE_ENV || <span class="branch-1 cbranch-no" title="branch not covered" >'development',</span>
+    corsOrigin: process.env.CORS_ORIGIN || <span class="branch-1 cbranch-no" title="branch not covered" >'http://localhost:3000',</span>
   },
   
   // Database configuration
   database: {
     client: process.env.DB_CLIENT || 'pg',
     connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || 'airport_capacity_planner',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+      host: process.env.DB_HOST || <span class="branch-1 cbranch-no" title="branch not covered" >'localhost',</span>
+      port: process.env.DB_PORT || <span class="branch-1 cbranch-no" title="branch not covered" >5432,</span>
+      database: process.env.DB_NAME || <span class="branch-1 cbranch-no" title="branch not covered" >'airport_capacity_planner',</span>
+      user: process.env.DB_USER || <span class="branch-1 cbranch-no" title="branch not covered" >'postgres',</span>
+      password: process.env.DB_PASSWORD || <span class="branch-1 cbranch-no" title="branch not covered" >'postgres',</span>
+      ssl: process.env.DB_SSL === 'true' ? <span class="branch-0 cbranch-no" title="branch not covered" >{ rejectUnauthorized: false } </span>: false
     },
     pool: {
       min: 2,
@@ -249,8 +249,8 @@
   
   // Authentication configuration
   auth: {
-    jwtSecret: process.env.JWT_SECRET || 'development-secret-key',
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+    jwtSecret: process.env.JWT_SECRET || <span class="branch-1 cbranch-no" title="branch not covered" >'development-secret-key',</span>
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || <span class="branch-1 cbranch-no" title="branch not covered" >'1d',</span>
   },
   
   // Upload configuration
@@ -262,26 +262,26 @@
   
   // Logging configuration
   logging: {
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.LOG_LEVEL || <span class="branch-1 cbranch-no" title="branch not covered" >'info',</span>
     file: process.env.LOG_FILE,
   },
   
   // OpenAI configuration
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL || 'gpt-4o',
-    temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.7'),
-    maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '1000'),
+    model: process.env.OPENAI_MODEL || <span class="branch-1 cbranch-no" title="branch not covered" >'gpt-4o',</span>
+    temperature: parseFloat(process.env.OPENAI_TEMPERATURE || <span class="branch-1 cbranch-no" title="branch not covered" >'0.7')</span>,
+    maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || <span class="branch-1 cbranch-no" title="branch not covered" >'1000')</span>,
   },
   
   // WebSocket configuration
   websocket: {
-    path: process.env.WS_PATH || '/socket.io',
-    corsOrigin: process.env.WS_CORS_ORIGIN || 'http://localhost:3000',
+    path: process.env.WS_PATH || <span class="branch-1 cbranch-no" title="branch not covered" >'/socket.io',</span>
+    corsOrigin: process.env.WS_CORS_ORIGIN || <span class="branch-1 cbranch-no" title="branch not covered" >'http://localhost:3000',</span>
   },
   
   // Frontend URL for redirects
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || <span class="branch-1 cbranch-no" title="branch not covered" >'http://localhost:3000',</span>
   
   // Feature flags
   features: {
@@ -295,7 +295,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../prettify.js"></script>
         <script>

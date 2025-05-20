@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.21% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/285</span>
+                <span class='fraction'>12/285</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.34% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/23</span>
+                <span class='fraction'>1/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.54% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/264</span>
+                <span class='fraction'>12/264</span>
             </div>
         
             
@@ -1087,15 +1087,15 @@
 <a name='L1022'></a><a href='#L1022'>1022</a>
 <a name='L1023'></a><a href='#L1023'>1023</a>
 <a name='L1024'></a><a href='#L1024'>1024</a>
-<a name='L1025'></a><a href='#L1025'>1025</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L1025'></a><a href='#L1025'>1025</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1103,7 +1103,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1115,7 +1115,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2111,23 +2111,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const logger = <span class="cstat-no" title="statement not covered" >require('../../utils/logger');</span>
-const nlpService = <span class="cstat-no" title="statement not covered" >require('./NLPService');</span>
-const standCapacityService = <span class="cstat-no" title="statement not covered" >require('../standCapacityService');</span>
-const maintenanceRequestService = <span class="cstat-no" title="statement not covered" >require('../maintenanceRequestService');</span>
-const airportConfigService = <span class="cstat-no" title="statement not covered" >require('../airportConfigService');</span>
-const airlineService = <span class="cstat-no" title="statement not covered" >require('../AirlineService');</span>
-const airportService = <span class="cstat-no" title="statement not covered" >require('../AirportService');</span>
-const flightDataService = <span class="cstat-no" title="statement not covered" >require('../FlightDataService');</span>
-const standCapacityToolService = <span class="cstat-no" title="statement not covered" >require('../standCapacityToolService');</span>
+<span class="cline-any cline-yes">36x</span></td><td class="text"><pre class="prettyprint lang-js">const logger = require('../../utils/logger');
+const nlpService = require('./NLPService');
+const standCapacityService = require('../standCapacityService');
+const maintenanceRequestService = require('../maintenanceRequestService');
+const airportConfigService = require('../airportConfigService');
+const airlineService = require('../AirlineService');
+const airportService = require('../AirportService');
+const flightDataService = require('../FlightDataService');
+const standCapacityToolService = require('../standCapacityToolService');
 &nbsp;
 /**
  * Service for orchestrating tools and API calls based on user intents
  */
 class ToolOrchestratorService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+  constructor() {
     // Register available services
-<span class="cstat-no" title="statement not covered" >    this.services = {</span>
+    this.services = {
       capacityService: standCapacityService,
       maintenanceService: maintenanceRequestService,
       infrastructureService: airportConfigService,
@@ -2139,7 +2139,7 @@ class ToolOrchestratorService {
     };
     
     // Define mappings between intents and their subtypes
-<span class="cstat-no" title="statement not covered" >    this.intentSubtypes = {</span>
+    this.intentSubtypes = {
       [nlpService.intents.CAPACITY_QUERY]: [
         {
           subtype: 'overall_capacity',
@@ -3135,14 +3135,14 @@ class ToolOrchestratorService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new ToolOrchestratorService(); </span></pre></td></tr></table></pre>
+module.exports = new ToolOrchestratorService(); </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

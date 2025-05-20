@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -100,76 +100,76 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Reasoning API routes
  */
 &nbsp;
-const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
-const ReasoningController = <span class="cstat-no" title="statement not covered" >require('../../controllers/agent/ReasoningController');</span>
-const auth = <span class="cstat-no" title="statement not covered" >require('../../middleware/auth');</span>
+const express = require('express');
+const router = express.Router();
+const ReasoningController = require('../../controllers/agent/ReasoningController');
+const auth = require('../../middleware/auth');
 &nbsp;
 // All routes require authentication
-<span class="cstat-no" title="statement not covered" >router.use(auth);</span>
+router.use(auth);
 &nbsp;
 // Get reasoning data for a specific reasoning process
-<span class="cstat-no" title="statement not covered" >router.get('/:id', ReasoningController.getReasoningData);</span>
+router.get('/:id', ReasoningController.getReasoningData);
 &nbsp;
 // Get reasoning history for a specific context
-<span class="cstat-no" title="statement not covered" >router.get('/history/:contextId', ReasoningController.getReasoningHistory);</span>
+router.get('/history/:contextId', ReasoningController.getReasoningHistory);
 &nbsp;
 // Initiate a new reasoning process
-<span class="cstat-no" title="statement not covered" >router.post('/initiate', ReasoningController.initiateReasoning);</span>
+router.post('/initiate', ReasoningController.initiateReasoning);
 &nbsp;
 // Execute a specific reasoning step
-<span class="cstat-no" title="statement not covered" >router.post('/:reasoningId/step/:stepId/execute', ReasoningController.executeReasoningStep);</span>
+router.post('/:reasoningId/step/:stepId/execute', ReasoningController.executeReasoningStep);
 &nbsp;
 // Get explanation for a specific step
-<span class="cstat-no" title="statement not covered" >router.get('/:reasoningId/step/:stepId/explain', ReasoningController.getStepExplanation);</span>
+router.get('/:reasoningId/step/:stepId/explain', ReasoningController.getStepExplanation);
 &nbsp;
 // Get insights for a reasoning process
-<span class="cstat-no" title="statement not covered" >router.get('/:reasoningId/insights', ReasoningController.getReasoningInsights);</span>
+router.get('/:reasoningId/insights', ReasoningController.getReasoningInsights);
 &nbsp;
 // Save feedback for a reasoning process
-<span class="cstat-no" title="statement not covered" >router.post('/:reasoningId/feedback', ReasoningController.saveReasoningFeedback);</span>
+router.post('/:reasoningId/feedback', ReasoningController.saveReasoningFeedback);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router;</span></pre></td></tr></table></pre>
+module.exports = router;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

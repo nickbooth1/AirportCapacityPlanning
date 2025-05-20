@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -104,96 +104,96 @@
 <a name='L39'></a><a href='#L39'>39</a>
 <a name='L40'></a><a href='#L40'>40</a>
 <a name='L41'></a><a href='#L41'>41</a>
-<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
-const GroundHandlingAgentController = <span class="cstat-no" title="statement not covered" >require('../controllers/GroundHandlingAgentController');</span>
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express');
+const router = express.Router();
+const GroundHandlingAgentController = require('../controllers/GroundHandlingAgentController');
 &nbsp;
 /**
  * GHA API Routes
  */
 &nbsp;
 // GET /api/ghas - Get all GHAs with pagination and filtering
-<span class="cstat-no" title="statement not covered" >router.get('/', GroundHandlingAgentController.getAllGHAs);</span>
+router.get('/', GroundHandlingAgentController.getAllGHAs);
 &nbsp;
 // GET /api/ghas/search - Search for GHAs by name
-<span class="cstat-no" title="statement not covered" >router.get('/search', GroundHandlingAgentController.searchGHAs);</span>
+router.get('/search', GroundHandlingAgentController.searchGHAs);
 &nbsp;
 // GET /api/ghas/airport/:code - Get GHAs operating at a specific airport
-<span class="cstat-no" title="statement not covered" >router.get('/airport/:code', GroundHandlingAgentController.getGHAsByAirport);</span>
+router.get('/airport/:code', GroundHandlingAgentController.getGHAsByAirport);
 &nbsp;
 // GET /api/ghas/validate - Validate if a GHA operates at a specific airport
-<span class="cstat-no" title="statement not covered" >router.get('/validate', GroundHandlingAgentController.validateGHAAtAirport);</span>
+router.get('/validate', GroundHandlingAgentController.validateGHAAtAirport);
 &nbsp;
 // GET /api/ghas/:id - Get a specific GHA by ID
-<span class="cstat-no" title="statement not covered" >router.get('/:id', GroundHandlingAgentController.getGHAById);</span>
+router.get('/:id', GroundHandlingAgentController.getGHAById);
 &nbsp;
 // POST /api/ghas - Create a new GHA
-<span class="cstat-no" title="statement not covered" >router.post('/', GroundHandlingAgentController.createGHA);</span>
+router.post('/', GroundHandlingAgentController.createGHA);
 &nbsp;
 // POST /api/ghas/import - Import multiple GHAs
-<span class="cstat-no" title="statement not covered" >router.post('/import', GroundHandlingAgentController.importGHAs);</span>
+router.post('/import', GroundHandlingAgentController.importGHAs);
 &nbsp;
 // PUT /api/ghas/:id - Update an existing GHA
-<span class="cstat-no" title="statement not covered" >router.put('/:id', GroundHandlingAgentController.updateGHA);</span>
+router.put('/:id', GroundHandlingAgentController.updateGHA);
 &nbsp;
 // DELETE /api/ghas/:id - Delete a GHA
-<span class="cstat-no" title="statement not covered" >router.delete('/:id', GroundHandlingAgentController.deleteGHA);</span>
+router.delete('/:id', GroundHandlingAgentController.deleteGHA);
 &nbsp;
 // POST /api/ghas/:gha_id/airports/:airport_id - Associate a GHA with an airport
-<span class="cstat-no" title="statement not covered" >router.post('/:gha_id/airports/:airport_id', GroundHandlingAgentController.addAirportRelation);</span>
+router.post('/:gha_id/airports/:airport_id', GroundHandlingAgentController.addAirportRelation);
 &nbsp;
 // DELETE /api/ghas/:gha_id/airports/:airport_id - Remove a GHA's association with an airport
-<span class="cstat-no" title="statement not covered" >router.delete('/:gha_id/airports/:airport_id', GroundHandlingAgentController.removeAirportRelation);</span>
+router.delete('/:gha_id/airports/:airport_id', GroundHandlingAgentController.removeAirportRelation);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router; </span></pre></td></tr></table></pre>
+module.exports = router; </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

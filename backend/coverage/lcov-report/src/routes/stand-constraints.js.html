@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">12.98% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>10/77</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">12.98% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>10/77</span>
             </div>
         
             
@@ -303,14 +303,14 @@
 <a name='L238'></a><a href='#L238'>238</a>
 <a name='L239'></a><a href='#L239'>239</a>
 <a name='L240'></a><a href='#L240'>240</a>
-<a name='L241'></a><a href='#L241'>241</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L241'></a><a href='#L241'>241</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -329,7 +329,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -356,9 +356,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -382,7 +382,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -446,10 +446,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -524,7 +524,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -543,12 +543,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express');</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
-const db = <span class="cstat-no" title="statement not covered" >require('../utils/db');</span>
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express');
+const router = express.Router();
+const db = require('../utils/db');
 &nbsp;
 // Get all stand constraints
-<span class="cstat-no" title="statement not covered" >router.get('/', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.get('/', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const constraints = <span class="cstat-no" title="statement not covered" >await db('stand_aircraft_constraints')</span>
       .select(
@@ -569,7 +569,7 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
 });
 &nbsp;
 // Get constraints by stand ID
-<span class="cstat-no" title="statement not covered" >router.get('/by-stand/:standId', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.get('/by-stand/:standId', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const { standId } = <span class="cstat-no" title="statement not covered" >req.params;</span>
     
@@ -596,7 +596,7 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
 });
 &nbsp;
 // Get constraints by aircraft type ID
-<span class="cstat-no" title="statement not covered" >router.get('/by-aircraft/:aircraftTypeId', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.get('/by-aircraft/:aircraftTypeId', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const { aircraftTypeId } = <span class="cstat-no" title="statement not covered" >req.params;</span>
     
@@ -622,7 +622,7 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
 });
 &nbsp;
 // Create a new constraint
-<span class="cstat-no" title="statement not covered" >router.post('/', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.post('/', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const { stand_id, aircraft_type_id, is_allowed, constraint_reason } = <span class="cstat-no" title="statement not covered" >req.body;</span>
     
@@ -686,7 +686,7 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
 });
 &nbsp;
 // Update a constraint
-<span class="cstat-no" title="statement not covered" >router.put('/:id', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.put('/:id', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const { id } = <span class="cstat-no" title="statement not covered" >req.params;</span>
     const { stand_id, aircraft_type_id, is_allowed, constraint_reason } = <span class="cstat-no" title="statement not covered" >req.body;</span>
@@ -764,7 +764,7 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
 });
 &nbsp;
 // Delete a constraint
-<span class="cstat-no" title="statement not covered" >router.delete('/:id', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {</span>
+router.delete('/:id', <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const { id } = <span class="cstat-no" title="statement not covered" >req.params;</span>
     
@@ -783,14 +783,14 @@ const db = <span class="cstat-no" title="statement not covered" >require('../uti
   }
 });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router; </span></pre></td></tr></table></pre>
+module.exports = router; </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

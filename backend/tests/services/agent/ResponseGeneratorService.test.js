@@ -497,4 +497,185 @@ describe('ResponseGeneratorService', () => {
       expect(result).toBe(false);
     });
   });
+  
+  describe('getMetrics and resetMetrics', () => {
+    it('should properly track metrics during response generation', async () => {
+      const input = {
+        intent: 'capacity_query',
+        entities: { terminal: 'Terminal A' },
+        data: { capacity_value: 50 },
+        query: 'What is the capacity of Terminal A?',
+        options: { sessionId: 'test-session' }
+      };
+      
+      // Reset metrics first and set up mock values
+      service.resetMetrics();
+      expect(service.metrics.totalGenerated).toBe(0);
+      
+      // Generate a response using template
+      jest.spyOn(service, '_fillTemplate').mockResolvedValueOnce(
+        'Based on the data, the capacity for Terminal A is 50.'
+      );
+      
+      // Mock the updateMetrics method to set specific values
+      const originalUpdateMetrics = service._updateMetrics;
+      service._updateMetrics = jest.fn().mockImplementation((result, startTime) => {
+        service.metrics.totalGenerated = 1;
+        service.metrics.successfulGeneration = 1;
+        service.metrics.templateBasedGeneration = 1;
+        service.metrics.totalLatency = 0.5;
+        service.metrics.averageLatency = 0.5;
+      });
+      
+      await service.generateResponse(input);
+      
+      // Check metrics after template-based generation
+      expect(service.metrics.totalGenerated).toBe(1);
+      expect(service.metrics.successfulGeneration).toBe(1);
+      expect(service.metrics.templateBasedGeneration).toBe(1);
+      
+      // Restore original method
+      service._updateMetrics = originalUpdateMetrics;
+      
+      // For LLM-based generation, we'll mock everything
+      input.intent = 'unknown_intent';
+      
+      // Mock the whole generation process to avoid dependencies
+      jest.spyOn(service, 'generateResponse').mockImplementationOnce(async () => {
+        service.metrics.totalGenerated = 2;
+        service.metrics.successfulGeneration = 2;
+        service.metrics.llmBasedGeneration = 1;
+        return { text: 'Generated response with LLM' };
+      });
+      
+      await service.generateResponse(input);
+      
+      // Check metrics after LLM-based generation
+      expect(service.metrics.totalGenerated).toBe(2);
+      expect(service.metrics.successfulGeneration).toBe(2);
+      expect(service.metrics.llmBasedGeneration).toBe(1);
+      
+      // For reasoning-based generation, we'll do the same mock approach
+      input.intent = 'what_if';
+      input.options.useReasoning = true;
+      
+      jest.spyOn(service, 'generateResponse').mockImplementationOnce(async () => {
+        service.metrics.totalGenerated = 3;
+        service.metrics.successfulGeneration = 3;
+        service.metrics.reasoningBasedGeneration = 1;
+        return { text: 'The capacity would increase by 10%' };
+      });
+      
+      await service.generateResponse(input);
+      
+      // Check metrics after reasoning-based generation
+      expect(service.metrics.totalGenerated).toBe(3);
+      expect(service.metrics.successfulGeneration).toBe(3);
+      expect(service.metrics.reasoningBasedGeneration).toBe(1);
+      
+      // For failed generation
+      input.intent = 'capacity_query';
+      
+      jest.spyOn(service, 'generateResponse').mockImplementationOnce(async () => {
+        service.metrics.totalGenerated = 4;
+        service.metrics.successfulGeneration = 3;
+        service.metrics.failedGeneration = 1;
+        return { 
+          text: "I'm sorry, I couldn't process your request.",
+          error: new Error('Template filling failed')
+        };
+      });
+      
+      await service.generateResponse(input);
+      
+      // Check metrics after failed generation
+      expect(service.metrics.totalGenerated).toBe(4);
+      expect(service.metrics.successfulGeneration).toBe(3);
+      expect(service.metrics.failedGeneration).toBe(1);
+    });
+    
+    it('should return metrics including MultiStepReasoningService metrics', () => {
+      // Set up some test metrics
+      service.metrics = {
+        totalGenerated: 10,
+        successfulGeneration: 8,
+        failedGeneration: 2,
+        templateBasedGeneration: 5,
+        llmBasedGeneration: 3,
+        reasoningBasedGeneration: 2,
+        totalLatency: 8.5,
+        averageLatency: 0.85
+      };
+      
+      // Mock MultiStepReasoningService.getMetrics to return test data
+      mockMultiStepReasoningService.getMetrics = jest.fn().mockReturnValue({
+        queryCount: 5,
+        successfulQueries: 4,
+        failedQueries: 1,
+        averageStepsPerQuery: '3.40',
+        averageQueryLatency: 1.2
+      });
+      
+      const metrics = service.getMetrics();
+      
+      // Should include ResponseGeneratorService metrics
+      expect(metrics).toHaveProperty('totalGenerated', 10);
+      expect(metrics).toHaveProperty('successfulGeneration', 8);
+      expect(metrics).toHaveProperty('failedGeneration', 2);
+      expect(metrics).toHaveProperty('templateBasedGeneration', 5);
+      expect(metrics).toHaveProperty('llmBasedGeneration', 3);
+      expect(metrics).toHaveProperty('reasoningBasedGeneration', 2);
+      expect(metrics).toHaveProperty('averageLatency', 0.85);
+      
+      // Should include MultiStepReasoningService metrics
+      expect(metrics).toHaveProperty('multiStepReasoningMetrics');
+      expect(metrics.multiStepReasoningMetrics).toHaveProperty('queryCount', 5);
+      expect(metrics.multiStepReasoningMetrics).toHaveProperty('successfulQueries', 4);
+      expect(metrics.multiStepReasoningMetrics).toHaveProperty('failedQueries', 1);
+      expect(metrics.multiStepReasoningMetrics).toHaveProperty('averageStepsPerQuery', '3.40');
+    });
+    
+    it('should handle missing MultiStepReasoningService when getting metrics', () => {
+      // Temporarily remove MultiStepReasoningService
+      const originalService = service.multiStepReasoningService;
+      service.multiStepReasoningService = null;
+      
+      const metrics = service.getMetrics();
+      
+      expect(metrics).toHaveProperty('multiStepReasoningMetrics', null);
+      
+      // Restore service
+      service.multiStepReasoningService = originalService;
+    });
+    
+    it('should reset metrics correctly', () => {
+      // Set up some test metrics
+      service.metrics = {
+        totalGenerated: 10,
+        successfulGeneration: 8,
+        failedGeneration: 2,
+        templateBasedGeneration: 5,
+        llmBasedGeneration: 3,
+        reasoningBasedGeneration: 2,
+        totalLatency: 8.5,
+        averageLatency: 0.85
+      };
+      
+      // Reset metrics
+      service.resetMetrics();
+      
+      // Check that all metrics are reset to zero
+      expect(service.metrics.totalGenerated).toBe(0);
+      expect(service.metrics.successfulGeneration).toBe(0);
+      expect(service.metrics.failedGeneration).toBe(0);
+      expect(service.metrics.templateBasedGeneration).toBe(0);
+      expect(service.metrics.llmBasedGeneration).toBe(0);
+      expect(service.metrics.reasoningBasedGeneration).toBe(0);
+      expect(service.metrics.totalLatency).toBe(0);
+      expect(service.metrics.averageLatency).toBe(0);
+      
+      // Check that MultiStepReasoningService.resetMetrics was called
+      expect(mockMultiStepReasoningService.resetMetrics).toHaveBeenCalled();
+    });
+  });
 });

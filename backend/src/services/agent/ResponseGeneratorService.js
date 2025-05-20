@@ -14,7 +14,9 @@
  */
 
 const OpenAIService = require('./OpenAIService');
-const WorkingMemoryService = require('./WorkingMemoryService');
+const workingMemoryService = require('./WorkingMemoryService');
+const { WorkingMemoryService } = require('./WorkingMemoryService');
+const multiStepReasoningService = require('./MultiStepReasoningService');
 const MultiStepReasoningService = require('./MultiStepReasoningService');
 const { FormatterService } = require('./formatting');
 const logger = require('../../utils/logger');
@@ -33,10 +35,8 @@ class ResponseGeneratorService {
   constructor(services = {}, options = {}) {
     // Initialize dependencies
     this.openAIService = services.openAIService || OpenAIService;
-    this.workingMemoryService = services.workingMemoryService || new WorkingMemoryService();
-    this.multiStepReasoningService = services.multiStepReasoningService || new MultiStepReasoningService({
-      workingMemoryService: this.workingMemoryService
-    });
+    this.workingMemoryService = services.workingMemoryService || workingMemoryService;
+    this.multiStepReasoningService = services.multiStepReasoningService || multiStepReasoningService;
     
     // Configure options
     this.options = {

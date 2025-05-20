@@ -10,7 +10,7 @@ const ReasoningExplainer = require('../../services/agent/ReasoningExplainer');
 const AgentResponse = require('../../models/agent/AgentResponse');
 const ReasoningProcess = require('../../models/agent/ReasoningProcess');
 const ReasoningFeedback = require('../../models/agent/ReasoningFeedback');
-const ContextService = require('../../services/agent/ContextService');
+const contextService = require('../../services/agent/ContextService');
 const logger = require('../../utils/logger');
 
 /**
@@ -96,17 +96,17 @@ exports.initiateReasoning = async (req, res) => {
     let context;
     if (contextId) {
       try {
-        context = await ContextService.getContext(contextId);
+        context = await contextService.getContext(contextId);
       } catch (error) {
         logger.warn(`Context not found, creating new: ${error.message}`);
-        context = await ContextService.createContext(userId);
+        context = await contextService.createContext(userId);
       }
     } else {
-      context = await ContextService.createContext(userId);
+      context = await contextService.createContext(userId);
     }
     
     // Get conversation history for context
-    const history = await ContextService.getConversationHistory(context.id);
+    const history = await contextService.getConversationHistory(context.id);
     
     // Use enhanced reasoning for this query
     const reasoningResult = await OpenAIService.processComplexCapacityQuery(

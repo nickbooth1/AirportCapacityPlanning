@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.72% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/148</span>
+                <span class='fraction'>7/148</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">2.59% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/77</span>
+                <span class='fraction'>2/77</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">8.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>1/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.92% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/142</span>
+                <span class='fraction'>7/142</span>
             </div>
         
             
@@ -507,9 +507,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -517,17 +517,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -935,7 +935,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * CollaborationController.js
  * 
  * Controller for managing collaborative workspaces, comments, and annotations.
@@ -943,27 +943,27 @@
  * Part of AirportAI Agent Phase 3 implementation.
  */
 &nbsp;
-const logger = <span class="cstat-no" title="statement not covered" >require('../utils/logger');</span>
-const CollaborationService = <span class="cstat-no" title="statement not covered" >require('../services/collaboration/CollaborationService');</span>
-const WebSocketService = <span class="cstat-no" title="statement not covered" >require('../services/collaboration/WebSocketService');</span>
+const logger = require('../utils/logger');
+const CollaborationService = require('../services/collaboration/CollaborationService');
+const WebSocketService = require('../services/collaboration/WebSocketService');
 &nbsp;
 /**
  * Controller for managing collaboration features
  */
 class CollaborationController {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+  constructor() {
     // Initialize services
-<span class="cstat-no" title="statement not covered" >    this.webSocketService = new WebSocketService({</span>
+    this.webSocketService = new WebSocketService({
       port: process.env.WS_PORT || 8080,
       path: '/ws',
       autoStart: true
     });
     
-<span class="cstat-no" title="statement not covered" >    this.collaborationService = new CollaborationService({</span>
+    this.collaborationService = new CollaborationService({
       wsService: this.webSocketService
     });
     
-<span class="cstat-no" title="statement not covered" >    logger.info('CollaborationController initialized');</span>
+    logger.info('CollaborationController initialized');
   }
   
   /**
@@ -1371,14 +1371,14 @@ class CollaborationController {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new CollaborationController();</span></pre></td></tr></table></pre>
+module.exports = new CollaborationController();</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

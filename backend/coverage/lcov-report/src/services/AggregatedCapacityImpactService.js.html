@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.55% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/270</span>
+                <span class='fraction'>15/270</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>1/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.81% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/258</span>
+                <span class='fraction'>15/258</span>
             </div>
         
             
@@ -723,26 +723,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1369,33 +1369,33 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">8x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * AggregatedCapacityImpactService
  * 
  * Service for calculating the impact of maintenance on airport capacity
  * Integrates the validated capacity impact calculation logic from Phases 1 &amp; 2
  * into a reusable backend service that can be called via an API endpoint.
  */
-const standCapacityToolService = <span class="cstat-no" title="statement not covered" >require('./standCapacityToolService');</span>
-const maintenanceRequestService = <span class="cstat-no" title="statement not covered" >require('./maintenanceRequestService');</span>
-const Stand = <span class="cstat-no" title="statement not covered" >require('../models/Stand');</span>
-const AircraftType = <span class="cstat-no" title="statement not covered" >require('../models/AircraftType');</span>
-const OperationalSettings = <span class="cstat-no" title="statement not covered" >require('../models/OperationalSettings');</span>
-const MaintenanceStatusType = <span class="cstat-no" title="statement not covered" >require('../models/MaintenanceStatusType');</span>
-const db = <span class="cstat-no" title="statement not covered" >require('../utils/db');</span>
-const { format, parseISO, eachDayOfInterval } = <span class="cstat-no" title="statement not covered" >require('date-fns');</span>
+const standCapacityToolService = require('./standCapacityToolService');
+const maintenanceRequestService = require('./maintenanceRequestService');
+const Stand = require('../models/Stand');
+const AircraftType = require('../models/AircraftType');
+const OperationalSettings = require('../models/OperationalSettings');
+const MaintenanceStatusType = require('../models/MaintenanceStatusType');
+const db = require('../utils/db');
+const { format, parseISO, eachDayOfInterval } = require('date-fns');
 &nbsp;
 class AggregatedCapacityImpactService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+  constructor() {
     // Cached data, loaded asynchronously if needed
-<span class="cstat-no" title="statement not covered" >    this.standsData = null; </span>// Map&lt;standCode, { dbId, compatibleAircraftICAOs }&gt;
-<span class="cstat-no" title="statement not covered" >    this.aircraftTypesData = null; </span>// Map&lt;icaoCode, { sizeCategory, averageTurnaroundMinutes, bodyType }&gt;
-<span class="cstat-no" title="statement not covered" >    this.operationalSettings = null;</span>
-<span class="cstat-no" title="statement not covered" >    this.maintenanceStatusTypes = null; </span>// Map&lt;id, name&gt;
-<span class="cstat-no" title="statement not covered" >    this.isInitialized = false;</span>
+    this.standsData = null; // Map&lt;standCode, { dbId, compatibleAircraftICAOs }&gt;
+    this.aircraftTypesData = null; // Map&lt;icaoCode, { sizeCategory, averageTurnaroundMinutes, bodyType }&gt;
+    this.operationalSettings = null;
+    this.maintenanceStatusTypes = null; // Map&lt;id, name&gt;
+    this.isInitialized = false;
 &nbsp;
     // Configuration for maintenance statuses
-<span class="cstat-no" title="statement not covered" >    this.MAINTENANCE_IMPACT_CATEGORIES = {</span>
+    this.MAINTENANCE_IMPACT_CATEGORIES = {
       DEFINITE: [2, 4, 5], // Approved, In Progress, Completed
       POTENTIAL: [1],      // Requested
     };
@@ -2022,14 +2022,14 @@ class AggregatedCapacityImpactService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new AggregatedCapacityImpactService(); </span></pre></td></tr></table></pre>
+module.exports = new AggregatedCapacityImpactService(); </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

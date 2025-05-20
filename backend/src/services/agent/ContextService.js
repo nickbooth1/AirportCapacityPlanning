@@ -1098,12 +1098,16 @@ class ContextService {
 }
 
 // Clean up resources when the process exits
+// Create the singleton instance
+const contextServiceInstance = new ContextService();
+
+// Clean up resources when the process exits
 process.on('exit', () => {
-  const contextService = module.exports;
-  
-  if (contextService.cacheCleanInterval) {
-    clearInterval(contextService.cacheCleanInterval);
+  if (contextServiceInstance.cacheCleanInterval) {
+    clearInterval(contextServiceInstance.cacheCleanInterval);
   }
 });
 
-module.exports = new ContextService();
+// Export both the class and the instance
+module.exports = contextServiceInstance;
+module.exports.ContextService = ContextService;

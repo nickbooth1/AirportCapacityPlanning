@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.53% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/253</span>
+                <span class='fraction'>14/253</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">2.75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/109</span>
+                <span class='fraction'>3/109</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.4% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/37</span>
+                <span class='fraction'>2/37</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.57% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/251</span>
+                <span class='fraction'>14/251</span>
             </div>
         
             
@@ -973,9 +973,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -990,20 +990,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1011,7 +1011,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1865,7 +1865,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * CollaborationService.js
  * 
  * Service for managing multi-user collaboration features including shared workspaces,
@@ -1874,9 +1874,9 @@
  * Part of AirportAI Agent Phase 3 implementation.
  */
 &nbsp;
-const logger = <span class="cstat-no" title="statement not covered" >require('../../utils/logger');</span>
-const { v4: uuidv4 } = <span class="cstat-no" title="statement not covered" >require('uuid');</span>
-const WebSocketService = <span class="cstat-no" title="statement not covered" >require('./WebSocketService');</span>
+const logger = require('../../utils/logger');
+const { v4: uuidv4 } = require('uuid');
+const WebSocketService = require('./WebSocketService');
 &nbsp;
 /**
  * Collaboration Service
@@ -1890,29 +1890,29 @@ const WebSocketService = <span class="cstat-no" title="statement not covered" >r
  * - Conflict resolution for simultaneous edits
  */
 class CollaborationService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
-<span class="cstat-no" title="statement not covered" >    this.db = options.db; </span>// Database connection for persistent storage
-<span class="cstat-no" title="statement not covered" >    this.wsService = options.wsService || new WebSocketService(options.webSocketConfig);</span>
+  constructor(options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+    this.db = options.db; // Database connection for persistent storage
+    this.wsService = options.wsService || <span class="branch-1 cbranch-no" title="branch not covered" >new WebSocketService(options.webSocketConfig);</span>
     
     // Initialize in-memory stores (would be database-backed in production)
-<span class="cstat-no" title="statement not covered" >    this.workspaces = new Map();</span>
-<span class="cstat-no" title="statement not covered" >    this.comments = new Map();</span>
-<span class="cstat-no" title="statement not covered" >    this.activities = new Map();</span>
-<span class="cstat-no" title="statement not covered" >    this.userPresence = new Map();</span>
+    this.workspaces = new Map();
+    this.comments = new Map();
+    this.activities = new Map();
+    this.userPresence = new Map();
     
     // Set up workspace cleanup interval
-<span class="cstat-no" title="statement not covered" >    this.cleanupInterval = options.cleanupInterval || 24 * 60 * 60 * 1000; </span>// 24 hours
-<span class="cstat-no" title="statement not covered" >    this.startCleanupInterval();</span>
+    this.cleanupInterval = options.cleanupInterval || 24 * 60 * 60 * 1000; // 24 hours
+    this.startCleanupInterval();
     
-<span class="cstat-no" title="statement not covered" >    logger.info('CollaborationService initialized');</span>
+    logger.info('CollaborationService initialized');
   }
   
   /**
    * Start the cleanup interval
    * @private
    */
-<span class="fstat-no" title="function not covered" >  st</span>artCleanupInterval() {
-<span class="cstat-no" title="statement not covered" >    this.cleanupTimer = setInterval(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+  startCleanupInterval() {
+    this.cleanupTimer = setInterval(<span class="fstat-no" title="function not covered" >()</span> =&gt; {
 <span class="cstat-no" title="statement not covered" >      this.cleanupStaleData();</span>
     }, this.cleanupInterval);
   }
@@ -2766,14 +2766,14 @@ class CollaborationService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = CollaborationService;</span></pre></td></tr></table></pre>
+module.exports = CollaborationService;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

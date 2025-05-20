@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">8.84% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/113</span>
+                <span class='fraction'>10/113</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.17% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/109</span>
+                <span class='fraction'>10/109</span>
             </div>
         
             
@@ -571,22 +571,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1071,26 +1071,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">8x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Service for the NEW Stand Capacity Tool
  * This service adapts the CLI-based Stand Capacity Tool for use in the web application
  */
-const CapacityCalculator = <span class="cstat-no" title="statement not covered" >require('./adapted/calculator/capacityCalculator');</span>
+const CapacityCalculator = require('./adapted/calculator/capacityCalculator');
 const { 
   OperationalSettings, 
   AircraftType, 
   Stand, 
   StandAdjacencyRule,
   TimeSlot
-} = <span class="cstat-no" title="statement not covered" >require('./adapted/models');</span>
+} = require('./adapted/models');
 &nbsp;
-const TimeSlotModel = <span class="cstat-no" title="statement not covered" >require('../models/TimeSlot');</span>
-const StandModel = <span class="cstat-no" title="statement not covered" >require('../models/Stand');</span>
-const AircraftTypeModel = <span class="cstat-no" title="statement not covered" >require('../models/AircraftType');</span>
-const StandAdjacencyRuleModel = <span class="cstat-no" title="statement not covered" >require('../models/StandAdjacencyRule');</span>
-const OperationalSettingsModel = <span class="cstat-no" title="statement not covered" >require('../models/OperationalSettings');</span>
-const db = <span class="cstat-no" title="statement not covered" >require('../utils/db');</span>
-const { getBodyType } = <span class="cstat-no" title="statement not covered" >require('../cli/capacityImpactAnalyzer/analyzer');</span>
+const TimeSlotModel = require('../models/TimeSlot');
+const StandModel = require('../models/Stand');
+const AircraftTypeModel = require('../models/AircraftType');
+const StandAdjacencyRuleModel = require('../models/StandAdjacencyRule');
+const OperationalSettingsModel = require('../models/OperationalSettings');
+const db = require('../utils/db');
+const { getBodyType } = require('../cli/capacityImpactAnalyzer/analyzer');
 &nbsp;
 class StandCapacityToolService {
   /**
@@ -1575,14 +1575,14 @@ class StandCapacityToolService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new StandCapacityToolService(); </span></pre></td></tr></table></pre>
+module.exports = new StandCapacityToolService(); </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

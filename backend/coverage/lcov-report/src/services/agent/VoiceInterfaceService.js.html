@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">6.36% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/157</span>
+                <span class='fraction'>10/157</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.88% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>1/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">6.53% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/153</span>
+                <span class='fraction'>10/153</span>
             </div>
         
             
@@ -770,13 +770,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -794,7 +794,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -815,10 +815,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -826,7 +826,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1463,20 +1463,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Voice Interface Service
  * 
  * This service provides voice processing capabilities for the AirportAI agent,
  * including speech-to-text, text-to-speech, and voice command processing.
  */
 &nbsp;
-const { v4: uuidv4 } = <span class="cstat-no" title="statement not covered" >require('uuid');</span>
-const logger = <span class="cstat-no" title="statement not covered" >require('../../utils/logger');</span>
-const nlpService = <span class="cstat-no" title="statement not covered" >require('./NLPService');</span>
+const { v4: uuidv4 } = require('uuid');
+const logger = require('../../utils/logger');
+const nlpService = require('./NLPService');
 &nbsp;
 class VoiceInterfaceService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
-<span class="cstat-no" title="statement not covered" >    this.speechModels = {</span>
+  constructor() {
+    this.speechModels = {
       default: {
         name: 'default',
         locale: 'en-US',
@@ -1494,7 +1494,7 @@ class VoiceInterfaceService {
       }
     };
     
-<span class="cstat-no" title="statement not covered" >    this.voiceProfiles = {</span>
+    this.voiceProfiles = {
       default: {
         gender: 'neutral',
         rate: 1.0,
@@ -1515,10 +1515,10 @@ class VoiceInterfaceService {
       }
     };
     
-<span class="cstat-no" title="statement not covered" >    this.speakers = new Map(); </span>// Store recognized speakers for multi-speaker environments
-<span class="cstat-no" title="statement not covered" >    this.sessions = new Map(); </span>// Store active voice sessions
+    this.speakers = new Map(); // Store recognized speakers for multi-speaker environments
+    this.sessions = new Map(); // Store active voice sessions
     
-<span class="cstat-no" title="statement not covered" >    this.specialCommands = new Map([</span>
+    this.specialCommands = new Map([
       ['help', this.handleHelpCommand],
       ['stop', this.handleStopCommand],
       ['cancel', this.handleCancelCommand],
@@ -1526,7 +1526,7 @@ class VoiceInterfaceService {
     ]);
     
     // Log service initialization
-<span class="cstat-no" title="statement not covered" >    logger.info('VoiceInterfaceService initialized');</span>
+    logger.info('VoiceInterfaceService initialized');
   }
   
   /**
@@ -2163,14 +2163,14 @@ class VoiceInterfaceService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new VoiceInterfaceService();</span></pre></td></tr></table></pre>
+module.exports = new VoiceInterfaceService();</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

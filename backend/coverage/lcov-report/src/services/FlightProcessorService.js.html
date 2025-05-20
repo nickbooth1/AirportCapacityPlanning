@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">3.4% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/440</span>
+                <span class='fraction'>15/440</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.54% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>1/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">3.44% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/435</span>
+                <span class='fraction'>15/435</span>
             </div>
         
             
@@ -1329,16 +1329,16 @@
 <a name='L1264'></a><a href='#L1264'>1264</a>
 <a name='L1265'></a><a href='#L1265'>1265</a>
 <a name='L1266'></a><a href='#L1266'>1266</a>
-<a name='L1267'></a><a href='#L1267'>1267</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L1267'></a><a href='#L1267'>1267</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1349,10 +1349,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2595,16 +2595,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const db = <span class="cstat-no" title="statement not covered" >require('../db');</span>
-const fs = <span class="cstat-no" title="statement not covered" >require('fs');</span>
-const path = <span class="cstat-no" title="statement not covered" >require('path');</span>
-const { spawn } = <span class="cstat-no" title="statement not covered" >require('child_process');</span>
-const util = <span class="cstat-no" title="statement not covered" >require('util');</span>
-const exec = <span class="cstat-no" title="statement not covered" >util.promisify(require('child_process').exec);</span>
-const FlightUploadService = <span class="cstat-no" title="statement not covered" >require('./FlightUploadService');</span>
-const FlightValidationService = <span class="cstat-no" title="statement not covered" >require('./FlightValidationService');</span>
-const FlightValidatorAdapter = <span class="cstat-no" title="statement not covered" >require('./adapted/FlightValidatorAdapter');</span>
-const StandAllocationAdapter = <span class="cstat-no" title="statement not covered" >require('./adapted/StandAllocationAdapter');</span>
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">const db = require('../db');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+const FlightUploadService = require('./FlightUploadService');
+const FlightValidationService = require('./FlightValidationService');
+const FlightValidatorAdapter = require('./adapted/FlightValidatorAdapter');
+const StandAllocationAdapter = require('./adapted/StandAllocationAdapter');
 &nbsp;
 /**
  * Flight Processor Service
@@ -2614,11 +2614,11 @@ const StandAllocationAdapter = <span class="cstat-no" title="statement not cover
  * the different components of the system.
  */
 class FlightProcessorService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
-<span class="cstat-no" title="statement not covered" >    this.uploadService = new FlightUploadService();</span>
-<span class="cstat-no" title="statement not covered" >    this.validationService = new FlightValidationService();</span>
-<span class="cstat-no" title="statement not covered" >    this.validatorAdapter = new FlightValidatorAdapter();</span>
-<span class="cstat-no" title="statement not covered" >    this.allocationAdapter = new StandAllocationAdapter();</span>
+  constructor() {
+    this.uploadService = new FlightUploadService();
+    this.validationService = new FlightValidationService();
+    this.validatorAdapter = new FlightValidatorAdapter();
+    this.allocationAdapter = new StandAllocationAdapter();
   }
 &nbsp;
   /**
@@ -3861,14 +3861,14 @@ class FlightProcessorService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = FlightProcessorService; </span></pre></td></tr></table></pre>
+module.exports = FlightProcessorService; </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

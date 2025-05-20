@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">8.95% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/67</span>
+                <span class='fraction'>6/67</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.09% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/66</span>
+                <span class='fraction'>6/66</span>
             </div>
         
             
@@ -282,8 +282,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -291,7 +291,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -349,9 +349,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -436,7 +436,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -479,7 +479,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -492,8 +492,8 @@
  * - Input sanitization and type conversion
  */
 &nbsp;
-const { ValidationError } = <span class="cstat-no" title="statement not covered" >require('./errorHandler');</span>
-const logger = <span class="cstat-no" title="statement not covered" >require('../utils/logger');</span>
+const { ValidationError } = require('./errorHandler');
+const logger = require('../utils/logger');
 &nbsp;
 /**
  * Validate stand update data
@@ -501,7 +501,7 @@ const logger = <span class="cstat-no" title="statement not covered" >require('..
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const validateStandUpdate = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {</span>
+const validateStandUpdate = <span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const standData = <span class="cstat-no" title="statement not covered" >req.body;</span>
     
@@ -559,7 +559,7 @@ const validateStandUpdate = <span class="cstat-no" title="statement not covered"
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const validateMaintenanceRequestUpdate = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {</span>
+const validateMaintenanceRequestUpdate = <span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const requestData = <span class="cstat-no" title="statement not covered" >req.body;</span>
     
@@ -646,7 +646,7 @@ const validateMaintenanceRequestUpdate = <span class="cstat-no" title="statement
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const validateETagForUpdate = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {</span>
+const validateETagForUpdate = <span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {
   // Skip validation if not an update operation
 <span class="cstat-no" title="statement not covered" >  if (!['PUT', 'PATCH'].includes(req.method)) {</span>
 <span class="cstat-no" title="statement not covered" >    return next();</span>
@@ -689,7 +689,7 @@ function <span class="fstat-no" title="function not covered" >validateEmail(</sp
 <span class="cstat-no" title="statement not covered" >  return emailRegex.test(email);</span>
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   validateStandUpdate,
   validateMaintenanceRequestUpdate,
   validateETagForUpdate
@@ -700,7 +700,7 @@ function <span class="fstat-no" title="function not covered" >validateEmail(</sp
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

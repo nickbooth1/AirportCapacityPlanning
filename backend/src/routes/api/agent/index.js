@@ -109,11 +109,23 @@ router.post('/query',
   }
 );
 
+// Get a context by ID
 router.get('/context/:contextId', 
   validationMiddleware.validateContextId,
   (req, res, next) => {
     try {
       agentController.getContext(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Create a new context
+router.post('/context', 
+  (req, res, next) => {
+    try {
+      agentController.createContext(req, res);
     } catch (error) {
       next(error);
     }

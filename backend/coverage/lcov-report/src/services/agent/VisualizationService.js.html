@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.46% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/179</span>
+                <span class='fraction'>8/179</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">2.94% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/34</span>
+                <span class='fraction'>1/34</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.62% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/173</span>
+                <span class='fraction'>8/173</span>
             </div>
         
             
@@ -1025,9 +1025,9 @@
 <a name='L960'></a><a href='#L960'>960</a>
 <a name='L961'></a><a href='#L961'>961</a>
 <a name='L962'></a><a href='#L962'>962</a>
-<a name='L963'></a><a href='#L963'>963</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L963'></a><a href='#L963'>963</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1035,14 +1035,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1050,7 +1050,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1096,7 +1096,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1987,24 +1987,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const { ChartJSNodeCanvas } = <span class="cstat-no" title="statement not covered" >require('chartjs-node-canvas');</span>
-const { v4: uuidv4 } = <span class="cstat-no" title="statement not covered" >require('uuid');</span>
-const logger = <span class="cstat-no" title="statement not covered" >require('../../utils/logger');</span>
+<span class="cline-any cline-yes">6x</span></td><td class="text"><pre class="prettyprint lang-js">const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const { v4: uuidv4 } = require('uuid');
+const logger = require('../../utils/logger');
 &nbsp;
 /**
  * Service for generating visualizations from data
  */
 class VisualizationService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+  constructor() {
     // Initialize ChartJS renderer
-<span class="cstat-no" title="statement not covered" >    this.chartJSRenderer = new ChartJSNodeCanvas({</span>
+    this.chartJSRenderer = new ChartJSNodeCanvas({
       width: 800,
       height: 400,
       backgroundColour: 'white'
     });
     
     // Define color schemes
-<span class="cstat-no" title="statement not covered" >    this.colorSchemes = {</span>
+    this.colorSchemes = {
       default: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
       blue: ['#2e59d9', '#3a68e0', '#4676e7', '#5283ee', '#5e91f5'],
       green: ['#1cc88a', '#1edc94', '#24e99e', '#2af6a7', '#30ffb1'],
@@ -2012,7 +2012,7 @@ class VisualizationService {
     };
     
     // Define visualization type maps for frontend
-<span class="cstat-no" title="statement not covered" >    this.visualizationTypes = {</span>
+    this.visualizationTypes = {
       barChart: {
         backendType: 'bar',
         frontendType: 'recharts.BarChart',
@@ -2058,7 +2058,7 @@ class VisualizationService {
     };
     
     // Cache for generated visualizations
-<span class="cstat-no" title="statement not covered" >    this.visualizationCache = new Map();</span>
+    this.visualizationCache = new Map();
   }
 &nbsp;
   /**
@@ -2949,14 +2949,14 @@ class VisualizationService {
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = new VisualizationService();</span></pre></td></tr></table></pre>
+module.exports = new VisualizationService();</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T12:44:54.904Z
+                at 2025-05-20T15:31:27.749Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -1,6 +1,11 @@
 const agentService = require('../../services/agent/AgentService');
 const contextService = require('../../services/agent/ContextService');
 const logger = require('../../utils/logger');
+
+// Ensure we're working with an instance, not trying to use as a constructor
+if (typeof contextService === 'function') {
+  throw new Error('ContextService imported as constructor but exported as instance');
+}
 const { 
   ValidationError, 
   NotFoundError, 
@@ -36,6 +41,31 @@ class AgentController {
     }
   }
 
+  /**
+   * Create a new conversation context
+   * @param {Object} req - Express request object 
+   * @param {Object} res - Express response object
+   */
+  async createContext(req, res, next) {
+    try {
+      const userId = req.user?.id || 'anonymous';
+      
+      // Create a new context
+      const context = await contextService.createContext(userId);
+      
+      return res.status(201).json({
+        success: true,
+        data: {
+          contextId: context.id,
+          created: true
+        }
+      });
+    } catch (error) {
+      logger.error(`Context creation error: ${error.message}`);
+      next(error);
+    }
+  }
+  
   /**
    * Get conversation context
    * @param {Object} req - Express request object

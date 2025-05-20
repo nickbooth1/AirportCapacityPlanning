@@ -809,4 +809,120 @@ describe('Enhanced MultiStepReasoningService', () => {
       expect(mockFactVerifier.verifyResponse).not.toHaveBeenCalled();
     });
   });
+
+  describe('getMetrics and resetMetrics', () => {
+    it('should initialize metrics properly in constructor', () => {
+      expect(service.metrics).toBeDefined();
+      expect(service.metrics).toHaveProperty('queryCount', 0);
+      expect(service.metrics).toHaveProperty('successfulQueries', 0);
+      expect(service.metrics).toHaveProperty('failedQueries', 0);
+      expect(service.metrics).toHaveProperty('stepCount', 0);
+      expect(service.metrics).toHaveProperty('knowledgeRetrievalCount', 0);
+      expect(service.metrics).toHaveProperty('factCheckingCount', 0);
+    });
+
+    it('getMetrics should return current metrics', () => {
+      // Set some metrics values for testing
+      service.metrics = {
+        queryCount: 5,
+        successfulQueries: 3,
+        failedQueries: 2,
+        stepCount: 15,
+        knowledgeRetrievalCount: 4,
+        factCheckingCount: 2,
+        averageQueryLatency: 0.8,
+        averageStepLatency: 0.3,
+        totalQueryLatency: 4.0,
+        totalStepLatency: 4.5
+      };
+
+      const metrics = service.getMetrics();
+      
+      expect(metrics).toHaveProperty('queryCount', 5);
+      expect(metrics).toHaveProperty('successfulQueries', 3);
+      expect(metrics).toHaveProperty('failedQueries', 2);
+      expect(metrics).toHaveProperty('stepCount', 15);
+      expect(metrics).toHaveProperty('knowledgeRetrievalCount', 4);
+      expect(metrics).toHaveProperty('factCheckingCount', 2);
+      expect(metrics).toHaveProperty('averageQueryLatency', 0.8);
+      expect(metrics).toHaveProperty('averageStepLatency', 0.3);
+      expect(metrics).toHaveProperty('averageStepsPerQuery', (15 / 5).toFixed(2));
+    });
+
+    it('resetMetrics should reset all metrics to zero', () => {
+      // Set some metrics values first
+      service.metrics = {
+        queryCount: 5,
+        successfulQueries: 3,
+        failedQueries: 2,
+        stepCount: 15,
+        knowledgeRetrievalCount: 4,
+        factCheckingCount: 2,
+        averageQueryLatency: 0.8,
+        averageStepLatency: 0.3,
+        totalQueryLatency: 4.0,
+        totalStepLatency: 4.5
+      };
+
+      service.resetMetrics();
+      
+      expect(service.metrics.queryCount).toBe(0);
+      expect(service.metrics.successfulQueries).toBe(0);
+      expect(service.metrics.failedQueries).toBe(0);
+      expect(service.metrics.stepCount).toBe(0);
+      expect(service.metrics.knowledgeRetrievalCount).toBe(0);
+      expect(service.metrics.factCheckingCount).toBe(0);
+      expect(service.metrics.averageQueryLatency).toBe(0);
+      expect(service.metrics.averageStepLatency).toBe(0);
+      expect(service.metrics.totalQueryLatency).toBe(0);
+      expect(service.metrics.totalStepLatency).toBe(0);
+    });
+
+    it('should update metrics when executing query', async () => {
+      // Mock the necessary methods to observe metrics updates
+      service.planQuerySteps = jest.fn().mockResolvedValue({
+        queryId: 'test-id',
+        originalQuery: 'test query',
+        steps: [
+          { stepId: 'step-1', description: 'Step 1' }
+        ]
+      });
+      
+      service.executeStepSequence = jest.fn().mockResolvedValue({
+        success: true,
+        stepResults: [
+          { stepId: 'step-1', executionTime: 0.5 }
+        ],
+        finalAnswer: { answer: 'Test answer' }
+      });
+
+      // Reset metrics first
+      service.resetMetrics();
+      
+      // Manually set up metrics tracking for testing
+      service.metrics.totalQueryLatency = 0.5;
+      service.metrics.averageQueryLatency = 0.5;
+      
+      // Execute a query
+      await service.executeQuery('test query');
+      
+      // Check metrics after execution
+      expect(service.metrics.queryCount).toBe(1);
+      expect(service.metrics.successfulQueries).toBe(1);
+      expect(service.metrics.failedQueries).toBe(0);
+      expect(service.metrics.stepCount).toBe(1);
+      
+      // Failed query should update metrics differently
+      service.planQuerySteps = jest.fn().mockResolvedValue({
+        status: 'invalid_plan',
+        reason: 'Invalid query'
+      });
+      
+      await service.executeQuery('invalid query');
+      
+      expect(service.metrics.queryCount).toBe(2);
+      expect(service.metrics.successfulQueries).toBe(1);
+      expect(service.metrics.failedQueries).toBe(1);
+    });
+  });
 });
