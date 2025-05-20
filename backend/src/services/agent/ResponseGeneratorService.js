@@ -16,6 +16,7 @@
 const OpenAIService = require('./OpenAIService');
 const WorkingMemoryService = require('./WorkingMemoryService');
 const MultiStepReasoningService = require('./MultiStepReasoningService');
+const { FormatterService } = require('./formatting');
 const logger = require('../../utils/logger');
 const { performance } = require('perf_hooks');
 
@@ -299,7 +300,7 @@ class ResponseGeneratorService {
       }
       
       // Apply output formatting if needed
-      const formattedResponse = this._applyOutputFormat(responseText, responseOptions.format);
+      const formattedResponse = this._applyOutputFormat(responseText, responseOptions.format, responseOptions);
       
       // Generate speech version if needed
       let responseSpeech = null;
@@ -641,7 +642,7 @@ class ResponseGeneratorService {
       const response = await this._fillTemplate(template, {}, params, options);
       
       // Apply output formatting if needed
-      return this._applyOutputFormat(response, options.format || 'text');
+      return this._applyOutputFormat(response, options.format || 'text', options);
     } catch (error) {
       logger.error(`System response generation error: ${error.message}`);
       return `System message: ${JSON.stringify(params)}`;
@@ -686,7 +687,7 @@ class ResponseGeneratorService {
       );
       
       // Apply output formatting if needed
-      return this._applyOutputFormat(description, options.format || 'text');
+      return this._applyOutputFormat(description, options.format || 'text', options);
     } catch (error) {
       logger.error(`Visualization description error: ${error.message}`);
       return "";
@@ -1041,9 +1042,300 @@ class ResponseGeneratorService {
    * @private
    * @param {string} text - Response text
    * @param {string} format - Desired format (text, json, html, markdown)
+   * @param {Object} options - Additional formatting options
    * @returns {string} - Formatted response
    */
-  _applyOutputFormat(text, format = 'text') {
+  _applyOutputFormat(text, format = 'text', options = {}) {
+    if (!format || format === 'text') {
+      return text;
+    }
+    
+    // Check for table formatting syntax
+    if (text.includes('|TABLE_START|') && text.includes('|TABLE_END|')) {
+      return this._processTableFormatting(text, format, options);
+    }
+    
+    // Check for list formatting syntax
+    if (text.includes('|LIST_START|') && text.includes('|LIST_END|')) {
+      return this._processListFormatting(text, format, options);
+    }
+    
+    // Check for disclosure formatting syntax
+    if (text.includes('|DISCLOSURE_START|') && text.includes('|DISCLOSURE_END|')) {
+      return this._processDisclosureFormatting(text, format, options);
+    }
+    
+    // Check for highlighted text
+    if (text.includes('|HIGHLIGHT_START|') && text.includes('|HIGHLIGHT_END|')) {
+      return this._processHighlightFormatting(text, format, options);
+    }
+    
+    // If no special formatting required, use the legacy formatter
+    return this._legacyApplyOutputFormat(text, format, options);
+  }
+  
+  /**
+   * Process table formatting in text
+   * @private
+   * @param {string} text - Text containing table markers
+   * @param {string} format - Desired output format
+   * @param {Object} options - Additional options
+   * @returns {string} - Text with formatted tables
+   */
+  _processTableFormatting(text, format, options = {}) {
+    let result = text;
+    const tableRegex = /\|TABLE_START\|(.*?)\|TABLE_END\|/gs;
+    
+    result = result.replace(tableRegex, (match, tableContent) => {
+      try {
+        // Parse the table content
+        const lines = tableContent.trim().split('\n');
+        const tableOptions = {};
+        let headerRow = [];
+        let rows = [];
+        let title = '';
+        
+        // Check if the first line is a title
+        if (lines[0].startsWith('|TITLE|')) {
+          title = lines[0].replace('|TITLE|', '').trim();
+          lines.shift();
+        }
+        
+        // Check if the first line has options
+        if (lines[0].startsWith('|OPTIONS|')) {
+          const optionsText = lines[0].replace('|OPTIONS|', '').trim();
+          try {
+            Object.assign(tableOptions, JSON.parse(optionsText));
+          } catch (e) {
+            logger.warn(`Invalid table options format: ${optionsText}`);
+          }
+          lines.shift();
+        }
+        
+        // The next line is the header
+        if (lines.length > 0) {
+          headerRow = lines[0].split('|').map(h => h.trim()).filter(Boolean);
+          
+          // Process data rows
+          rows = lines.slice(1).map(line => {
+            return line.split('|').map(cell => cell.trim()).filter(Boolean);
+          }).filter(row => row.length > 0);
+        }
+        
+        // Format the table
+        if (headerRow.length > 0 && rows.length > 0) {
+          if (tableOptions.comparison === true) {
+            // For comparison tables, convert to the required format
+            const items = headerRow.slice(1).map((name, idx) => {
+              const item = { name };
+              rows.forEach(row => {
+                if (row.length > idx + 1) {
+                  item[row[0]] = row[idx + 1];
+                }
+              });
+              return item;
+            });
+            
+            const keys = rows.map(row => row[0]);
+            return FormatterService.formatComparisonTable(
+              title, 
+              items, 
+              keys, 
+              { ...tableOptions, format }
+            );
+          } else {
+            // Regular table
+            return title ? 
+              `${title}\n${FormatterService.formatTable(headerRow, rows, { ...tableOptions, format })}` :
+              FormatterService.formatTable(headerRow, rows, { ...tableOptions, format });
+          }
+        }
+        
+        // Fallback if parsing fails
+        return match;
+      } catch (error) {
+        logger.error(`Error formatting table: ${error.message}`);
+        return match;
+      }
+    });
+    
+    // If there are still other special formats, process them
+    if (result.includes('|LIST_START|') || 
+        result.includes('|DISCLOSURE_START|') || 
+        result.includes('|HIGHLIGHT_START|')) {
+      return this._applyOutputFormat(result, format, options);
+    }
+    
+    // Apply legacy formatting to the remaining text
+    return this._legacyApplyOutputFormat(result, format, options);
+  }
+  
+  /**
+   * Process list formatting in text
+   * @private
+   * @param {string} text - Text containing list markers
+   * @param {string} format - Desired output format
+   * @param {Object} options - Additional options
+   * @returns {string} - Text with formatted lists
+   */
+  _processListFormatting(text, format, options = {}) {
+    let result = text;
+    const listRegex = /\|LIST_START\|(.*?)\|LIST_END\|/gs;
+    
+    result = result.replace(listRegex, (match, listContent) => {
+      try {
+        // Parse the list content
+        const lines = listContent.trim().split('\n');
+        const listOptions = {};
+        let items = [];
+        
+        // Check if the first line has options
+        if (lines[0].startsWith('|OPTIONS|')) {
+          const optionsText = lines[0].replace('|OPTIONS|', '').trim();
+          try {
+            Object.assign(listOptions, JSON.parse(optionsText));
+          } catch (e) {
+            logger.warn(`Invalid list options format: ${optionsText}`);
+          }
+          lines.shift();
+        }
+        
+        // Parse list items
+        const itemRegex = /^(\s*)(-|\*|\d+\.)\s+(.+)$/;
+        let currentItem = null;
+        let itemStack = [{ level: -1, children: [] }];
+        
+        lines.forEach(line => {
+          const match = line.match(itemRegex);
+          if (match) {
+            const [_, indent, bullet, text] = match;
+            const level = indent.length / 2; // Assuming 2 spaces per level
+            
+            // Create new item
+            const item = { text };
+            
+            // Check for highlight marker
+            if (text.includes('|HIGHLIGHT|')) {
+              item.text = text.replace('|HIGHLIGHT|', '').trim();
+              item.highlight = true;
+            }
+            
+            // Find parent at appropriate level
+            while (itemStack[itemStack.length - 1].level >= level) {
+              itemStack.pop();
+            }
+            
+            // Add to parent's children
+            const parent = itemStack[itemStack.length - 1];
+            if (!parent.children) parent.children = [];
+            parent.children.push(item);
+            
+            // Push this item to stack
+            item.level = level;
+            itemStack.push(item);
+          }
+        });
+        
+        // Get root items
+        items = itemStack[0].children || [];
+        
+        // Format the list
+        if (items.length > 0) {
+          return FormatterService.formatList(items, { ...listOptions, format });
+        }
+        
+        // Fallback: treat each line as an item
+        items = lines.map(line => line.trim()).filter(Boolean);
+        return FormatterService.formatList(items, { ...listOptions, format });
+      } catch (error) {
+        logger.error(`Error formatting list: ${error.message}`);
+        return match;
+      }
+    });
+    
+    // If there are still other special formats, process them
+    if (result.includes('|DISCLOSURE_START|') || result.includes('|HIGHLIGHT_START|')) {
+      return this._applyOutputFormat(result, format, options);
+    }
+    
+    // Apply legacy formatting to the remaining text
+    return this._legacyApplyOutputFormat(result, format, options);
+  }
+  
+  /**
+   * Process disclosure formatting in text
+   * @private
+   * @param {string} text - Text containing disclosure markers
+   * @param {string} format - Desired output format
+   * @param {Object} options - Additional options
+   * @returns {string} - Text with formatted disclosures
+   */
+  _processDisclosureFormatting(text, format, options = {}) {
+    let result = text;
+    const disclosureRegex = /\|DISCLOSURE_START\|(.*?)\|DISCLOSURE_END\|/gs;
+    
+    result = result.replace(disclosureRegex, (match, content) => {
+      try {
+        // Parse the disclosure content
+        const parts = content.split('|DETAILS|');
+        if (parts.length !== 2) {
+          return match;
+        }
+        
+        const summary = parts[0].trim();
+        const details = parts[1].trim();
+        
+        // Format the disclosure
+        return FormatterService.formatDisclosure(summary, details, { format });
+      } catch (error) {
+        logger.error(`Error formatting disclosure: ${error.message}`);
+        return match;
+      }
+    });
+    
+    // If there are still highlight formats, process them
+    if (result.includes('|HIGHLIGHT_START|')) {
+      return this._applyOutputFormat(result, format, options);
+    }
+    
+    // Apply legacy formatting to the remaining text
+    return this._legacyApplyOutputFormat(result, format, options);
+  }
+  
+  /**
+   * Process highlight formatting in text
+   * @private
+   * @param {string} text - Text containing highlight markers
+   * @param {string} format - Desired output format
+   * @param {Object} options - Additional options
+   * @returns {string} - Text with highlighted sections
+   */
+  _processHighlightFormatting(text, format, options = {}) {
+    let result = text;
+    const highlightRegex = /\|HIGHLIGHT_START\|(.*?)\|HIGHLIGHT_END\|/gs;
+    
+    result = result.replace(highlightRegex, (match, content) => {
+      try {
+        return FormatterService.highlightText(content.trim(), { format, inline: true });
+      } catch (error) {
+        logger.error(`Error highlighting text: ${error.message}`);
+        return match;
+      }
+    });
+    
+    // Apply legacy formatting to the remaining text
+    return this._legacyApplyOutputFormat(result, format, options);
+  }
+  
+  /**
+   * Legacy output formatting method
+   * @private
+   * @param {string} text - Response text
+   * @param {string} format - Desired format
+   * @param {Object} options - Additional options
+   * @returns {string} - Formatted response
+   */
+  _legacyApplyOutputFormat(text, format = 'text', options = {}) {
     if (!format || format === 'text') {
       return text;
     }

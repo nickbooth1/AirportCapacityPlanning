@@ -1,12 +1,17 @@
 /**
- * Integration tests for knowledge retrieval components
+ * Integration tests for knowledge retrieval components with improved query understanding
  * 
- * These tests verify the integration between various knowledge retrieval components:
+ * These tests verify the integration between various knowledge retrieval components
+ * and the enhanced query understanding system:
  * - KnowledgeRetrievalService
  * - RetrievalAugmentedGenerationService
  * - WorkingMemoryService
  * - MultiStepReasoningService
  * - ResponseGeneratorService
+ * - QueryVariationHandlerService (NEW)
+ * - IntentClassifierService (NEW)
+ * - QueryParserService (NEW)
+ * - EnhancedAgentQueryProcessor (NEW)
  * 
  * Test ID: 1.5.4.1
  */
@@ -16,6 +21,12 @@ const RetrievalAugmentedGenerationService = require('../../../src/services/agent
 const WorkingMemoryService = require('../../../src/services/agent/WorkingMemoryService');
 const MultiStepReasoningService = require('../../../src/services/agent/MultiStepReasoningService');
 const ResponseGeneratorService = require('../../../src/services/agent/ResponseGeneratorService');
+
+// New query understanding components
+const QueryVariationHandlerService = require('../../../src/services/agent/QueryVariationHandlerService');
+const IntentClassifierService = require('../../../src/services/agent/IntentClassifierService');
+const QueryParserService = require('../../../src/services/agent/QueryParserService');
+const EnhancedAgentQueryProcessor = require('../../../src/services/agent/EnhancedAgentQueryProcessor');
 
 // Mock the OpenAI service for deterministic testing
 jest.mock('../../../src/services/agent/OpenAIService', () => ({
@@ -140,6 +151,7 @@ describe('Knowledge Retrieval Integration Tests (1.5.4.1)', () => {
   let ragService;
   let multiStepReasoningService;
   let responseGeneratorService;
+  let enhancedQueryProcessor;
   
   beforeAll(() => {
     // Create fresh instances for integration testing
@@ -169,6 +181,30 @@ describe('Knowledge Retrieval Integration Tests (1.5.4.1)', () => {
     responseGeneratorService = ResponseGeneratorService;
     responseGeneratorService.workingMemoryService = workingMemoryService;
     responseGeneratorService.multiStepReasoningService = multiStepReasoningService;
+    
+    // Initialize the enhanced query processor
+    enhancedQueryProcessor = new EnhancedAgentQueryProcessor({
+      queryVariationHandler: QueryVariationHandlerService,
+      intentClassifier: IntentClassifierService,
+      queryParser: QueryParserService,
+      workingMemoryService,
+      multiStepReasoningService,
+      responseGenerator: responseGeneratorService
+    });
+    
+    // Register a handler for test queries
+    enhancedQueryProcessor.registerQueryHandler({
+      processQuery: async (parsedQuery, context) => {
+        return {
+          success: true,
+          data: {
+            text: `Response for ${parsedQuery.intent} query about ${Object.keys(parsedQuery.entities || {}).join(', ')}`,
+            entities: parsedQuery.entities,
+            parameters: parsedQuery.parameters
+          }
+        };
+      }
+    }, ['capacity_query', 'maintenance_query', 'infrastructure_query', 'stand_status_query', '*']);
   });
   
   beforeEach(() => {
@@ -666,6 +702,100 @@ describe('Knowledge Retrieval Integration Tests (1.5.4.1)', () => {
       // Should have both structured and vector results
       expect(result.facts.length).toBeGreaterThan(0);
       expect(result.contextual.length).toBeGreaterThan(0);
+    });
+  });
+  
+  describe('Query variation handling tests', () => {
+    it('should handle different phrasings of the same query', async () => {
+      const variations = [
+        'What is the status of stand A12?',
+        'Tell me about stand A12',
+        'Show me stand A12',
+        'Stand A12 status?',
+        'How is A12 looking?'
+      ];
+      
+      const results = [];
+      
+      for (const query of variations) {
+        const result = await enhancedQueryProcessor.processQuery(query, {
+          sessionId: 'test-variations'
+        });
+        
+        results.push(result);
+        
+        // All variations should successfully process
+        expect(result.success).toBeTruthy();
+        
+        // All should identify the stand entity
+        expect(result.parsedQuery.entities.stand).toBeDefined();
+        expect(result.parsedQuery.entities.stand).toContain('A12');
+      }
+      
+      // All should have similar intent classification
+      const intents = results.map(r => r.parsedQuery.intent);
+      expect(new Set(intents).size).toBeLessThan(3); // Maximum 2 different intents
+    });
+    
+    it('should handle abbreviations and synonyms', async () => {
+      // Test abbreviation handling
+      const t1Result = await enhancedQueryProcessor.processQuery('Show T1 capacity', {
+        sessionId: 'test-abbrev'
+      });
+      
+      expect(t1Result.success).toBeTruthy();
+      expect(t1Result.parsedQuery.entities.terminal).toBeDefined();
+      expect(t1Result.parsedQuery.entities.terminal).toContain('Terminal 1');
+      
+      // Test synonym handling
+      const gateResult = await enhancedQueryProcessor.processQuery('Show gate A12 status', {
+        sessionId: 'test-synonym'
+      });
+      
+      expect(gateResult.success).toBeTruthy();
+      expect(gateResult.parsedQuery.entities.stand).toBeDefined();
+      expect(gateResult.parsedQuery.entities.stand).toContain('Stand A12');
+    });
+    
+    it('should integrate with knowledge retrieval and reasoning', async () => {
+      // Process a query with variations that requires knowledge retrieval
+      const result = await enhancedQueryProcessor.processQuery(
+        'What's the deal with Terminal 1 capacity during peak hours?',
+        { sessionId: 'test-integrated' }
+      );
+      
+      expect(result.success).toBeTruthy();
+      
+      // Query should have been normalized and classified correctly
+      expect(result.parsedQuery.intent).toBeDefined();
+      expect(result.parsedQuery.entities.terminal).toBeDefined();
+      expect(result.parsedQuery.entities.terminal).toContain('Terminal 1');
+      
+      // Should have used multi-step reasoning due to complex query
+      expect(result.handlerUsed).toBe('MultiStepReasoningService');
+      
+      // Verify knowledge retrieval was performed
+      // MultiStepReasoningService calls RAG which calls knowledge retrieval
+      expect(multiStepReasoningService.ragService.knowledgeRetrievalService.retrieveKnowledge)
+        .toHaveBeenCalled();
+    });
+    
+    it('should maintain context across differently phrased queries', async () => {
+      const sessionId = 'test-sequence-variations';
+      
+      // First query about Terminal 1
+      await enhancedQueryProcessor.processQuery('Tell me about Terminal 1 capacity', {
+        sessionId
+      });
+      
+      // Follow-up using a different phrasing and referring to previous entity
+      const result = await enhancedQueryProcessor.processQuery('How does maintenance affect it?', {
+        sessionId
+      });
+      
+      expect(result.success).toBeTruthy();
+      expect(result.parsedQuery.entities.terminal).toBeDefined();
+      expect(result.parsedQuery.entities.terminal).toContain('Terminal 1');
     });
   });
   

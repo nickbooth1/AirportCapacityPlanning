@@ -133,7 +133,7 @@ describe('Enhanced MultiStepReasoningService', () => {
       workingMemoryService: mockWorkingMemoryService,
       ragService: mockRagService,
       factVerifier: mockFactVerifier,
-      contextService: new ContextService(),
+      contextService: ContextService,
     });
   });
 

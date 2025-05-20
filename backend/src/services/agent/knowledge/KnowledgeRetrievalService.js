@@ -841,8 +841,6 @@ class KnowledgeRetrievalService {
       this.vectorSearchService.resetMetrics();
     }
   }
-}
-
   /**
    * Extract all unique sources from results
    * 
@@ -915,5 +913,6 @@ class KnowledgeRetrievalService {
     
     return items;
   }
+}
 
 module.exports = KnowledgeRetrievalService;

@@ -450,7 +450,6 @@ class WorkingMemoryService {
       return false;
     }
   }
-}
 
   /**
    * Store entities mentioned in the conversation
@@ -772,5 +771,6 @@ class WorkingMemoryService {
       };
     }
   }
+}
 
 module.exports = WorkingMemoryService;

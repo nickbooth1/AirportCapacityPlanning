@@ -1,0 +1,16 @@
+/**
+ * Mock FactVerifierService for tests
+ */
+
+class FactVerifierService {
+  verifyResponse() {
+    return Promise.resolve({
+      verified: true,
+      confidence: 0.8,
+      correctedResponse: "Fact-checked response",
+      statements: []
+    });
+  }
+}
+
+module.exports = FactVerifierService;

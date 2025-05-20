@@ -1,0 +1,26 @@
+/**
+ * Mock RetrievalAugmentedGenerationService for tests
+ */
+
+class RetrievalAugmentedGenerationService {
+  constructor() {
+    this.knowledgeRetrievalService = {
+      retrieveKnowledge: jest.fn().mockResolvedValue({
+        facts: [],
+        contextual: [],
+        sources: []
+      })
+    };
+  }
+  
+  generateResponse() {
+    return Promise.resolve({
+      text: "Generated RAG response",
+      confidence: 0.9,
+      sources: [],
+      isFactChecked: true
+    });
+  }
+}
+
+module.exports = RetrievalAugmentedGenerationService;
