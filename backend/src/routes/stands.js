@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const StandService = require('../services/StandService');
 const { ValidationError } = require('../middleware/errorHandler');
+const { validateStandUpdate, validateETagForUpdate } = require('../middleware/updateValidationMiddleware');
 
 // Get all stands with optional filtering
 router.get('/', async (req, res, next) => {
@@ -268,28 +269,28 @@ router.post('/bulk', async (req, res, next) => {
 });
 
 // Update a stand
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validateETagForUpdate, validateStandUpdate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const standData = req.body;
+    const user = req.user || { id: 'system', name: 'System' };
     
-    // Convert string values to appropriate types
-    if (standData.pier_id) standData.pier_id = parseInt(standData.pier_id, 10);
-    if (standData.is_active !== undefined) {
-      standData.is_active = standData.is_active === true || standData.is_active === 'true';
-    }
-    if (standData.has_jetbridge !== undefined) {
-      standData.has_jetbridge = standData.has_jetbridge === true || standData.has_jetbridge === 'true';
-    }
-    if (standData.max_wingspan_meters) {
-      standData.max_wingspan_meters = parseInt(standData.max_wingspan_meters, 10);
-    }
-    if (standData.max_length_meters) {
-      standData.max_length_meters = parseInt(standData.max_length_meters, 10);
-    }
+    // Get ETag if provided for concurrency control
+    const modifiedAt = req.headers['if-match'];
     
-    const updatedStand = await StandService.updateStand(parseInt(id, 10), standData);
+    // Update stand with service that includes conflict detection and audit logging
+    const updatedStand = await StandService.updateStand(
+      parseInt(id, 10), 
+      standData,
+      {
+        user,
+        request: req,
+        modifiedAt
+      }
+    );
     
+    // Set ETag header for next update
+    res.set('ETag', new Date(updatedStand.updated_at).getTime().toString());
     res.json(updatedStand);
   } catch (error) {
     next(error);
@@ -301,8 +302,16 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { force = false } = req.query;
+    const user = req.user || { id: 'system', name: 'System' };
     
-    await StandService.deleteStand(parseInt(id, 10), force === 'true');
+    await StandService.deleteStand(
+      parseInt(id, 10), 
+      force === 'true',
+      {
+        user,
+        request: req
+      }
+    );
     
     res.status(204).end();
   } catch (error) {

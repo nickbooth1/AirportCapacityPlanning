@@ -136,13 +136,22 @@ exports.getRequestsByStand = async (req, res, next) => {
 
 exports.createRequest = async (req, res, next) => {
   try {
-    const request = await maintenanceRequestService.createRequest(req.body);
+    // Get user info from auth or use default for now
+    const user = req.user || { id: 'system', name: 'System' };
+    
+    // Pass request data, user, and request object
+    const request = await maintenanceRequestService.createRequest(req.body, {
+      user,
+      request: req
+    });
+    
     // Send notification
     try {
       await notificationService.sendMaintenanceRequestNotification(request.id, 'created');
     } catch (notificationError) {
       console.error('Failed to send creation notification:', notificationError);
     }
+    
     res.status(201).json(request);
   } catch (error) {
     next(error);
@@ -151,16 +160,32 @@ exports.createRequest = async (req, res, next) => {
 
 exports.updateRequest = async (req, res, next) => {
   try {
-    const request = await maintenanceRequestService.updateRequest(req.params.id, req.body);
-    if (!request) {
-      return res.status(404).json({ message: 'Maintenance request not found' });
-    }
+    // Get user info from auth or use default for now
+    const user = req.user || { id: 'system', name: 'System' };
+    
+    // Extract If-Match header for optimistic concurrency control
+    const modifiedAt = req.headers['if-match'];
+    
+    // Pass request data, user, and request object
+    const request = await maintenanceRequestService.updateRequest(
+      req.params.id, 
+      req.body,
+      {
+        user,
+        request: req,
+        modifiedAt
+      }
+    );
+    
     // Send notification
     try {
       await notificationService.sendMaintenanceRequestNotification(request.id, 'updated');
     } catch (notificationError) {
       console.error('Failed to send update notification:', notificationError);
     }
+    
+    // Set ETag header for next update
+    res.set('ETag', new Date(request.updated_at).getTime().toString());
     res.json(request);
   } catch (error) {
     next(error);

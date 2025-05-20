@@ -9,6 +9,8 @@ const Stand = require('../models/Stand');
 const Pier = require('../models/Pier');
 const { ValidationError, NotFoundError, ConflictError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const { transaction } = require('objection');
+const AuditService = require('./AuditService');
 
 class StandService {
   /**
@@ -150,9 +152,14 @@ class StandService {
   /**
    * Create a new stand
    * @param {Object} standData - Stand data
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User performing the creation
+   * @param {Object} options.request - Express request object
    * @returns {Promise<Object>} - The created stand
    */
-  async createStand(standData) {
+  async createStand(standData, options = {}) {
+    const trx = await transaction.start(Stand.knex());
+    
     try {
       // Extract data
       const { 
@@ -172,26 +179,29 @@ class StandService {
       
       // Validate required fields
       if (!name || !code || !pier_id) {
+        await trx.rollback();
         throw new ValidationError('Name, code, and pier_id are required');
       }
       
       // Verify pier exists
-      const pier = await Pier.query().findById(pier_id);
+      const pier = await Pier.query(trx).findById(pier_id);
       if (!pier) {
+        await trx.rollback();
         throw new ValidationError(`Pier with ID ${pier_id} not found`);
       }
       
       // Check for unique code within pier
-      const existingStand = await Stand.query()
+      const existingStand = await Stand.query(trx)
         .where({ code, pier_id })
         .first();
         
       if (existingStand) {
+        await trx.rollback();
         throw new ConflictError('A stand with this code already exists for this pier');
       }
       
       // Create stand
-      const newStand = await Stand.query().insert({
+      const newStand = await Stand.query(trx).insert({
         name,
         code,
         pier_id,
@@ -206,9 +216,29 @@ class StandService {
         longitude
       });
       
+      // Create audit log
+      await AuditService.logChange({
+        entityType: 'stand',
+        entityId: newStand.id,
+        action: 'create',
+        previousState: null,
+        newState: newStand,
+        user: options.user,
+        request: options.request,
+        transaction: trx
+      });
+      
+      // Commit transaction
+      await trx.commit();
+      
       // Return with relations
       return this.getStandById(newStand.id);
     } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
       if (error instanceof ValidationError || error instanceof ConflictError) {
         throw error;
       }
@@ -222,42 +252,108 @@ class StandService {
    * Update a stand
    * @param {number} id - Stand ID
    * @param {Object} standData - Updated stand data
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User performing the update
+   * @param {Object} options.request - Express request object
+   * @param {string} options.modifiedAt - Last modified timestamp for concurrency check
    * @returns {Promise<Object>} - The updated stand
    */
-  async updateStand(id, standData) {
+  async updateStand(id, standData, options = {}) {
+    const trx = await transaction.start(Stand.knex());
+    
     try {
       // Check if stand exists
-      const stand = await Stand.query().findById(id);
+      const stand = await Stand.query(trx).findById(id);
       if (!stand) {
+        await trx.rollback();
         throw new NotFoundError(`Stand with ID ${id} not found`);
+      }
+      
+      // Optimistic concurrency control if modifiedAt is provided
+      if (options.modifiedAt && stand.updated_at && 
+          new Date(options.modifiedAt).getTime() !== new Date(stand.updated_at).getTime()) {
+        await trx.rollback();
+        throw new ConflictError('Stand has been modified by another user. Please refresh and try again.');
+      }
+      
+      // Detect maintenance conflicts - if the stand has active maintenance
+      if (stand.maintenanceRequests && Array.isArray(stand.maintenanceRequests)) {
+        const now = new Date();
+        const activeMaintenanceRequests = stand.maintenanceRequests.filter(req => {
+          const startDate = new Date(req.start_datetime);
+          const endDate = new Date(req.end_datetime);
+          return startDate <= now && endDate >= now && [2, 4].includes(req.status_id); // Approved or In Progress
+        });
+        
+        if (activeMaintenanceRequests.length > 0) {
+          // Log a warning but don't block the update
+          logger.warn(`Updating stand ${id} with active maintenance requests`, {
+            standId: id,
+            maintenance: activeMaintenanceRequests.map(r => r.id)
+          });
+          
+          // If changing status to inactive while maintenance is active, that's a conflict
+          if (standData.is_active === false && stand.is_active === true) {
+            await trx.rollback();
+            throw new ConflictError('Cannot deactivate stand with active maintenance requests');
+          }
+        }
       }
       
       // If pier_id is being updated, verify pier exists
       if (standData.pier_id && standData.pier_id !== stand.pier_id) {
-        const pier = await Pier.query().findById(standData.pier_id);
+        const pier = await Pier.query(trx).findById(standData.pier_id);
         if (!pier) {
+          await trx.rollback();
           throw new ValidationError(`Pier with ID ${standData.pier_id} not found`);
         }
         
         // Check for unique code within pier if code is being updated
         if (standData.code && (standData.code !== stand.code || standData.pier_id !== stand.pier_id)) {
-          const existingStand = await Stand.query()
+          const existingStand = await Stand.query(trx)
             .where({ code: standData.code, pier_id: standData.pier_id })
             .whereNot({ id })
             .first();
             
           if (existingStand) {
+            await trx.rollback();
             throw new ConflictError('A stand with this code already exists for this pier');
           }
         }
       }
       
+      // Save the previous state for audit log
+      const previousState = { ...stand };
+      
       // Update stand
-      await Stand.query().findById(id).patch(standData);
+      await Stand.query(trx).findById(id).patch(standData);
+      
+      // Get updated stand for audit and return value
+      const updatedStand = await Stand.query(trx).findById(id);
+      
+      // Create audit log
+      await AuditService.logChange({
+        entityType: 'stand',
+        entityId: id,
+        action: 'update',
+        previousState,
+        newState: updatedStand,
+        user: options.user,
+        request: options.request,
+        transaction: trx
+      });
+      
+      // Commit transaction
+      await trx.commit();
       
       // Return updated stand with relations
       return this.getStandById(id);
     } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
       if (
         error instanceof NotFoundError || 
         error instanceof ValidationError || 
@@ -275,34 +371,72 @@ class StandService {
    * Delete a stand
    * @param {number} id - Stand ID
    * @param {boolean} force - Force deletion even if there are dependencies
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User performing the deletion
+   * @param {Object} options.request - Express request object
    * @returns {Promise<boolean>} - Success status
    */
-  async deleteStand(id, force = false) {
+  async deleteStand(id, force = false, options = {}) {
+    const trx = await transaction.start(Stand.knex());
+    
     try {
       // Check if stand exists
-      const stand = await Stand.query().findById(id);
+      const stand = await Stand.query(trx).findById(id)
+        .withGraphFetched('maintenanceRequests');
       if (!stand) {
+        await trx.rollback();
         throw new NotFoundError(`Stand with ID ${id} not found`);
       }
       
-      // Check for dependencies unless force is true
-      if (!force) {
-        // Check for maintenance requests
-        const maintenanceRequests = await stand.$relatedQuery('maintenanceRequests');
-        if (maintenanceRequests.length > 0) {
-          throw new ConflictError(
-            `Cannot delete stand ${id} because it has ${maintenanceRequests.length} maintenance requests associated with it. Use force=true to delete anyway.`
-          );
-        }
-        
-        // Add other dependency checks as needed
+      // Check for active maintenance (regardless of force flag)
+      const now = new Date();
+      const activeMaintenanceRequests = stand.maintenanceRequests.filter(req => {
+        const startDate = new Date(req.start_datetime);
+        const endDate = new Date(req.end_datetime);
+        return startDate <= now && endDate >= now && [2, 4].includes(req.status_id); // Approved or In Progress
+      });
+      
+      if (activeMaintenanceRequests.length > 0) {
+        await trx.rollback();
+        throw new ConflictError(
+          `Cannot delete stand ${id} because it has active maintenance in progress.`
+        );
       }
       
+      // Check for dependencies unless force is true
+      if (!force && stand.maintenanceRequests.length > 0) {
+        await trx.rollback();
+        throw new ConflictError(
+          `Cannot delete stand ${id} because it has ${stand.maintenanceRequests.length} maintenance requests associated with it. Use force=true to delete anyway.`
+        );
+      }
+      
+      // Create audit log before deleting (we need the stand data)
+      await AuditService.logChange({
+        entityType: 'stand',
+        entityId: id,
+        action: 'delete',
+        previousState: stand,
+        newState: null,
+        user: options.user,
+        request: options.request,
+        notes: force ? 'Forced deletion with dependencies' : null,
+        transaction: trx
+      });
+      
       // Delete stand
-      await Stand.query().deleteById(id);
+      await Stand.query(trx).deleteById(id);
+      
+      // Commit transaction
+      await trx.commit();
       
       return true;
     } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
       if (
         error instanceof NotFoundError || 
         error instanceof ConflictError

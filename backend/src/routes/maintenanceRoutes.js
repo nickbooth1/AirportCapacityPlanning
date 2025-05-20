@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const maintenanceController = require('../controllers/maintenanceController');
+const { validateMaintenanceRequestUpdate, validateETagForUpdate } = require('../middleware/updateValidationMiddleware');
 
 // Maintenance requests routes
 router.get('/requests', maintenanceController.getAllRequests);
@@ -14,8 +15,8 @@ router.get('/requests/:id/capacity-impact', maintenanceController.getRequestCapa
 
 // Request-specific routes with ID
 router.get('/requests/:id', maintenanceController.getRequestById);
-router.put('/requests/:id', maintenanceController.updateRequest);
-router.put('/requests/:id/status', maintenanceController.updateRequestStatus);
+router.put('/requests/:id', validateETagForUpdate, validateMaintenanceRequestUpdate, maintenanceController.updateRequest);
+router.put('/requests/:id/status', validateETagForUpdate, maintenanceController.updateRequestStatus);
 
 // Maintenance approvals routes
 router.post('/approvals', maintenanceController.createApproval);

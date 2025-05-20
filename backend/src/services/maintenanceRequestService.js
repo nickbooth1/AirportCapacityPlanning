@@ -1,7 +1,11 @@
 const MaintenanceRequest = require('../models/MaintenanceRequest');
 const MaintenanceStatusType = require('../models/MaintenanceStatusType');
-const { ValidationError } = require('objection');
+const Stand = require('../models/Stand');
+const { ValidationError, transaction } = require('objection');
 const { raw } = require('objection'); // Import raw
+const { NotFoundError, ConflictError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
+const AuditService = require('./AuditService');
 
 class MaintenanceRequestService {
   async getAllRequests(filters = {}) {
@@ -167,25 +171,268 @@ class MaintenanceRequestService {
       .orderBy('start_datetime', 'asc');
   }
   
-  async createRequest(requestData) {
-    this.validateDates(requestData.start_datetime, requestData.end_datetime);
-    if (!requestData.status_id) {
-      requestData.status_id = 1; // Default to 'Requested'
+  /**
+   * Create a new maintenance request
+   * @param {Object} requestData - Request data
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User creating the request
+   * @param {Object} options.request - Express request object
+   * @returns {Promise<Object>} - The created request
+   */
+  async createRequest(requestData, options = {}) {
+    const trx = await transaction.start(MaintenanceRequest.knex());
+    
+    try {
+      // Validate dates
+      this.validateDates(requestData.start_datetime, requestData.end_datetime);
+      
+      // Set default status if not provided
+      if (!requestData.status_id) {
+        requestData.status_id = 1; // Default to 'Requested'
+      }
+      
+      // Verify stand exists and is active
+      const stand = await Stand.query(trx).findById(requestData.stand_id);
+      if (!stand) {
+        await trx.rollback();
+        throw new ValidationError({ 
+          message: `Stand with ID ${requestData.stand_id} not found`,
+          type: 'ValidationError'
+        });
+      }
+      
+      if (!stand.is_active) {
+        await trx.rollback();
+        throw new ValidationError({ 
+          message: 'Cannot assign maintenance to an inactive stand',
+          type: 'ValidationError'
+        });
+      }
+      
+      // Check for date overlap with other maintenance requests
+      const overlaps = await this.checkForOverlappingMaintenance(
+        requestData.stand_id, 
+        requestData.start_datetime, 
+        requestData.end_datetime,
+        null,
+        trx
+      );
+      
+      if (overlaps.length > 0) {
+        await trx.rollback();
+        const conflictMessage = overlaps.map(o => 
+          `ID: ${o.id}, Title: ${o.title}, Period: ${new Date(o.start_datetime).toLocaleDateString()} - ${new Date(o.end_datetime).toLocaleDateString()}`
+        ).join('; ');
+        
+        throw new ConflictError(`Maintenance period overlaps with existing requests: ${conflictMessage}`);
+      }
+      
+      // Set timestamps
+      const now = new Date().toISOString();
+      requestData.created_at = now;
+      requestData.updated_at = now;
+      
+      // Create the request
+      const newRequest = await MaintenanceRequest.query(trx).insert(requestData);
+      
+      // Create audit log
+      await AuditService.logChange({
+        entityType: 'maintenance_request',
+        entityId: newRequest.id,
+        action: 'create',
+        previousState: null,
+        newState: newRequest,
+        user: options.user,
+        request: options.request,
+        transaction: trx
+      });
+      
+      // Commit transaction
+      await trx.commit();
+      
+      // Return created request with relations
+      return await MaintenanceRequest.query()
+        .findById(newRequest.id)
+        .withGraphFetched('[stand, status]');
+    } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
+      // Log the error
+      logger.error(`Error creating maintenance request: ${error.message}`, { error });
+      
+      // Rethrow the error
+      throw error;
     }
-    return await MaintenanceRequest.query().insert(requestData);
   }
   
-  async updateRequest(id, requestData) {
-    const existingRequest = await MaintenanceRequest.query().findById(id);
-    if (!existingRequest) {
-      throw new ValidationError({ type: 'NotFound', message: 'Request not found' });
+  /**
+   * Update a maintenance request
+   * @param {string} id - Request ID
+   * @param {Object} requestData - Updated request data
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User performing the update
+   * @param {Object} options.request - Express request object
+   * @param {string} options.modifiedAt - Last modified timestamp for concurrency check
+   * @returns {Promise<Object>} - The updated request
+   */
+  async updateRequest(id, requestData, options = {}) {
+    const trx = await transaction.start(MaintenanceRequest.knex());
+    
+    try {
+      // Get existing request with related data
+      const existingRequest = await MaintenanceRequest.query(trx)
+        .findById(id)
+        .withGraphFetched('[stand, status]');
+        
+      if (!existingRequest) {
+        await trx.rollback();
+        throw new NotFoundError('Maintenance request not found');
+      }
+      
+      // Optimistic concurrency control if modifiedAt is provided
+      if (options.modifiedAt && existingRequest.updated_at && 
+          new Date(options.modifiedAt).getTime() !== new Date(existingRequest.updated_at).getTime()) {
+        await trx.rollback();
+        throw new ConflictError('Request has been modified by another user. Please refresh and try again.');
+      }
+      
+      // Verify stand exists if changing stand
+      if (requestData.stand_id && requestData.stand_id !== existingRequest.stand_id) {
+        const stand = await Stand.query(trx).findById(requestData.stand_id);
+        if (!stand) {
+          await trx.rollback();
+          throw new ValidationError({ message: `Stand with ID ${requestData.stand_id} not found` });
+        }
+        
+        // Check if stand is active
+        if (!stand.is_active) {
+          await trx.rollback();
+          throw new ValidationError({ message: 'Cannot assign maintenance to an inactive stand' });
+        }
+      }
+      
+      // Validate dates
+      const startDate = requestData.start_datetime || existingRequest.start_datetime;
+      const endDate = requestData.end_datetime || existingRequest.end_datetime;
+      this.validateDates(startDate, endDate);
+      
+      // Check for date overlap with other maintenance requests for the same stand
+      if (requestData.start_datetime || requestData.end_datetime) {
+        const standId = requestData.stand_id || existingRequest.stand_id;
+        const overlaps = await this.checkForOverlappingMaintenance(
+          standId, 
+          startDate, 
+          endDate, 
+          id, // exclude current request
+          trx
+        );
+        
+        if (overlaps.length > 0) {
+          await trx.rollback();
+          const conflictMessage = overlaps.map(o => 
+            `ID: ${o.id}, Title: ${o.title}, Period: ${new Date(o.start_datetime).toLocaleDateString()} - ${new Date(o.end_datetime).toLocaleDateString()}`
+          ).join('; ');
+          
+          throw new ConflictError(`Maintenance period overlaps with existing requests: ${conflictMessage}`);
+        }
+      }
+      
+      // Status transition validation - if changing status
+      if (requestData.status_id && requestData.status_id !== existingRequest.status_id) {
+        // Define allowed transitions
+        const allowedTransitions = {
+          1: [2, 3, 6],     // Requested -> Approved, Rejected, Cancelled
+          2: [4, 6],        // Approved -> In Progress, Cancelled
+          3: [1],           // Rejected -> Requested (resubmit)
+          4: [5, 6],        // In Progress -> Completed, Cancelled
+          5: [],            // Completed -> (no further transitions)
+          6: [1]            // Cancelled -> Requested (resubmit)
+        };
+        
+        if (!allowedTransitions[existingRequest.status_id] || 
+            !allowedTransitions[existingRequest.status_id].includes(Number(requestData.status_id))) {
+          await trx.rollback();
+          throw new ValidationError({ 
+            message: `Invalid status transition from ${existingRequest.status.name} to status ID ${requestData.status_id}`,
+            type: 'ValidationError'
+          });
+        }
+      }
+      
+      // Save the previous state for audit log
+      const previousState = { ...existingRequest };
+      
+      // Update the request
+      const updatedRequest = await MaintenanceRequest.query(trx)
+        .patchAndFetchById(id, {
+          ...requestData,
+          updated_at: new Date().toISOString()
+        });
+      
+      // Create audit log
+      await AuditService.logChange({
+        entityType: 'maintenance_request',
+        entityId: id,
+        action: 'update',
+        previousState,
+        newState: updatedRequest,
+        user: options.user,
+        request: options.request,
+        transaction: trx
+      });
+      
+      // Commit transaction
+      await trx.commit();
+      
+      // Return updated request with relations
+      return await MaintenanceRequest.query()
+        .findById(id)
+        .withGraphFetched('[stand, status, approvals]');
+    } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
+      // Log the error
+      logger.error(`Error updating maintenance request ${id}: ${error.message}`, { error });
+      
+      // Rethrow the error
+      throw error;
+    }
+  }
+  
+  /**
+   * Check for overlapping maintenance on a stand
+   * @param {number} standId - Stand ID
+   * @param {string} startDate - Start date/time
+   * @param {string} endDate - End date/time
+   * @param {string} excludeRequestId - Request ID to exclude from check
+   * @param {Object} trx - Transaction object
+   * @returns {Promise<Array>} - Array of overlapping requests
+   */
+  async checkForOverlappingMaintenance(standId, startDate, endDate, excludeRequestId = null, trx = null) {
+    let query = MaintenanceRequest.query(trx)
+      .where('stand_id', standId)
+      .where(builder => {
+        // Overlapping period logic: 
+        // New request starts before existing ends AND new request ends after existing starts
+        builder
+          .where('start_datetime', '<=', endDate)
+          .where('end_datetime', '>=', startDate);
+      })
+      // Only consider active maintenance (requested, approved, in progress)
+      .whereIn('status_id', [1, 2, 4]);
+    
+    // Exclude the current request if updating
+    if (excludeRequestId) {
+      query = query.whereNot('id', excludeRequestId);
     }
     
-    const startDate = requestData.start_datetime || existingRequest.start_datetime;
-    const endDate = requestData.end_datetime || existingRequest.end_datetime;
-    this.validateDates(startDate, endDate);
-    
-    return await MaintenanceRequest.query().patchAndFetchById(id, requestData);
+    return await query;
   }
   
   validateDates(startDateStr, endDateStr) {
