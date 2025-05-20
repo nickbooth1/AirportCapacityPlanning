@@ -370,6 +370,98 @@ class StandService {
   }
   
   /**
+   * Get the count of stands with applied filters
+   * @param {Object} options - Filter options
+   * @returns {Promise<number>} - Total count of matching stands
+   */
+  async getStandCount(options = {}) {
+    try {
+      const { filter = {} } = options;
+      
+      // Build the query
+      let query = Stand.query();
+      
+      // Apply filters
+      if (Object.keys(filter).length > 0) {
+        query = query.where(filter);
+      }
+      
+      // If terminal_id is specified, we need special handling
+      if (options.terminal_id) {
+        // Get all piers in the terminal
+        const piers = await Pier.query().where('terminal_id', options.terminal_id);
+        
+        if (piers.length === 0) {
+          return 0;
+        }
+        
+        // Filter stands by pier IDs
+        const pierIds = piers.map(pier => pier.id);
+        query = query.whereIn('pier_id', pierIds);
+      }
+      
+      // Execute count query
+      const result = await query.count('id as count').first();
+      
+      return parseInt(result.count, 10);
+    } catch (error) {
+      logger.error(`Error counting stands: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get the count of search results
+   * @param {string} searchTerm - Search term
+   * @param {Object} options - Search options
+   * @returns {Promise<number>} - Total count of matching stands
+   */
+  async getSearchResultCount(searchTerm, options = {}) {
+    try {
+      const { 
+        includeInactive = false, 
+        terminalId = null,
+        pierId = null
+      } = options;
+      
+      let query = Stand.query()
+        .where(builder => {
+          builder
+            .where('name', 'like', `%${searchTerm}%`)
+            .orWhere('code', 'like', `%${searchTerm}%`)
+            .orWhere('description', 'like', `%${searchTerm}%`);
+        });
+      
+      // Filter by active status
+      if (!includeInactive) {
+        query = query.where('is_active', true);
+      }
+      
+      // Filter by terminal
+      if (terminalId) {
+        query = query.whereExists(
+          Pier.query()
+            .whereColumn('piers.id', 'stands.pier_id')
+            .where('piers.terminal_id', terminalId)
+        );
+      }
+      
+      // Filter by pier
+      if (pierId) {
+        query = query.where('pier_id', pierId);
+      }
+      
+      // Execute count query
+      const result = await query.count('id as count').first();
+      
+      return parseInt(result.count, 10);
+    } catch (error) {
+      logger.error(`Error counting search results: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
    * Bulk create stands
    * @param {Array} standsData - Array of stand data objects
    * @returns {Promise<Array>} - Created stands

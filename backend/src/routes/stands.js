@@ -14,7 +14,8 @@ router.get('/', async (req, res, next) => {
       terminal_id,
       sortBy = 'name',
       sortOrder = 'asc',
-      includeRelations = true
+      includeRelations = true,
+      includePagination = true
     } = req.query;
     
     // Build filter object
@@ -28,8 +29,34 @@ router.get('/', async (req, res, next) => {
     
     // Handle special case for terminal_id filter
     if (terminal_id) {
-      const stands = await StandService.getStandsByTerminalId(terminal_id);
-      return res.json(stands);
+      if (includePagination === 'true') {
+        // Get stands with pagination
+        const stands = await StandService.getStandsByTerminalId(terminal_id);
+        const count = await StandService.getStandCount({ 
+          terminal_id: terminal_id,
+          filter
+        });
+        
+        // Calculate pagination metadata
+        const page = Math.floor(offset / limit) + 1;
+        const totalPages = Math.ceil(count / limit);
+        
+        return res.json({
+          data: stands,
+          pagination: {
+            total: count,
+            page,
+            limit: parseInt(limit, 10),
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+          }
+        });
+      } else {
+        // Just return the stands without pagination metadata
+        const stands = await StandService.getStandsByTerminalId(terminal_id);
+        return res.json(stands);
+      }
     }
     
     // Get stands with filter options
@@ -42,7 +69,29 @@ router.get('/', async (req, res, next) => {
       sortOrder: sortOrder.toLowerCase() === 'desc' ? 'desc' : 'asc'
     });
     
-    res.json(stands);
+    // Add pagination metadata if requested
+    if (includePagination === 'true') {
+      const count = await StandService.getStandCount({ filter });
+      
+      // Calculate pagination metadata
+      const page = Math.floor(offset / limit) + 1;
+      const totalPages = Math.ceil(count / parseInt(limit, 10));
+      
+      res.json({
+        data: stands,
+        pagination: {
+          total: count,
+          page,
+          limit: parseInt(limit, 10),
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      });
+    } else {
+      // Just return the stands without pagination metadata
+      res.json(stands);
+    }
   } catch (error) {
     next(error);
   }
@@ -69,10 +118,38 @@ router.get('/:id', async (req, res, next) => {
 router.get('/by-pier/:pierId', async (req, res, next) => {
   try {
     const { pierId } = req.params;
+    const { 
+      limit = 100,
+      offset = 0,
+      includePagination = true 
+    } = req.query;
     
     const stands = await StandService.getStandsByPierId(parseInt(pierId, 10));
     
-    res.json(stands);
+    // Add pagination metadata if requested
+    if (includePagination === 'true') {
+      const filter = { pier_id: parseInt(pierId, 10) };
+      const count = await StandService.getStandCount({ filter });
+      
+      // Calculate pagination metadata
+      const page = Math.floor(offset / limit) + 1;
+      const totalPages = Math.ceil(count / parseInt(limit, 10));
+      
+      res.json({
+        data: stands,
+        pagination: {
+          total: count,
+          page,
+          limit: parseInt(limit, 10),
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      });
+    } else {
+      // Just return the stands without pagination metadata
+      res.json(stands);
+    }
   } catch (error) {
     next(error);
   }
@@ -86,17 +163,46 @@ router.get('/search/:term', async (req, res, next) => {
       limit = 20, 
       includeInactive = false,
       terminal_id = null,
-      pier_id = null
+      pier_id = null,
+      includePagination = true
     } = req.query;
     
-    const stands = await StandService.searchStands(term, {
+    const searchOptions = {
       limit: parseInt(limit, 10),
       includeInactive: includeInactive === 'true',
       terminalId: terminal_id ? parseInt(terminal_id, 10) : null,
       pierId: pier_id ? parseInt(pier_id, 10) : null
-    });
+    };
     
-    res.json(stands);
+    const stands = await StandService.searchStands(term, searchOptions);
+    
+    // Add pagination metadata if requested
+    if (includePagination === 'true') {
+      const count = await StandService.getSearchResultCount(term, {
+        includeInactive: includeInactive === 'true',
+        terminalId: terminal_id ? parseInt(terminal_id, 10) : null,
+        pierId: pier_id ? parseInt(pier_id, 10) : null
+      });
+      
+      // Calculate pagination metadata
+      const page = 1; // Search doesn't use offset currently
+      const totalPages = Math.ceil(count / parseInt(limit, 10));
+      
+      res.json({
+        data: stands,
+        pagination: {
+          total: count,
+          page,
+          limit: parseInt(limit, 10),
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: false // First page has no previous page
+        }
+      });
+    } else {
+      // Just return the search results without pagination metadata
+      res.json(stands);
+    }
   } catch (error) {
     next(error);
   }

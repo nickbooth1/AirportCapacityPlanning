@@ -6,8 +6,65 @@ const notificationService = require('../services/notificationService');
 // Maintenance Requests
 exports.getAllRequests = async (req, res, next) => {
   try {
-    const requests = await maintenanceRequestService.getAllRequests(req.query);
-    res.json(requests);
+    // Extract pagination parameters
+    const { 
+      limit = 20, 
+      offset = 0, 
+      includePagination = true,
+      ...filterParams 
+    } = req.query;
+    
+    // Convert limit and offset to integers
+    const parsedLimit = parseInt(limit, 10);
+    const parsedOffset = parseInt(offset, 10);
+    
+    // Process array parameters that might come as strings
+    if (filterParams.status && typeof filterParams.status === 'string') {
+      filterParams.status = filterParams.status.split(',').map(s => parseInt(s.trim(), 10));
+    }
+    
+    if (filterParams.standIds && typeof filterParams.standIds === 'string') {
+      filterParams.standIds = filterParams.standIds.split(',').map(s => s.trim());
+    }
+    
+    if (filterParams.priority && typeof filterParams.priority === 'string') {
+      filterParams.priority = filterParams.priority.split(',').map(s => s.trim());
+    }
+    
+    // Add pagination params if pagination is enabled
+    const filters = {
+      ...filterParams,
+      limit: includePagination === 'true' ? parsedLimit : undefined,
+      offset: includePagination === 'true' ? parsedOffset : undefined
+    };
+    
+    // Get requests with applied filters
+    const requests = await maintenanceRequestService.getAllRequests(filters);
+    
+    // Add pagination metadata if requested
+    if (includePagination === 'true') {
+      // Get total count for pagination
+      const count = await maintenanceRequestService.getRequestCount(filterParams);
+      
+      // Calculate pagination metadata
+      const page = Math.floor(parsedOffset / parsedLimit) + 1;
+      const totalPages = Math.ceil(count / parsedLimit);
+      
+      res.json({
+        data: requests,
+        pagination: {
+          total: count,
+          page,
+          limit: parsedLimit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      });
+    } else {
+      // Just return the requests without pagination metadata
+      res.json(requests);
+    }
   } catch (error) {
     next(error);
   }
@@ -27,8 +84,51 @@ exports.getRequestById = async (req, res, next) => {
 
 exports.getRequestsByStand = async (req, res, next) => {
   try {
-    const requests = await maintenanceRequestService.getRequestsByStand(req.params.standId);
-    res.json(requests);
+    const standId = req.params.standId;
+    const { 
+      limit = 20, 
+      offset = 0, 
+      includePagination = true,
+      ...filterParams 
+    } = req.query;
+    
+    // Combine stand ID with other filters
+    const filters = {
+      ...filterParams,
+      standId,
+      limit: includePagination === 'true' ? parseInt(limit, 10) : undefined,
+      offset: includePagination === 'true' ? parseInt(offset, 10) : undefined
+    };
+    
+    // Get requests with applied filters
+    const requests = await maintenanceRequestService.getAllRequests(filters);
+    
+    // Add pagination metadata if requested
+    if (includePagination === 'true') {
+      // Get total count for pagination
+      const count = await maintenanceRequestService.getRequestCount({ standId, ...filterParams });
+      
+      // Calculate pagination metadata
+      const parsedLimit = parseInt(limit, 10);
+      const parsedOffset = parseInt(offset, 10);
+      const page = Math.floor(parsedOffset / parsedLimit) + 1;
+      const totalPages = Math.ceil(count / parsedLimit);
+      
+      res.json({
+        data: requests,
+        pagination: {
+          total: count,
+          page,
+          limit: parsedLimit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      });
+    } else {
+      // Just return the requests without pagination metadata
+      res.json(requests);
+    }
   } catch (error) {
     next(error);
   }
