@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">3.42% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/263</span>
+                <span class='fraction'>0/263</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.8% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/250</span>
+                <span class='fraction'>0/250</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">3.7% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/27</span>
+                <span class='fraction'>0/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">3.51% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>9/256</span>
+                <span class='fraction'>0/256</span>
             </div>
         
             
@@ -1303,18 +1303,18 @@
 <a name='L1238'></a><a href='#L1238'>1238</a>
 <a name='L1239'></a><a href='#L1239'>1239</a>
 <a name='L1240'></a><a href='#L1240'>1240</a>
-<a name='L1241'></a><a href='#L1241'>1241</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L1241'></a><a href='#L1241'>1241</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1326,8 +1326,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2543,31 +2543,31 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const { OpenAI } = require('openai');
-const logger = require('../../utils/logger');
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const { OpenAI } = <span class="cstat-no" title="statement not covered" >require('openai');</span>
+const logger = <span class="cstat-no" title="statement not covered" >require('../../utils/logger');</span>
 &nbsp;
 class OpenAIService {
-  constructor() {
+<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
     // Only create a real client if API key is available
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        this.client = new OpenAI({
+<span class="cstat-no" title="statement not covered" >    if (process.env.OPENAI_API_KEY) {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        this.client = new OpenAI({</span>
           apiKey: process.env.OPENAI_API_KEY,
         });
-        this.isAvailable = true;
+<span class="cstat-no" title="statement not covered" >        this.isAvailable = true;</span>
       } catch (error) {
 <span class="cstat-no" title="statement not covered" >        logger.error(`Failed to initialize OpenAI client: ${error.message}`);</span>
 <span class="cstat-no" title="statement not covered" >        this.isAvailable = false;</span>
 <span class="cstat-no" title="statement not covered" >        this.initializeMockClient();</span>
       }
-    } else <span class="missing-if-branch" title="else path not taken" >E</span>{
+    } else {
 <span class="cstat-no" title="statement not covered" >      logger.warn('OpenAI API key not provided. Using mock client.');</span>
 <span class="cstat-no" title="statement not covered" >      this.isAvailable = false;</span>
 <span class="cstat-no" title="statement not covered" >      this.initializeMockClient();</span>
     }
     
-    this.model = process.env.OPENAI_MODEL || <span class="branch-1 cbranch-no" title="branch not covered" >'gpt-4o';</span>
-    this.tokenUsage = {
+<span class="cstat-no" title="statement not covered" >    this.model = process.env.OPENAI_MODEL || 'gpt-4o';</span>
+<span class="cstat-no" title="statement not covered" >    this.tokenUsage = {</span>
       prompt: 0,
       completion: 0,
       total: 0
@@ -3783,14 +3783,14 @@ Generate a comprehensive comparison analysis of these scenarios.`
   }
 }
 &nbsp;
-module.exports = new OpenAIService();</pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >module.exports = new OpenAIService();</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T07:06:24.553Z
+                at 2025-05-20T07:19:35.974Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
