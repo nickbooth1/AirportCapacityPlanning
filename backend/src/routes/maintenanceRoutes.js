@@ -17,6 +17,7 @@ router.get('/requests/:id/capacity-impact', maintenanceController.getRequestCapa
 router.get('/requests/:id', maintenanceController.getRequestById);
 router.put('/requests/:id', validateETagForUpdate, validateMaintenanceRequestUpdate, maintenanceController.updateRequest);
 router.put('/requests/:id/status', validateETagForUpdate, maintenanceController.updateRequestStatus);
+router.post('/requests/:id/cancel', maintenanceController.cancelRequest);
 
 // Maintenance approvals routes
 router.post('/approvals', maintenanceController.createApproval);

@@ -11,6 +11,7 @@ const { ValidationError, NotFoundError, ConflictError } = require('../middleware
 const logger = require('../utils/logger');
 const { transaction } = require('objection');
 const AuditService = require('./AuditService');
+const CascadeDeleteService = require('./CascadeDeleteService');
 
 class StandService {
   /**
@@ -20,6 +21,8 @@ class StandService {
    * @param {Object} options.filter - Filter criteria (e.g., {is_active: true})
    * @param {number} options.limit - Maximum number of stands to return
    * @param {number} options.offset - Offset for pagination
+   * @param {boolean} options.includeDeleted - Whether to include soft-deleted stands
+   * @param {boolean} options.onlyDeleted - Whether to return only soft-deleted stands
    * @returns {Promise<Array>} - Array of stands
    */
   async getAllStands(options = {}) {
@@ -30,13 +33,24 @@ class StandService {
         limit = 100, 
         offset = 0,
         sortBy = 'name',
-        sortOrder = 'asc'
+        sortOrder = 'asc',
+        includeDeleted = false,
+        onlyDeleted = false
       } = options;
 
       // Build the query
       let query = Stand.query();
       
-      // Apply filters
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      } else {
+        query = query.modify('withDeleted');
+      }
+      
+      // Apply other filters
       if (Object.keys(filter).length > 0) {
         query = query.where(filter);
       }
@@ -65,12 +79,22 @@ class StandService {
    * Get a stand by ID
    * @param {number} id - Stand ID
    * @param {boolean} includeRelations - Whether to include relations
+   * @param {boolean} includeDeleted - Whether to include soft-deleted stands
    * @returns {Promise<Object>} - The stand
    */
-  async getStandById(id, includeRelations = true) {
+  async getStandById(id, includeRelations = true, includeDeleted = false) {
     try {
-      let query = Stand.query().findById(id);
+      let query = Stand.query();
       
+      // Apply soft delete filter
+      if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
+      
+      // Find by ID
+      query = query.findById(id);
+      
+      // Include relations if requested
       if (includeRelations) {
         query = query.withGraphFetched('[pier.[terminal]]');
       }
@@ -78,7 +102,7 @@ class StandService {
       const stand = await query;
       
       if (!stand) {
-        throw new NotFoundError(`Stand with ID ${id} not found`);
+        throw new NotFoundError(`Stand with ID ${id} not found${!includeDeleted ? ' or is deleted' : ''}`);
       }
       
       return stand;
@@ -95,9 +119,11 @@ class StandService {
   /**
    * Get stands by pier ID
    * @param {number} pierId - Pier ID
+   * @param {boolean} includeDeleted - Whether to include soft-deleted stands
+   * @param {boolean} onlyDeleted - Whether to return only soft-deleted stands
    * @returns {Promise<Array>} - Array of stands
    */
-  async getStandsByPierId(pierId) {
+  async getStandsByPierId(pierId, includeDeleted = false, onlyDeleted = false) {
     try {
       // Verify pier exists
       const pier = await Pier.query().findById(pierId);
@@ -106,10 +132,20 @@ class StandService {
         throw new NotFoundError(`Pier with ID ${pierId} not found`);
       }
       
-      // Get stands for the pier
-      const stands = await Stand.query()
-        .where('pier_id', pierId)
-        .withGraphFetched('pier.[terminal]');
+      // Build query
+      let query = Stand.query().where('pier_id', pierId);
+      
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
+      
+      // Include relations
+      query = query.withGraphFetched('pier.[terminal]');
+      
+      const stands = await query;
       
       return stands;
     } catch (error) {
@@ -125,9 +161,11 @@ class StandService {
   /**
    * Get stands by terminal ID
    * @param {number} terminalId - Terminal ID
+   * @param {boolean} includeDeleted - Whether to include soft-deleted stands
+   * @param {boolean} onlyDeleted - Whether to return only soft-deleted stands
    * @returns {Promise<Array>} - Array of stands
    */
-  async getStandsByTerminalId(terminalId) {
+  async getStandsByTerminalId(terminalId, includeDeleted = false, onlyDeleted = false) {
     try {
       // Get piers for the terminal
       const piers = await Pier.query().where('terminal_id', terminalId);
@@ -138,9 +176,19 @@ class StandService {
       
       // Get stands for all piers in the terminal
       const pierIds = piers.map(pier => pier.id);
-      const stands = await Stand.query()
-        .whereIn('pier_id', pierIds)
-        .withGraphFetched('pier.[terminal]');
+      let query = Stand.query().whereIn('pier_id', pierIds);
+      
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
+      
+      // Include relations
+      query = query.withGraphFetched('pier.[terminal]');
+      
+      const stands = await query;
       
       return stands;
     } catch (error) {
@@ -374,63 +422,110 @@ class StandService {
    * @param {Object} options - Additional options
    * @param {Object} options.user - User performing the deletion
    * @param {Object} options.request - Express request object
-   * @returns {Promise<boolean>} - Success status
+   * @param {boolean} options.softDelete - Whether to perform a soft delete (default: true)
+   * @param {string} options.reason - Reason for deletion
+   * @param {boolean} options.cancelMaintenance - Whether to cancel maintenance (default: false)
+   * @returns {Promise<Object>} - Success status and detail information
    */
   async deleteStand(id, force = false, options = {}) {
     const trx = await transaction.start(Stand.knex());
     
     try {
-      // Check if stand exists
-      const stand = await Stand.query(trx).findById(id)
-        .withGraphFetched('maintenanceRequests');
+      // Default to soft delete unless specifically set to false
+      const softDelete = options.softDelete !== false;
+      const reason = options.reason || null;
+      const cancelMaintenance = options.cancelMaintenance === true;
+      
+      // Check if stand exists and include deleted stands only if not using soft delete
+      let query = Stand.query(trx);
+      
+      // If we're doing permanent deletion and the stand is already soft-deleted,
+      // we want to find it regardless of deleted status
+      if (!softDelete) {
+        query = query.modify('withDeleted');
+      } else {
+        query = query.modify('notDeleted');
+      }
+      
+      // Get the stand with maintenance requests
+      const stand = await query.findById(id).withGraphFetched('maintenanceRequests');
       if (!stand) {
         await trx.rollback();
-        throw new NotFoundError(`Stand with ID ${id} not found`);
+        throw new NotFoundError(`Stand with ID ${id} not found${softDelete ? ' or is already deleted' : ''}`);
       }
       
-      // Check for active maintenance (regardless of force flag)
-      const now = new Date();
-      const activeMaintenanceRequests = stand.maintenanceRequests.filter(req => {
-        const startDate = new Date(req.start_datetime);
-        const endDate = new Date(req.end_datetime);
-        return startDate <= now && endDate >= now && [2, 4].includes(req.status_id); // Approved or In Progress
-      });
+      // Get all dependencies for this stand
+      const dependencies = await CascadeDeleteService.getStandDependencies(id);
       
-      if (activeMaintenanceRequests.length > 0) {
+      // Check for active maintenance if we're not forcing cancellation
+      if (dependencies.hasActiveDependencies && !cancelMaintenance) {
         await trx.rollback();
         throw new ConflictError(
-          `Cannot delete stand ${id} because it has active maintenance in progress.`
+          `Cannot delete stand ${id} because it has active maintenance in progress. Use cancelMaintenance=true to automatically cancel these requests.`
         );
       }
       
-      // Check for dependencies unless force is true
-      if (!force && stand.maintenanceRequests.length > 0) {
+      // Check for other dependencies if not forcing
+      if (!force && dependencies.hasAnyDependencies) {
         await trx.rollback();
         throw new ConflictError(
-          `Cannot delete stand ${id} because it has ${stand.maintenanceRequests.length} maintenance requests associated with it. Use force=true to delete anyway.`
+          `Cannot delete stand ${id} because it has dependencies: ${dependencies.dependencies.maintenance.total} maintenance requests and ${dependencies.dependencies.adjacencyRules.total} adjacency rules. Use force=true to delete anyway.`
         );
       }
       
-      // Create audit log before deleting (we need the stand data)
+      // Handle cascade operations if cancelling maintenance or forcing delete
+      const cascadeResults = {};
+      if ((force || cancelMaintenance) && dependencies.hasAnyDependencies) {
+        // Handle cascade operations before deleting the stand
+        const cascadeResult = await CascadeDeleteService.handleStandDeletionCascade(id, {
+          ...options,
+          softDelete,
+          cancelActiveMaintenanceOrFail: cancelMaintenance,
+          reason: reason || `Stand ${id} deletion`
+        });
+        
+        // Store cascade results for the response
+        cascadeResults.maintenance = cascadeResult.result.maintenance;
+        cascadeResults.adjacencyRules = cascadeResult.result.adjacencyRules;
+      }
+      
+      // Create audit log
+      const actionType = softDelete ? 'soft_delete' : 'delete';
       await AuditService.logChange({
         entityType: 'stand',
         entityId: id,
-        action: 'delete',
+        action: actionType,
         previousState: stand,
         newState: null,
         user: options.user,
         request: options.request,
-        notes: force ? 'Forced deletion with dependencies' : null,
+        notes: `${force ? 'Forced deletion with dependencies. ' : ''}${cancelMaintenance ? 'Cancelled maintenance. ' : ''}${reason ? 'Reason: ' + reason : ''}`,
         transaction: trx
       });
       
-      // Delete stand
-      await Stand.query(trx).deleteById(id);
+      if (softDelete) {
+        // Perform soft delete
+        await Stand.query(trx).findById(id).patch({
+          deleted_at: new Date().toISOString(),
+          deleted_by: options.user ? options.user.id || options.user.name : 'system',
+          deletion_reason: reason
+        });
+      } else {
+        // Perform hard delete
+        await Stand.query(trx).deleteById(id);
+      }
       
       // Commit transaction
       await trx.commit();
       
-      return true;
+      // Return detailed result
+      return {
+        success: true,
+        standId: id,
+        deleteType: softDelete ? 'soft_delete' : 'permanent_delete',
+        cascadeOperations: cascadeResults,
+        message: `Stand ${id} ${softDelete ? 'soft' : 'permanently'} deleted successfully.`
+      };
     } catch (error) {
       // Rollback transaction if it hasn't been committed
       if (!trx.isCompleted()) {
@@ -461,7 +556,9 @@ class StandService {
         includeInactive = false, 
         limit = 20, 
         terminalId = null,
-        pierId = null
+        pierId = null,
+        includeDeleted = false,
+        onlyDeleted = false
       } = options;
       
       let query = Stand.query()
@@ -470,8 +567,17 @@ class StandService {
             .where('name', 'like', `%${searchTerm}%`)
             .orWhere('code', 'like', `%${searchTerm}%`)
             .orWhere('description', 'like', `%${searchTerm}%`);
-        })
-        .withGraphFetched('pier.[terminal]');
+        });
+      
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
+      
+      // Include relations
+      query = query.withGraphFetched('pier.[terminal]');
       
       // Filter by active status
       if (!includeInactive) {
@@ -506,24 +612,40 @@ class StandService {
   /**
    * Get the count of stands with applied filters
    * @param {Object} options - Filter options
+   * @param {Object} options.filter - Filter criteria
+   * @param {number} options.terminal_id - Terminal ID for filtering
+   * @param {boolean} options.includeDeleted - Whether to include soft-deleted stands
+   * @param {boolean} options.onlyDeleted - Whether to count only soft-deleted stands
    * @returns {Promise<number>} - Total count of matching stands
    */
   async getStandCount(options = {}) {
     try {
-      const { filter = {} } = options;
+      const { 
+        filter = {},
+        terminal_id = null,
+        includeDeleted = false,
+        onlyDeleted = false 
+      } = options;
       
       // Build the query
       let query = Stand.query();
       
-      // Apply filters
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
+      
+      // Apply other filters
       if (Object.keys(filter).length > 0) {
         query = query.where(filter);
       }
       
       // If terminal_id is specified, we need special handling
-      if (options.terminal_id) {
+      if (terminal_id) {
         // Get all piers in the terminal
-        const piers = await Pier.query().where('terminal_id', options.terminal_id);
+        const piers = await Pier.query().where('terminal_id', terminal_id);
         
         if (piers.length === 0) {
           return 0;
@@ -548,6 +670,11 @@ class StandService {
    * Get the count of search results
    * @param {string} searchTerm - Search term
    * @param {Object} options - Search options
+   * @param {boolean} options.includeInactive - Whether to include inactive stands
+   * @param {number} options.terminalId - Terminal ID for filtering
+   * @param {number} options.pierId - Pier ID for filtering
+   * @param {boolean} options.includeDeleted - Whether to include soft-deleted stands
+   * @param {boolean} options.onlyDeleted - Whether to count only soft-deleted stands
    * @returns {Promise<number>} - Total count of matching stands
    */
   async getSearchResultCount(searchTerm, options = {}) {
@@ -555,7 +682,9 @@ class StandService {
       const { 
         includeInactive = false, 
         terminalId = null,
-        pierId = null
+        pierId = null,
+        includeDeleted = false,
+        onlyDeleted = false
       } = options;
       
       let query = Stand.query()
@@ -565,6 +694,13 @@ class StandService {
             .orWhere('code', 'like', `%${searchTerm}%`)
             .orWhere('description', 'like', `%${searchTerm}%`);
         });
+      
+      // Apply soft delete filter
+      if (onlyDeleted) {
+        query = query.modify('onlyDeleted');
+      } else if (!includeDeleted) {
+        query = query.modify('notDeleted');
+      }
       
       // Filter by active status
       if (!includeInactive) {
@@ -635,13 +771,15 @@ class StandService {
       
       for (const pierId of pierIds) {
         const codes = Array.from(codesByPier[pierId]);
+        // Include both deleted and non-deleted stands in the conflict check
         const existingStands = await Stand.query()
+          .modify('withDeleted')
           .where('pier_id', pierId)
           .whereIn('code', codes);
           
         if (existingStands.length > 0) {
           for (const stand of existingStands) {
-            conflicts.push(`Stand with code ${stand.code} already exists in pier ${pierId}`);
+            conflicts.push(`Stand with code ${stand.code} already exists in pier ${pierId}${stand.deleted_at ? ' (deleted)' : ''}`);
           }
         }
       }
@@ -683,6 +821,96 @@ class StandService {
       }
       
       logger.error(`Error in bulk stand creation: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Restore a soft-deleted stand
+   * @param {number} id - Stand ID to restore
+   * @param {Object} options - Additional options
+   * @param {Object} options.user - User performing the restoration
+   * @param {Object} options.request - Express request object
+   * @returns {Promise<Object>} - The restored stand
+   */
+  async undeleteStand(id, options = {}) {
+    const trx = await transaction.start(Stand.knex());
+    
+    try {
+      // Check if stand exists and is soft-deleted
+      const stand = await Stand.query(trx)
+        .modify('onlyDeleted')
+        .findById(id)
+        .withGraphFetched('pier');
+      
+      if (!stand) {
+        await trx.rollback();
+        throw new NotFoundError(`Stand with ID ${id} not found or is not deleted`);
+      }
+      
+      // Check for code uniqueness conflicts
+      const existingStand = await Stand.query(trx)
+        .modify('notDeleted')
+        .where({
+          code: stand.code,
+          pier_id: stand.pier_id
+        })
+        .first();
+      
+      if (existingStand) {
+        await trx.rollback();
+        throw new ConflictError(
+          `Cannot restore stand with code ${stand.code} because another active stand with this code exists in the same pier`
+        );
+      }
+      
+      // Save the previous state for audit log
+      const previousState = { ...stand };
+      
+      // Restore the stand
+      await Stand.query(trx)
+        .findById(id)
+        .patch({
+          deleted_at: null,
+          deleted_by: null,
+          deletion_reason: null
+        });
+      
+      // Get the updated stand for audit and return
+      const restoredStand = await Stand.query(trx)
+        .findById(id)
+        .withGraphFetched('pier.[terminal]');
+      
+      // Create audit log
+      await AuditService.logChange({
+        entityType: 'stand',
+        entityId: id,
+        action: 'restore',
+        previousState,
+        newState: restoredStand,
+        user: options.user,
+        request: options.request,
+        transaction: trx
+      });
+      
+      // Commit transaction
+      await trx.commit();
+      
+      return restoredStand;
+    } catch (error) {
+      // Rollback transaction if it hasn't been committed
+      if (!trx.isCompleted()) {
+        await trx.rollback();
+      }
+      
+      if (
+        error instanceof NotFoundError || 
+        error instanceof ConflictError
+      ) {
+        throw error;
+      }
+      
+      logger.error(`Error restoring stand ${id}: ${error.message}`);
       throw error;
     }
   }

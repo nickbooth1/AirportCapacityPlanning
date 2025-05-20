@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const StandService = require('../services/StandService');
+const CascadeDeleteService = require('../services/CascadeDeleteService');
 const { ValidationError } = require('../middleware/errorHandler');
 const { validateStandUpdate, validateETagForUpdate } = require('../middleware/updateValidationMiddleware');
 
@@ -16,7 +17,9 @@ router.get('/', async (req, res, next) => {
       sortBy = 'name',
       sortOrder = 'asc',
       includeRelations = true,
-      includePagination = true
+      includePagination = true,
+      includeDeleted = false,
+      onlyDeleted = false
     } = req.query;
     
     // Build filter object
@@ -32,10 +35,16 @@ router.get('/', async (req, res, next) => {
     if (terminal_id) {
       if (includePagination === 'true') {
         // Get stands with pagination
-        const stands = await StandService.getStandsByTerminalId(terminal_id);
+        const stands = await StandService.getStandsByTerminalId(
+          terminal_id,
+          includeDeleted === 'true',
+          onlyDeleted === 'true'
+        );
         const count = await StandService.getStandCount({ 
           terminal_id: terminal_id,
-          filter
+          filter,
+          includeDeleted: includeDeleted === 'true',
+          onlyDeleted: onlyDeleted === 'true'
         });
         
         // Calculate pagination metadata
@@ -55,7 +64,11 @@ router.get('/', async (req, res, next) => {
         });
       } else {
         // Just return the stands without pagination metadata
-        const stands = await StandService.getStandsByTerminalId(terminal_id);
+        const stands = await StandService.getStandsByTerminalId(
+          terminal_id,
+          includeDeleted === 'true',
+          onlyDeleted === 'true'
+        );
         return res.json(stands);
       }
     }
@@ -67,12 +80,18 @@ router.get('/', async (req, res, next) => {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       sortBy,
-      sortOrder: sortOrder.toLowerCase() === 'desc' ? 'desc' : 'asc'
+      sortOrder: sortOrder.toLowerCase() === 'desc' ? 'desc' : 'asc',
+      includeDeleted: includeDeleted === 'true',
+      onlyDeleted: onlyDeleted === 'true'
     });
     
     // Add pagination metadata if requested
     if (includePagination === 'true') {
-      const count = await StandService.getStandCount({ filter });
+      const count = await StandService.getStandCount({ 
+        filter,
+        includeDeleted: includeDeleted === 'true',
+        onlyDeleted: onlyDeleted === 'true'
+      });
       
       // Calculate pagination metadata
       const page = Math.floor(offset / limit) + 1;
@@ -102,11 +121,12 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { includeRelations = true } = req.query;
+    const { includeRelations = true, includeDeleted = false } = req.query;
     
     const stand = await StandService.getStandById(
       parseInt(id, 10),
-      includeRelations === 'true'
+      includeRelations === 'true',
+      includeDeleted === 'true'
     );
     
     res.json(stand);
@@ -122,15 +142,25 @@ router.get('/by-pier/:pierId', async (req, res, next) => {
     const { 
       limit = 100,
       offset = 0,
-      includePagination = true 
+      includePagination = true,
+      includeDeleted = false,
+      onlyDeleted = false
     } = req.query;
     
-    const stands = await StandService.getStandsByPierId(parseInt(pierId, 10));
+    const stands = await StandService.getStandsByPierId(
+      parseInt(pierId, 10),
+      includeDeleted === 'true',
+      onlyDeleted === 'true'
+    );
     
     // Add pagination metadata if requested
     if (includePagination === 'true') {
       const filter = { pier_id: parseInt(pierId, 10) };
-      const count = await StandService.getStandCount({ filter });
+      const count = await StandService.getStandCount({ 
+        filter,
+        includeDeleted: includeDeleted === 'true',
+        onlyDeleted: onlyDeleted === 'true'
+      });
       
       // Calculate pagination metadata
       const page = Math.floor(offset / limit) + 1;
@@ -165,14 +195,18 @@ router.get('/search/:term', async (req, res, next) => {
       includeInactive = false,
       terminal_id = null,
       pier_id = null,
-      includePagination = true
+      includePagination = true,
+      includeDeleted = false,
+      onlyDeleted = false
     } = req.query;
     
     const searchOptions = {
       limit: parseInt(limit, 10),
       includeInactive: includeInactive === 'true',
       terminalId: terminal_id ? parseInt(terminal_id, 10) : null,
-      pierId: pier_id ? parseInt(pier_id, 10) : null
+      pierId: pier_id ? parseInt(pier_id, 10) : null,
+      includeDeleted: includeDeleted === 'true',
+      onlyDeleted: onlyDeleted === 'true'
     };
     
     const stands = await StandService.searchStands(term, searchOptions);
@@ -182,7 +216,9 @@ router.get('/search/:term', async (req, res, next) => {
       const count = await StandService.getSearchResultCount(term, {
         includeInactive: includeInactive === 'true',
         terminalId: terminal_id ? parseInt(terminal_id, 10) : null,
-        pierId: pier_id ? parseInt(pier_id, 10) : null
+        pierId: pier_id ? parseInt(pier_id, 10) : null,
+        includeDeleted: includeDeleted === 'true',
+        onlyDeleted: onlyDeleted === 'true'
       });
       
       // Calculate pagination metadata
@@ -301,19 +337,59 @@ router.put('/:id', validateETagForUpdate, validateStandUpdate, async (req, res, 
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { force = false } = req.query;
+    const { 
+      force = false,
+      permanent = false,
+      reason = null,
+      cancelMaintenance = false
+    } = req.query;
     const user = req.user || { id: 'system', name: 'System' };
     
-    await StandService.deleteStand(
+    const result = await StandService.deleteStand(
       parseInt(id, 10), 
       force === 'true',
+      {
+        user,
+        request: req,
+        softDelete: permanent !== 'true', // Use soft delete unless permanent=true
+        reason,
+        cancelMaintenance: cancelMaintenance === 'true'
+      }
+    );
+    
+    // Return 200 with detailed information instead of 204 no content
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get stand dependencies
+router.get('/:id/dependencies', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const dependencies = await CascadeDeleteService.getStandDependencies(parseInt(id, 10));
+    res.json(dependencies);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Restore a soft-deleted stand
+router.post('/:id/restore', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = req.user || { id: 'system', name: 'System' };
+    
+    const restoredStand = await StandService.undeleteStand(
+      parseInt(id, 10),
       {
         user,
         request: req
       }
     );
     
-    res.status(204).end();
+    res.status(200).json(restoredStand);
   } catch (error) {
     next(error);
   }

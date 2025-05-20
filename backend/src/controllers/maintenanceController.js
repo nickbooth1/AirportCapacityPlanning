@@ -223,6 +223,8 @@ exports.updateRequestStatus = async (req, res, next) => {
       let eventType = 'updated';
       if (updatedRequest.status_id === 5) { // Completed
         eventType = 'completed';
+      } else if (updatedRequest.status_id === 6) { // Cancelled
+        eventType = 'cancelled';
       }
       await notificationService.sendMaintenanceRequestNotification(id, eventType);
     } catch (notificationError) {
@@ -230,6 +232,74 @@ exports.updateRequestStatus = async (req, res, next) => {
     }
     
     res.json(updatedRequest);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Cancel a maintenance request
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+exports.cancelRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // Get user info from auth or use default
+    const user = req.user || { id: 'system', name: 'System' };
+    
+    // Get the current request to check if it can be cancelled
+    const request = await maintenanceRequestService.getRequestById(id);
+    
+    if (!request) {
+      return res.status(404).json({ message: 'Maintenance request not found' });
+    }
+    
+    // Check if request is already cancelled or completed
+    if (request.status_id === 5) { // Completed
+      return res.status(400).json({ 
+        message: 'Cannot cancel a completed maintenance request',
+        currentStatus: request.status.name
+      });
+    }
+    
+    if (request.status_id === 6) { // Already cancelled
+      return res.status(400).json({ 
+        message: 'Request is already cancelled',
+        currentStatus: request.status.name
+      });
+    }
+    
+    // Update to cancelled status
+    await maintenanceApprovalService.updateRequestStatus(id, 6);
+    
+    // Add cancellation reason as approval/comment
+    await maintenanceApprovalService.createApproval({
+      maintenance_request_id: id,
+      approver_name: user.name,
+      approver_email: user.email || 'user@airport.com',
+      approver_department: user.department || 'Airport Operations',
+      is_approved: false,
+      comments: `Request cancelled: ${reason || 'No reason provided'}`
+    }, false); // Pass false to skip status update again
+    
+    // Get the updated request
+    const updatedRequest = await maintenanceRequestService.getRequestById(id);
+    
+    // Send cancellation notification
+    try {
+      await notificationService.sendMaintenanceRequestNotification(id, 'cancelled');
+    } catch (notificationError) {
+      console.error('Failed to send cancellation notification:', notificationError);
+    }
+    
+    res.json({
+      ...updatedRequest,
+      message: 'Maintenance request cancelled successfully'
+    });
   } catch (error) {
     next(error);
   }

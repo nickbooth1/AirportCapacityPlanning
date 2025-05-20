@@ -24,7 +24,10 @@ class Stand extends Model {
         latitude: { type: 'number' },
         longitude: { type: 'number' },
         created_at: { type: 'string', format: 'date-time' },
-        updated_at: { type: 'string', format: 'date-time' }
+        updated_at: { type: 'string', format: 'date-time' },
+        deleted_at: { type: 'string', format: 'date-time' },
+        deleted_by: { type: 'string' },
+        deletion_reason: { type: 'string' }
       }
     };
   }
@@ -57,6 +60,19 @@ class Stand extends Model {
   static modifiers = {
     selectName(builder) {
       builder.select('id', 'name', 'code');
+    },
+    
+    // Add soft delete modifiers
+    notDeleted(builder) {
+      builder.whereNull('deleted_at');
+    },
+    
+    onlyDeleted(builder) {
+      builder.whereNotNull('deleted_at');
+    },
+    
+    withDeleted(builder) {
+      // Does nothing, allowing both deleted and non-deleted records
     }
     // Add other modifiers for Pier if needed
   };
