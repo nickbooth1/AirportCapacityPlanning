@@ -1,0 +1,110 @@
+{
+  "timestamp": "2025-05-20T08:23:45.091Z",
+  "testConfig": {
+    "iterations": 10,
+    "concurrentUsers": 5
+  },
+  "kpiResults": {
+    "systemResponseTime": {
+      "average": 0.00005163925714287611,
+      "p95": 0.0001097500000000764,
+      "kpiTarget": 1,
+      "passed": true
+    },
+    "voiceRecognition": {
+      "accuracy": 0.9760807030927697,
+      "processingTime": 0.00004699996000002102,
+      "kpiTarget": 0.97,
+      "passed": true
+    },
+    "autonomousDecision": {
+      "accuracy": 0.9813491290925087,
+      "processingTime": 0.00006323750000001382,
+      "kpiTarget": 0.99,
+      "passed": false
+    },
+    "dashboardLoading": {
+      "averageTime": 0.00007265819999997803,
+      "kpiTarget": 2,
+      "passed": true
+    },
+    "apiGatewayThroughput": {
+      "maxThroughput": 126314.35797001007,
+      "kpiTarget": 1000,
+      "passed": true
+    }
+  },
+  "detailedMetrics": {
+    "responseTimeDistribution": [
+      {
+        "rangeStart": 0.03220799999985502,
+        "rangeEnd": 0.043587199999865336,
+        "count": 23,
+        "percentage": 65.71428571428571
+      },
+      {
+        "rangeStart": 0.043587199999865336,
+        "rangeEnd": 0.05496639999987565,
+        "count": 1,
+        "percentage": 2.857142857142857
+      },
+      {
+        "rangeStart": 0.05496639999987565,
+        "rangeEnd": 0.06634559999988596,
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "rangeStart": 0.06634559999988596,
+        "rangeEnd": 0.07772479999989627,
+        "count": 4,
+        "percentage": 11.428571428571429
+      },
+      {
+        "rangeStart": 0.07772479999989627,
+        "rangeEnd": 0.08910399999990659,
+        "count": 4,
+        "percentage": 11.428571428571429
+      },
+      {
+        "rangeStart": 0.08910399999990659,
+        "rangeEnd": 0.1004831999999169,
+        "count": 1,
+        "percentage": 2.857142857142857
+      },
+      {
+        "rangeStart": 0.1004831999999169,
+        "rangeEnd": 0.11186239999992721,
+        "count": 1,
+        "percentage": 2.857142857142857
+      },
+      {
+        "rangeStart": 0.11186239999992721,
+        "rangeEnd": 0.12324159999993753,
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "rangeStart": 0.12324159999993753,
+        "rangeEnd": 0.13462079999994786,
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "rangeStart": 0.13462079999994786,
+        "rangeEnd": 0.14599999999995816,
+        "count": 1,
+        "percentage": 2.857142857142857
+      }
+    ],
+    "apiCalls": 0,
+    "voiceCalls": 25,
+    "autonomousDecisions": 10,
+    "successRate": 0
+  },
+  "summary": {
+    "passedKpis": 4,
+    "failedKpis": 1,
+    "overallResult": "FAILED"
+  }
+}

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">7.14% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/126</span>
+                <span class='fraction'>9/126</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.43% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/106</span>
+                <span class='fraction'>10/106</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>1/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">7.31% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/123</span>
+                <span class='fraction'>9/123</span>
             </div>
         
             
@@ -696,9 +696,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -709,10 +709,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -722,17 +722,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1295,7 +1295,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * FactVerifierService.js
  * 
  * This service validates the factual accuracy of generated responses by comparing
@@ -1312,9 +1312,9 @@
  * - Citation and attribution for factual statements
  */
 &nbsp;
-const logger = <span class="cstat-no" title="statement not covered" >require('../../../utils/logger');</span>
-const OpenAIService = <span class="cstat-no" title="statement not covered" >require('../OpenAIService');</span>
-const { performance } = <span class="cstat-no" title="statement not covered" >require('perf_hooks');</span>
+const logger = require('../../../utils/logger');
+const OpenAIService = require('../OpenAIService');
+const { performance } = require('perf_hooks');
 &nbsp;
 class FactVerifierService {
   /**
@@ -1323,32 +1323,32 @@ class FactVerifierService {
    * @param {Object} services - Service dependencies
    * @param {Object} options - Configuration options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(services = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  constructor(services = {}, options = {}) {
     // Initialize dependencies
-<span class="cstat-no" title="statement not covered" >    this.openAIService = services.openAIService || OpenAIService;</span>
+    this.openAIService = services.openAIService || OpenAIService;
     
     // Configure options
-<span class="cstat-no" title="statement not covered" >    this.options = {</span>
+    this.options = {
       defaultConfidenceThreshold: options.defaultConfidenceThreshold || 0.7,
-      strictMode: options.strictMode !== undefined ? options.strictMode : false,
+      strictMode: options.strictMode !== undefined ? <span class="branch-0 cbranch-no" title="branch not covered" >options.strictMode </span>: false,
       extractStatementsBeforeVerification: options.extractStatementsBeforeVerification !== undefined 
-        ? options.extractStatementsBeforeVerification 
+        ? <span class="branch-0 cbranch-no" title="branch not covered" >options.extractStatementsBeforeVerification </span>
         : true,
       ...options
     };
     
     // Initialize logger
-<span class="cstat-no" title="statement not covered" >    this.logger = services.logger || logger;</span>
+    this.logger = services.logger || logger;
     
     // Performance metrics
-<span class="cstat-no" title="statement not covered" >    this.metrics = {</span>
+    this.metrics = {
       totalVerifications: 0,
       totalCorrections: 0,
       averageConfidence: 0,
       totalVerificationTimeMs: 0
     };
     
-<span class="cstat-no" title="statement not covered" >    this.logger.info('FactVerifierService initialized');</span>
+    this.logger.info('FactVerifierService initialized');
   }
   
   /**
@@ -1911,14 +1911,14 @@ Please compare these responses for factual consistency and accuracy.`;
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = FactVerifierService;</span></pre></td></tr></table></pre>
+module.exports = FactVerifierService;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T07:19:35.974Z
+                at 2025-05-20T12:44:54.904Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

@@ -12,7 +12,7 @@
  */
 
 const logger = require('../../../utils/logger');
-const { VectorSearchService } = require('../VectorSearchService');
+const vectorSearchService = require('../VectorSearchService');
 const { performance } = require('perf_hooks');
 
 class KnowledgeRetrievalService {
@@ -28,7 +28,7 @@ class KnowledgeRetrievalService {
     this.options = options;
     
     // Initialize dependencies
-    this.vectorSearchService = services.vectorSearchService || new VectorSearchService();
+    this.vectorSearchService = services.vectorSearchService || vectorSearchService;
     this.longTermMemoryService = services.longTermMemoryService;
     this.workingMemoryService = services.workingMemoryService;
     

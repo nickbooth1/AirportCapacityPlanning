@@ -47,5 +47,52 @@ module.exports = {
       summary: 'Request for capacity information',
       sentiment: 'neutral'
     };
+  }),
+  
+  /**
+   * Extract parameters from scenario description
+   */
+  extractParametersFromDescription: jest.fn().mockResolvedValue({
+    terminal: 'Terminal 2',
+    standType: 'wide_body',
+    count: 3
+  }),
+  
+  /**
+   * Identify intent from text
+   */
+  identifyIntent: jest.fn().mockResolvedValue({
+    intent: 'what_if_scenario',
+    confidence: 0.9
+  }),
+  
+  /**
+   * Extract entities from text
+   */
+  extractEntities: jest.fn().mockResolvedValue([
+    { type: 'terminal', value: 'Terminal 2', confidence: 0.95 },
+    { type: 'stand_type', value: 'wide_body', confidence: 0.85 },
+    { type: 'count', value: '3', confidence: 0.9 }
+  ]),
+  
+  /**
+   * Analyze text for sentiment and keywords
+   */
+  analyzeText: jest.fn().mockResolvedValue({
+    sentiment: 'neutral',
+    keywords: ['capacity', 'terminal', 'wide body']
+  }),
+  
+  /**
+   * Extract parameters from query
+   */
+  extractParametersFromQuery: jest.fn().mockResolvedValue({
+    action: 'create',
+    entityType: 'scenario',
+    parameters: {
+      terminal: 'Terminal 2',
+      standType: 'wide_body',
+      count: 3
+    }
   })
 };

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.82% </span>
+                <span class="strong">4.14% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/241</span>
+                <span class='fraction'>10/241</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">9.82% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/112</span>
+                <span class='fraction'>11/112</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.26% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/38</span>
+                <span class='fraction'>2/38</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.84% </span>
+                <span class="strong">4.2% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/238</span>
+                <span class='fraction'>10/238</span>
             </div>
         
             
@@ -857,24 +857,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1630,26 +1630,26 @@
 const logger = require('../../utils/logger');
 &nbsp;
 class WorkingMemoryService {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  constructor(options = {}) {
     // Initialize memory storage with default TTL of 30 minutes (in milliseconds)
-<span class="cstat-no" title="statement not covered" >    this.defaultTTL = options.defaultTTL || 30 * 60 * 1000; </span>
-<span class="cstat-no" title="statement not covered" >    this.storage = new Map();</span>
+    this.defaultTTL = options.defaultTTL || 30 * 60 * 1000; 
+    this.storage = new Map();
     
     // Knowledge retrieval specific settings
-<span class="cstat-no" title="statement not covered" >    this.maxEntityHistorySize = options.maxEntityHistorySize || 50;</span>
-<span class="cstat-no" title="statement not covered" >    this.maxKnowledgeItemsPerQuery = options.maxKnowledgeItemsPerQuery || 20;</span>
-<span class="cstat-no" title="statement not covered" >    this.maxRetrievalResultsHistory = options.maxRetrievalResultsHistory || 10;</span>
+    this.maxEntityHistorySize = options.maxEntityHistorySize || 50;
+    this.maxKnowledgeItemsPerQuery = options.maxKnowledgeItemsPerQuery || 20;
+    this.maxRetrievalResultsHistory = options.maxRetrievalResultsHistory || 10;
     
     // Set up memory cleanup interval (every 10 minutes by default)
-<span class="cstat-no" title="statement not covered" >    this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000;</span>
-<span class="cstat-no" title="statement not covered" >    this.startCleanupInterval();</span>
+    this.cleanupInterval = options.cleanupInterval || 10 * 60 * 1000;
+    this.startCleanupInterval();
   }
 &nbsp;
   /**
    * Start the cleanup interval to remove expired entries
    */
-<span class="fstat-no" title="function not covered" >  st</span>artCleanupInterval() {
-<span class="cstat-no" title="statement not covered" >    this.cleanupTimer = setInterval(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+  startCleanupInterval() {
+    this.cleanupTimer = setInterval(<span class="fstat-no" title="function not covered" >()</span> =&gt; {
 <span class="cstat-no" title="statement not covered" >      this.cleanupExpiredEntries();</span>
     }, this.cleanupInterval);
   }
@@ -2395,7 +2395,7 @@ module.exports = WorkingMemoryService;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-20T07:19:35.974Z
+                at 2025-05-20T12:44:54.904Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
