@@ -29,6 +29,7 @@ router.get('/status-types', maintenanceController.getAllStatusTypes);
 // Calendar & Impact routes
 router.get('/calendar', maintenanceController.getCalendarData);
 router.get('/impact', maintenanceController.getCapacityImpact);
+router.get('/unavailable-stands', maintenanceController.getUnavailableStands);
 
 // Recurring Schedules routes (Add these later if needed)
 // router.get('/recurring', maintenanceController.getAllRecurringSchedules);

@@ -1,9 +1,10 @@
 /**
  * Maintenance Service
  * This service is a facade over the individual maintenance services for use by the NLP agent.
- * It provides simpler interfaces for querying maintenance data.
+ * It provides simpler interfaces for querying maintenance data and analyzing capacity impacts.
  */
 const maintenanceRequestService = require('./maintenanceRequestService');
+const maintenanceCapacityIntegrationService = require('./maintenanceCapacityIntegrationService');
 const logger = require('../utils/logger');
 const db = require('../utils/db');
 
@@ -142,6 +143,92 @@ class MaintenanceService {
   async getMaintenanceStatusTypes() {
     logger.info('MaintenanceService: Delegating to maintenanceRequestService.getAllStatusTypes');
     return maintenanceRequestService.getAllStatusTypes();
+  }
+  
+  /**
+   * Calculate how a maintenance request impacts airport capacity
+   * @param {string} requestId - Maintenance request ID
+   * @param {Object} options - Additional options
+   * @param {string} options.startDate - Optional override start date
+   * @param {string} options.endDate - Optional override end date
+   * @returns {Promise<Object>} - Capacity impact analysis
+   */
+  async getCapacityImpact(requestId, options = {}) {
+    logger.info(`MaintenanceService: Calculating capacity impact for maintenance request ${requestId}`);
+    try {
+      return await maintenanceCapacityIntegrationService.calculateRequestCapacityImpact(
+        requestId,
+        options.startDate || null,
+        options.endDate || null
+      );
+    } catch (error) {
+      logger.error(`Error calculating capacity impact for maintenance request ${requestId}: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get the overall capacity impact of all scheduled maintenance for a time period
+   * @param {Object} options - Filter options
+   * @param {string} options.startDate - Start date (ISO format)
+   * @param {string} options.endDate - End date (ISO format) 
+   * @returns {Promise<Object>} - Aggregated capacity impact data
+   */
+  async getAggregatedCapacityImpact(options = {}) {
+    logger.info('MaintenanceService: Calculating aggregated capacity impact for maintenance');
+    
+    if (!options.startDate || !options.endDate) {
+      // Default to current date and next 7 days if dates not provided
+      const currentDate = new Date();
+      const endDate = new Date(currentDate);
+      endDate.setDate(endDate.getDate() + 7);
+      
+      options.startDate = currentDate.toISOString().split('T')[0];
+      options.endDate = endDate.toISOString().split('T')[0];
+    }
+    
+    try {
+      return await maintenanceCapacityIntegrationService.calculateCapacityImpact(
+        options.startDate,
+        options.endDate
+      );
+    } catch (error) {
+      logger.error(`Error calculating aggregated capacity impact: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get unavailable stands due to maintenance for a specific time period
+   * @param {Object} options - Filter options 
+   * @param {string} options.startDate - Start date (ISO format)
+   * @param {string} options.endDate - End date (ISO format)
+   * @param {Array} options.standIds - Optional array of specific stand IDs to check
+   * @returns {Promise<Array>} - Array of stands with unavailability periods
+   */
+  async getUnavailableStands(options = {}) {
+    logger.info('MaintenanceService: Getting unavailable stands due to maintenance');
+    
+    if (!options.startDate || !options.endDate) {
+      // Default to current date and next 7 days if dates not provided
+      const currentDate = new Date();
+      const endDate = new Date(currentDate);
+      endDate.setDate(endDate.getDate() + 7);
+      
+      options.startDate = currentDate.toISOString().split('T')[0];
+      options.endDate = endDate.toISOString().split('T')[0];
+    }
+    
+    try {
+      return await maintenanceCapacityIntegrationService.getUnavailableStands(
+        options.startDate,
+        options.endDate,
+        options.standIds || null
+      );
+    } catch (error) {
+      logger.error(`Error getting unavailable stands: ${error.message}`);
+      throw error;
+    }
   }
 }
 

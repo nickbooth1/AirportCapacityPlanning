@@ -1,6 +1,7 @@
 const maintenanceRequestService = require('../services/maintenanceRequestService');
 const maintenanceApprovalService = require('../services/maintenanceApprovalService');
 const maintenanceCapacityService = require('../services/maintenanceCapacityIntegrationService');
+const maintenanceService = require('../services/maintenanceService');
 const notificationService = require('../services/notificationService');
 
 // Maintenance Requests
@@ -357,7 +358,10 @@ exports.getCapacityImpact = async (req, res, next) => {
     if (!startDate || !endDate) {
       return res.status(400).json({ message: 'Both startDate and endDate are required' });
     }
-    const impact = await maintenanceCapacityService.calculateCapacityImpact(startDate, endDate);
+    const impact = await maintenanceService.getAggregatedCapacityImpact({
+      startDate,
+      endDate
+    });
     res.json(impact);
   } catch (error) {
     next(error);
@@ -373,31 +377,52 @@ exports.getRequestCapacityImpact = async (req, res, next) => {
     let { id } = req.params;
     const { startDate, endDate } = req.query;
     
-    console.log(`Calculating capacity impact for maintenance request ${id}`);
-    
-    // Validate UUID format
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidPattern.test(id)) {
-      console.error(`Invalid UUID format for request ID: ${id}`);
-      
-      // Try to format the ID if it doesn't have dashes but is the right length
-      if (/^[0-9a-f]{32}$/i.test(id)) {
-        id = `${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}`;
-        console.log(`Reformatted ID as UUID: ${id}`);
-      } else {
-        return res.status(400).json({ message: 'Invalid request ID format. Must be a valid UUID.' });
+    // Validate UUID format if applicable
+    // Note: Depends on your ID format, adjust as needed
+    if (id.length === 36) {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidPattern.test(id)) {
+        // Try to format the ID if it doesn't have dashes but is the right length
+        if (/^[0-9a-f]{32}$/i.test(id)) {
+          id = `${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}`;
+        } else {
+          return res.status(400).json({ message: 'Invalid request ID format.' });
+        }
       }
     }
     
-    const impactAnalysis = await maintenanceCapacityService.calculateRequestCapacityImpact(
-      id,
-      startDate || null,
-      endDate || null
-    );
+    const impactAnalysis = await maintenanceService.getCapacityImpact(id, {
+      startDate,
+      endDate
+    });
     
     res.json(impactAnalysis);
   } catch (error) {
-    console.error(`Error getting request capacity impact: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * Get stands that are unavailable due to maintenance during a specific time period
+ */
+exports.getUnavailableStands = async (req, res, next) => {
+  try {
+    const { startDate, endDate, standIds } = req.query;
+    
+    // Parse standIds if provided
+    let parsedStandIds = null;
+    if (standIds) {
+      parsedStandIds = standIds.split(',').map(id => id.trim());
+    }
+    
+    const unavailableStands = await maintenanceService.getUnavailableStands({
+      startDate,
+      endDate,
+      standIds: parsedStandIds
+    });
+    
+    res.json(unavailableStands);
+  } catch (error) {
     next(error);
   }
 };

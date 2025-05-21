@@ -1236,6 +1236,173 @@ Generate a comprehensive comparison analysis of these scenarios.`
       total: 0
     };
   }
+  
+  /**
+   * Extract intent and entities from a user's query
+   * @param {string} query - The user query text
+   * @param {Object} options - Additional options
+   * @param {string} options.model - The model to use
+   * @param {Object} options.context - Additional context for intent extraction
+   * @param {boolean} options.includeReasoning - Whether to include reasoning in the response
+   * @returns {Promise<Object>} - The extracted intent and entities
+   */
+  async extractIntentAndEntities(query, options = {}) {
+    const useModel = options.model || this.model;
+    logger.debug(`Extracting intent and entities using model: ${useModel}`);
+    
+    const systemPrompt = `
+      You are an AI assistant specializing in airport capacity planning and operations.
+      Analyze the user's query to:
+      1. Identify the primary intent
+      2. Extract relevant entities (terminals, stands, aircraft types, dates, etc.)
+      
+      Available intents:
+      - capacity_query: Questions about capacity, utilization, availability
+      - maintenance_query: Questions about maintenance schedules, repairs, etc.
+      - infrastructure_query: Questions about airport infrastructure like terminals, piers, etc.
+      - stand_status_query: Questions about the status of specific stands
+      - help_request: Requests for help or information about system capabilities
+      
+      Respond with JSON in the following format:
+      {
+        "intent": "intent_name",
+        "confidence": (a decimal between 0 and 1),
+        "entities": {
+          "terminal": "terminal identifier if present",
+          "stand": "stand identifier if present",
+          "aircraft_type": "aircraft type if present",
+          "time_range": {
+            "start": "YYYY-MM-DD",
+            "end": "YYYY-MM-DD"
+          },
+          "other_entity_name": "other entity value"
+        },
+        "reasoning": "Brief explanation of your intent classification and entity extraction"
+      }
+    `;
+    
+    try {
+      if (!this.isAvailable) {
+        throw new Error("OpenAI service unavailable");
+      }
+      
+      const response = await this.client.chat.completions.create({
+        model: useModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: query }
+        ],
+        response_format: { type: "json_object" }
+      });
+      
+      // Track token usage
+      if (response.usage) {
+        this.tokenUsage.prompt += response.usage.prompt_tokens;
+        this.tokenUsage.completion += response.usage.completion_tokens;
+        this.tokenUsage.total += response.usage.total_tokens;
+        
+        logger.info(`OpenAI Token Usage - Prompt: ${response.usage.prompt_tokens}, Completion: ${response.usage.completion_tokens}, Total: ${response.usage.total_tokens}`);
+      }
+      
+      // Parse the response
+      const content = response.choices[0].message.content;
+      let result;
+      
+      try {
+        result = JSON.parse(content);
+      } catch (parseError) {
+        logger.error(`Failed to parse OpenAI response as JSON: ${parseError.message}`);
+        throw new Error('Invalid response format from OpenAI');
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error(`Error in extractIntentAndEntities: ${error.message}`);
+      
+      // If OpenAI is not available, return a mock response
+      return {
+        intent: this._determineFallbackIntent(query),
+        confidence: 0.7,
+        entities: this._extractBasicEntities(query),
+        reasoning: "This is a fallback intent classification due to OpenAI service unavailability"
+      };
+    }
+  }
+  
+  /**
+   * Determine a fallback intent based on simple keyword matching
+   * @param {string} query - The user query
+   * @returns {string} - A best-guess intent
+   * @private
+   */
+  _determineFallbackIntent(query) {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('capacity') || lowerQuery.includes('how many') || 
+        lowerQuery.includes('available') || lowerQuery.includes('utilization')) {
+      return 'capacity_query';
+    } 
+    else if (lowerQuery.includes('maintenance') || lowerQuery.includes('repair') || 
+             lowerQuery.includes('fix') || lowerQuery.includes('broken')) {
+      return 'maintenance_query';
+    }
+    else if (lowerQuery.includes('terminal') || lowerQuery.includes('infrastructure') || 
+             lowerQuery.includes('pier')) {
+      return 'infrastructure_query';
+    }
+    else if (lowerQuery.includes('stand') || lowerQuery.includes('gate') || 
+             lowerQuery.includes('status')) {
+      return 'stand_status_query';
+    }
+    else if (lowerQuery.includes('help') || lowerQuery.includes('guide') ||
+             lowerQuery.includes('how to') || lowerQuery.includes('what can you')) {
+      return 'help_request';
+    }
+    
+    return 'capacity_query'; // Default fallback
+  }
+  
+  /**
+   * Extract basic entities using regex patterns
+   * @param {string} query - The user query
+   * @returns {Object} - Extracted entities
+   * @private
+   */
+  _extractBasicEntities(query) {
+    const entities = {};
+    const lowerQuery = query.toLowerCase();
+    
+    // Extract terminal
+    const terminalMatch = lowerQuery.match(/terminal\s+(\w+)/i);
+    if (terminalMatch) {
+      entities.terminal = terminalMatch[1];
+    }
+    
+    // Extract stand
+    const standMatch = lowerQuery.match(/stand\s+([a-z0-9]+)/i);
+    if (standMatch) {
+      entities.stand = standMatch[1];
+    }
+    
+    // Extract aircraft type
+    const aircraftMatch = lowerQuery.match(/aircraft\s+type\s+([a-z0-9]+)/i) || 
+                         lowerQuery.match(/([ab][0-9]{3})/i);
+    if (aircraftMatch) {
+      entities.aircraft_type = aircraftMatch[1];
+    }
+    
+    // Default time range (next 30 days)
+    const now = new Date();
+    const endDate = new Date();
+    endDate.setDate(now.getDate() + 30);
+    
+    entities.time_range = {
+      start: now.toISOString().split('T')[0],
+      end: endDate.toISOString().split('T')[0]
+    };
+    
+    return entities;
+  }
 }
 
 module.exports = new OpenAIService();
